@@ -272,7 +272,7 @@ export default function POS() {
         </div>
 
         {/* Cart Panel */}
-        <div className="w-full lg:w-[400px] bg-card border-t lg:border-t-0 lg:border-l shadow-lg flex flex-col" style={{ minHeight: '400px' }}>
+        <div className="w-full lg:w-[400px] bg-card border-t lg:border-t-0 lg:border-l shadow-lg flex flex-col">
           <div className="p-4 border-b bg-card/50 backdrop-blur flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ export default function POS() {
               )}
             </div>
           </div>
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             <Cart
               items={cart}
               onUpdateQuantity={updateQuantity}
@@ -297,35 +297,35 @@ export default function POS() {
               taxRate={taxRate}
             />
           </div>
-        </div>
-        {cart.length > 0 && (
-          <div className="p-4 border-t bg-card/50 backdrop-blur space-y-3 flex-shrink-0">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span>KES {subtotal.toLocaleString()}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
-                  <span>- KES {discount.toLocaleString()}</span>
+          {cart.length > 0 && (
+            <div className="p-4 border-t bg-card/50 backdrop-blur space-y-3 flex-shrink-0">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>KES {subtotal.toLocaleString()}</span>
                 </div>
-              )}
-              <div className="flex justify-between text-lg font-bold text-primary pt-2 border-t">
-                <span>Total</span>
-                <span>KES {total.toLocaleString()}</span>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span>- KES {discount.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold text-primary pt-2 border-t">
+                  <span>Total</span>
+                  <span>KES {total.toLocaleString()}</span>
+                </div>
               </div>
+              <Button
+                onClick={() => setCheckoutOpen(true)}
+                className="w-full h-14 rounded-xl text-lg font-bold shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90"
+                size="lg"
+              >
+                <ShoppingCart className="w-5 h-5 mr-2" />
+                Charge KES {total.toLocaleString()}
+              </Button>
             </div>
-            <Button
-              onClick={() => setCheckoutOpen(true)}
-              className="w-full h-14 rounded-xl text-lg font-bold shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90"
-              size="lg"
-            >
-              <ShoppingCart className="w-5 h-5 mr-2" />
-              Charge KES {total.toLocaleString()}
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <CheckoutDialog
