@@ -1,0 +1,81 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Product name"
+    },
+    "sku": {
+      "type": "string",
+      "description": "Stock keeping unit / barcode"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "groceries",
+        "beverages",
+        "dairy",
+        "bakery",
+        "snacks",
+        "household",
+        "personal_care",
+        "electronics",
+        "stationery",
+        "other"
+      ],
+      "description": "Product category"
+    },
+    "price": {
+      "type": "number",
+      "description": "Selling price in KES"
+    },
+    "cost_price": {
+      "type": "number",
+      "description": "Cost/buying price in KES"
+    },
+    "stock_quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Current stock quantity"
+    },
+    "low_stock_threshold": {
+      "type": "number",
+      "default": 10,
+      "description": "Alert when stock falls below this"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "piece",
+        "kg",
+        "litre",
+        "pack",
+        "dozen",
+        "box",
+        "bag"
+      ],
+      "default": "piece",
+      "description": "Unit of measurement"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Product image URL"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether product is available for sale"
+    },
+    "tax_rate": {
+      "type": "number",
+      "default": 16,
+      "description": "VAT percentage (Kenya standard is 16%)"
+    }
+  },
+  "required": [
+    "name",
+    "price",
+    "category"
+  ]
+}

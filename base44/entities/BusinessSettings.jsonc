@@ -1,0 +1,42 @@
+{
+  "name": "BusinessSettings",
+  "type": "object",
+  "properties": {
+    "business_name": {
+      "type": "string",
+      "description": "Business/store name"
+    },
+    "business_phone": {
+      "type": "string"
+    },
+    "business_email": {
+      "type": "string"
+    },
+    "business_address": {
+      "type": "string"
+    },
+    "kra_pin": {
+      "type": "string",
+      "description": "KRA PIN number"
+    },
+    "default_tax_rate": {
+      "type": "number",
+      "default": 16,
+      "description": "Default VAT rate"
+    },
+    "currency": {
+      "type": "string",
+      "default": "KES"
+    },
+    "receipt_footer": {
+      "type": "string",
+      "default": "Thank you for shopping with us!"
+    },
+    "logo_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_name"
+  ]
+}
