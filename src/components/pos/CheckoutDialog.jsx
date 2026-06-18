@@ -48,10 +48,10 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const tier = selectedCustomer?.tier || 'bronze';
 
   const cashAmount = parseFloat(cashReceived) || 0;
-  const change = cashAmount - total;
+  const change = cashAmount - displayTotal;
 
   const canComplete = () => {
-    if (method === 'cash') return cashAmount >= total;
+    if (method === 'cash') return cashAmount >= displayTotal;
     if (method === 'mpesa') return mpesaRef.trim().length > 0;
     return true;
   };
@@ -68,12 +68,14 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
     });
   };
 
+  const displayTotal = Math.round(total);
+
   const quickCashAmounts = [
-    Math.ceil(total / 100) * 100,
-    Math.ceil(total / 500) * 500,
-    Math.ceil(total / 1000) * 1000,
-    total
-  ].filter((v, i, a) => a.indexOf(v) === i && v >= total).slice(0, 4);
+    Math.ceil(displayTotal / 100) * 100,
+    Math.ceil(displayTotal / 500) * 500,
+    Math.ceil(displayTotal / 1000) * 1000,
+    displayTotal
+  ].filter((v, i, a) => a.indexOf(v) === i && v >= displayTotal).slice(0, 4);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -87,12 +89,12 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
           <div className="text-center py-4 bg-gradient-to-br from-muted to-primary/5 rounded-xl border border-primary/20">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Amount Due</p>
             <p className="text-3xl font-display font-bold text-primary mt-1">
-              KES {total.toLocaleString()}
+              KES {displayTotal.toLocaleString()}
             </p>
             <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
               <Gift className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-primary">
-                Earn {Math.floor(total / 100)} pts
+                Earn {Math.floor(displayTotal / 100)} pts
               </span>
             </div>
           </div>
@@ -145,7 +147,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
                   </Button>
                 ))}
               </div>
-              {cashAmount >= total && (
+              {cashAmount >= displayTotal && (
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-center">
                   <p className="text-xs text-emerald-600 dark:text-emerald-400">Change</p>
                   <p className="text-2xl font-display font-bold text-emerald-700 dark:text-emerald-300">
@@ -222,7 +224,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
                       <Gift className="w-2.5 h-2.5 text-primary" />
                       <span>After</span>
                     </div>
-                    <p className="text-sm font-bold text-primary">{(loyaltyPoints + Math.floor(total / 100)).toLocaleString()}</p>
+                    <p className="text-sm font-bold text-primary">{(loyaltyPoints + Math.floor(displayTotal / 100)).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -244,7 +246,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
             ) : (
               <>
                 <CheckCircle className="w-5 h-5 mr-2" />
-                Complete Sale — KES {total.toLocaleString()}
+                Complete Sale — KES {displayTotal.toLocaleString()}
               </>
             )}
           </Button>

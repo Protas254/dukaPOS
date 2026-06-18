@@ -99,17 +99,21 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
             <span className="text-muted-foreground">VAT ({taxRate}%)</span>
             <span className="font-medium">KES {Math.round(taxAmount).toLocaleString()}</span>
           </div>
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Taxable Amount</span>
+            <span className="font-medium">KES {taxableAmount.toLocaleString()}</span>
+          </div>
         </div>
         <div className="flex justify-between items-center pt-1 border-t">
           <span className="text-xs font-bold">Total</span>
-          <span className="text-lg font-display font-bold text-primary">KES {total.toLocaleString()}</span>
+          <span className="text-lg font-display font-bold text-primary">KES {Math.round(total).toLocaleString()}</span>
         </div>
         {items.length > 0 && onCheckout && (
           <Button
             onClick={onCheckout}
             className="w-full h-8 rounded-md text-sm font-bold bg-primary hover:bg-primary/90 mt-2"
           >
-            Charge KES {total.toLocaleString()}
+            Charge KES {Math.round(total).toLocaleString()}
           </Button>
         )}
       </div>
