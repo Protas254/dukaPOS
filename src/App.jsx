@@ -22,6 +22,7 @@ import Inventory from '@/pages/Inventory';
 import Transactions from '@/pages/Transactions';
 import Reports from '@/pages/Reports';
 import Customers from '@/pages/Customers';
+import MyShifts from '@/pages/MyShifts';
 import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
@@ -61,6 +62,7 @@ const AuthenticatedApp = () => {
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/my-shifts" element={<MyShifts />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
