@@ -100,7 +100,9 @@ export default function POS() {
 
   // Calculations
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const total = subtotal - discount;
+  const taxableAmount = subtotal - discount;
+  const taxTotal = taxableAmount * (taxRate / (100 + taxRate));
+  const total = taxableAmount + taxTotal;
 
   const generateReceiptNumber = () => {
     const now = new Date();
@@ -117,25 +119,24 @@ export default function POS() {
     const user = await base44.auth.me();
     const items = cart.map(i => {
       const itemTotal = i.price * i.quantity;
-      const taxAmount = itemTotal * (i.tax_rate / (100 + i.tax_rate));
+      const itemTax = itemTotal * (i.tax_rate / (100 + i.tax_rate));
       return {
         product_id: i.id,
         product_name: i.name,
         quantity: i.quantity,
         unit_price: i.price,
         total: itemTotal,
-        tax_amount: Math.round(taxAmount)
+        tax_amount: Math.round(itemTax)
       };
     });
 
-    const taxTotal = items.reduce((sum, i) => sum + i.tax_amount, 0);
-    const pointsEarned = Math.floor(total / 100);
+    const pointsEarned = Math.floor(subtotal / 100);
 
     const saleData = {
       receipt_number: generateReceiptNumber(),
       items,
       subtotal,
-      tax_total: taxTotal,
+      tax_total: Math.round(taxTotal),
       discount_amount: discount,
       total_amount: total,
       points_earned: pointsEarned,

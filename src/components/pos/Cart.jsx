@@ -10,7 +10,7 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
   const discountAmount = discount || 0;
   const taxableAmount = subtotal - discountAmount;
   const taxAmount = taxableAmount * (taxRate / (100 + taxRate));
-  const total = subtotal - discountAmount;
+  const total = taxableAmount + taxAmount;
 
   if (items.length === 0) {
     return (

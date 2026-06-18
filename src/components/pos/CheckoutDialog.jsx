@@ -92,7 +92,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
             <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
               <Gift className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-primary">
-                Earn {Math.floor(total / 100)} loyalty points
+                Earn {Math.floor(total / 100)} pts
               </span>
             </div>
           </div>
@@ -168,15 +168,6 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
                   autoFocus
                 />
               </div>
-              <div>
-                <Label className="text-xs">Customer Phone</Label>
-                <Input
-                  value={customerPhone}
-                  onChange={e => setCustomerPhone(e.target.value)}
-                  placeholder="0712 345 678"
-                  className="mt-1"
-                />
-              </div>
             </div>
           )}
 
@@ -188,27 +179,28 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
 
           <Separator />
 
-          {/* Customer info */}
-          <div className="space-y-2">
-            <Label className="text-xs">Customer Phone (for loyalty points)</Label>
-            <Input
-              value={customerPhone}
-              onChange={e => setCustomerPhone(e.target.value)}
-              placeholder="0712 345 678"
-              className="mt-1"
-            />
-            {selectedCustomer && (
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
+          {/* Customer info - only show if not already entered for M-Pesa */}
+          {method !== 'mpesa' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Customer Phone (for loyalty points)</Label>
+              <Input
+                value={customerPhone}
+                onChange={e => setCustomerPhone(e.target.value)}
+                placeholder="0712 345 678"
+                className="mt-1"
+              />
+              {selectedCustomer && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-primary" />
+                    <User className="w-3 h-3 text-primary" />
                     <div>
-                      <span className="text-sm font-semibold block">{selectedCustomer.name}</span>
-                      <span className="text-xs text-muted-foreground">{selectedCustomer.phone}</span>
+                      <span className="text-xs font-semibold block">{selectedCustomer.name}</span>
+                      <span className="text-[10px] text-muted-foreground">{selectedCustomer.phone}</span>
                     </div>
                   </div>
                   <Badge className={cn(
-                    "font-bold",
+                    "text-[9px] font-bold px-1.5 py-0.5",
                     tier === 'gold' ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white shadow-md' : 
                     tier === 'platinum' ? 'bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-md' : 
                     tier === 'silver' ? 'bg-gradient-to-r from-gray-300 to-gray-400 text-white shadow-sm' :
@@ -217,28 +209,26 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
                     {tier.toUpperCase()}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-background rounded-lg p-2.5 border">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                      <Gift className="w-3 h-3" />
-                      <span>Current Points</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-background rounded-md p-2 border">
+                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground mb-1">
+                      <Gift className="w-2.5 h-2.5" />
+                      <span>Current</span>
                     </div>
-                    <p className="text-lg font-bold text-primary">{loyaltyPoints.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-primary">{loyaltyPoints.toLocaleString()}</p>
                   </div>
-                  <div className="bg-background rounded-lg p-2.5 border border-primary/30">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                      <Gift className="w-3 h-3 text-primary" />
-                      <span>After Purchase</span>
+                  <div className="bg-background rounded-md p-2 border border-primary/30">
+                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground mb-1">
+                      <Gift className="w-2.5 h-2.5 text-primary" />
+                      <span>After</span>
                     </div>
-                    <p className="text-lg font-bold text-primary">{(loyaltyPoints + Math.floor(total / 100)).toLocaleString()}</p>
+                    <p className="text-sm font-bold text-primary">{(loyaltyPoints + Math.floor(total / 100)).toLocaleString()}</p>
                   </div>
-                </div>
-                <div className="text-xs text-muted-foreground text-center">
-                  Total spent: KES {(selectedCustomer.total_spending || 0).toLocaleString()} • {(selectedCustomer.total_transactions || 0)} transactions
                 </div>
               </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Complete */}
           <Button
