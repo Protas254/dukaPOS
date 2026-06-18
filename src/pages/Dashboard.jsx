@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, ShoppingCart, TrendingUp, Package, 
-  AlertTriangle, ArrowRight
+  AlertTriangle, ArrowRight, User, Award
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfDay, subDays } from 'date-fns';
@@ -86,6 +86,33 @@ export default function Dashboard() {
     .slice(0, 5);
 
   const recentSales = sales.slice(0, 5);
+
+  // Cashier performance - all time
+  const cashierStats = useMemo(() => {
+    const byCashier = {};
+    sales.forEach(sale => {
+      const cashier = sale.cashier_name || 'Unknown';
+      if (!byCashier[cashier]) {
+        byCashier[cashier] = { 
+          name: cashier, 
+          transactions: 0, 
+          revenue: 0,
+          avgSale: 0,
+          cashSales: 0,
+          mpesaSales: 0,
+          cardSales: 0
+        };
+      }
+      byCashier[cashier].transactions += 1;
+      byCashier[cashier].revenue += (sale.total_amount || 0);
+      if (sale.payment_method === 'cash') byCashier[cashier].cashSales += 1;
+      if (sale.payment_method === 'mpesa') byCashier[cashier].mpesaSales += 1;
+      if (sale.payment_method === 'card') byCashier[cashier].cardSales += 1;
+    });
+    return Object.values(byCashier)
+      .map(c => ({ ...c, avgSale: c.transactions > 0 ? Math.round(c.revenue / c.transactions) : 0 }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [sales]);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
@@ -288,6 +315,70 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Cashier Performance */}
+      <div className="bg-card rounded-2xl border p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Award className="w-4 h-4 text-primary" />
+            <h3 className="font-display font-semibold text-sm">Cashier Performance</h3>
+          </div>
+          <Link to="/reports" className="text-xs text-primary font-medium hover:underline">View detailed report</Link>
+        </div>
+        {cashierStats.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-3 font-medium text-muted-foreground">Cashier</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">Transactions</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total Revenue</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">Avg Sale</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden sm:table-cell">Payment Breakdown</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cashierStats.map((c, i) => (
+                  <tr key={c.name} className="border-b last:border-0 hover:bg-muted/50">
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="font-medium">{c.name}</span>
+                      </div>
+                    </td>
+                    <td className="text-right py-3 px-3 font-semibold">{c.transactions}</td>
+                    <td className="text-right py-3 px-3 font-semibold">KES {c.revenue.toLocaleString()}</td>
+                    <td className="text-right py-3 px-3">KES {c.avgSale.toLocaleString()}</td>
+                    <td className="text-right py-3 px-3 hidden sm:table-cell">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {c.cashSales > 0 && (
+                          <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                            Cash: {c.cashSales}
+                          </Badge>
+                        )}
+                        {c.mpesaSales > 0 && (
+                          <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            M-Pesa: {c.mpesaSales}
+                          </Badge>
+                        )}
+                        {c.cardSales > 0 && (
+                          <Badge variant="secondary" className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                            Card: {c.cardSales}
+                          </Badge>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-8">No sales data yet</p>
+        )}
+      </div>
     </div>
   );
 }
