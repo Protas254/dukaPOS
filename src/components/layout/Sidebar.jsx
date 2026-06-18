@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, Receipt, 
-  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock
+  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, X
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -27,16 +27,25 @@ export default function Sidebar({ collapsed, onToggle }) {
       collapsed ? "w-[72px]" : "w-[240px]"
     )}>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-        <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-          <Store className="w-5 h-5 text-sidebar-primary-foreground" />
-        </div>
-        {!collapsed && (
-          <div className="overflow-hidden">
-            <h1 className="font-display font-bold text-base leading-tight truncate">SoftPOS</h1>
-            <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">Kenya</p>
+      <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-border">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center flex-shrink-0">
+            <Store className="w-5 h-5 text-sidebar-primary-foreground" />
           </div>
-        )}
+          {!collapsed && (
+            <div className="overflow-hidden">
+              <h1 className="font-display font-bold text-base leading-tight truncate">SoftPOS</h1>
+              <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">Kenya</p>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={onToggle}
+          className="p-1.5 rounded-lg hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+          title={collapsed ? 'Open sidebar' : 'Close sidebar'}
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Navigation */}
