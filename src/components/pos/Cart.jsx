@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 
-export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCart, discount, onDiscountChange, taxRate }) {
+export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCart, discount, onDiscountChange, taxRate, onCheckout }) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discountAmount = discount || 0;
   const taxableAmount = subtotal - discountAmount;
@@ -71,8 +71,8 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
         </div>
       </ScrollArea>
 
-      {/* Totals */}
-      <div className="border-t px-4 py-3 space-y-2 bg-muted/30">
+      {/* Totals & Checkout */}
+      <div className="border-t px-4 py-4 space-y-3 bg-muted/30">
         <div className="flex items-center gap-2">
           <label className="text-xs text-muted-foreground whitespace-nowrap">Discount (KES)</label>
           <Input
@@ -80,18 +80,18 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
             min="0"
             value={discount || ''}
             onChange={e => onDiscountChange(parseFloat(e.target.value) || 0)}
-            className="h-7 text-xs text-right"
+            className="h-8 text-sm text-right"
             placeholder="0"
           />
         </div>
         <Separator />
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Subtotal</span>
             <span>KES {subtotal.toLocaleString()}</span>
           </div>
           {discountAmount > 0 && (
-            <div className="flex justify-between text-xs text-destructive">
+            <div className="flex justify-between text-xs text-green-600">
               <span>Discount</span>
               <span>-KES {discountAmount.toLocaleString()}</span>
             </div>
@@ -101,11 +101,20 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
             <span>KES {Math.round(taxAmount).toLocaleString()}</span>
           </div>
           <Separator />
-          <div className="flex justify-between text-lg font-display font-bold pt-1">
+          <div className="flex justify-between text-xl font-display font-bold pt-1">
             <span>Total</span>
             <span className="text-primary">KES {total.toLocaleString()}</span>
           </div>
         </div>
+        {items.length > 0 && onCheckout && (
+          <Button
+            onClick={onCheckout}
+            className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-primary/30 bg-primary hover:bg-primary/90 mt-3"
+          >
+            <ShoppingBag className="w-4 h-4 mr-2" />
+            Charge KES {total.toLocaleString()}
+          </Button>
+        )}
       </div>
     </div>
   );
