@@ -5,12 +5,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, subDays, startOfDay, startOfWeek, startOfMonth, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
-import { DollarSign, TrendingUp, ShoppingCart, Users, Percent } from 'lucide-react';
+import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User } from 'lucide-react';
 
 const COLORS = ['hsl(174,62%,32%)', 'hsl(150,50%,45%)', 'hsl(210,60%,50%)', 'hsl(38,92%,55%)', 'hsl(0,72%,51%)'];
 
 export default function Reports() {
   const [period, setPeriod] = useState('7days');
+  const [selectedCashier, setSelectedCashier] = useState('all');
 
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
@@ -31,7 +32,18 @@ export default function Reports() {
     return subDays(now, 7);
   }, [period]);
 
-  const periodSales = sales.filter(s => new Date(s.created_date) >= periodStart);
+  const periodSales = sales.filter(s => {
+    const saleDate = new Date(s.created_date);
+    const matchesPeriod = saleDate >= periodStart;
+    const matchesCashier = selectedCashier === 'all' || s.cashier_name === selectedCashier;
+    return matchesPeriod && matchesCashier;
+  });
+
+  // Get unique cashiers from sales
+  const cashiers = useMemo(() => {
+    const unique = [...new Set(sales.map(s => s.cashier_name).filter(Boolean))];
+    return unique.sort();
+  }, [sales]);
 
   const totalRevenue = periodSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const totalTax = periodSales.reduce((sum, s) => sum + (s.tax_total || 0), 0);
@@ -120,6 +132,33 @@ export default function Reports() {
     };
   });
 
+  // Cashier performance
+  const cashierPerformance = useMemo(() => {
+    const byCashier = {};
+    periodSales.forEach(sale => {
+      const cashier = sale.cashier_name || 'Unknown';
+      if (!byCashier[cashier]) {
+        byCashier[cashier] = { 
+          name: cashier, 
+          transactions: 0, 
+          revenue: 0,
+          avgSale: 0,
+          cashTransactions: 0,
+          mpesaTransactions: 0,
+          cardTransactions: 0
+        };
+      }
+      byCashier[cashier].transactions += 1;
+      byCashier[cashier].revenue += (sale.total_amount || 0);
+      if (sale.payment_method === 'cash') byCashier[cashier].cashTransactions += 1;
+      if (sale.payment_method === 'mpesa') byCashier[cashier].mpesaTransactions += 1;
+      if (sale.payment_method === 'card') byCashier[cashier].cardTransactions += 1;
+    });
+    return Object.values(byCashier)
+      .map(c => ({ ...c, avgSale: c.transactions > 0 ? Math.round(c.revenue / c.transactions) : 0 }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [periodSales]);
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -127,14 +166,26 @@ export default function Reports() {
           <h1 className="text-2xl md:text-3xl font-display font-bold">Reports</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Sales analytics & insights</p>
         </div>
-        <Tabs value={period} onValueChange={setPeriod}>
-          <TabsList className="bg-muted">
-            <TabsTrigger value="7days" className="text-xs">7 Days</TabsTrigger>
-            <TabsTrigger value="30days" className="text-xs">30 Days</TabsTrigger>
-            <TabsTrigger value="thisWeek" className="text-xs">This Week</TabsTrigger>
-            <TabsTrigger value="thisMonth" className="text-xs">This Month</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex gap-2">
+          <Tabs value={period} onValueChange={setPeriod}>
+            <TabsList className="bg-muted">
+              <TabsTrigger value="7days" className="text-xs">7 Days</TabsTrigger>
+              <TabsTrigger value="30days" className="text-xs">30 Days</TabsTrigger>
+              <TabsTrigger value="thisWeek" className="text-xs">This Week</TabsTrigger>
+              <TabsTrigger value="thisMonth" className="text-xs">This Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <select
+            value={selectedCashier}
+            onChange={(e) => setSelectedCashier(e.target.value)}
+            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="all">All Cashiers</option>
+            {cashiers.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Stats */}
@@ -262,6 +313,68 @@ export default function Reports() {
             <p className="text-muted-foreground text-xs">Net Revenue</p>
             <p className="font-display font-bold text-lg">KES {(totalRevenue - totalTax).toLocaleString()}</p>
           </div>
+        </div>
+      </div>
+
+      {/* Cashier Performance */}
+      <div className="bg-card rounded-2xl border p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <User className="w-4 h-4 text-primary" />
+          <h3 className="font-display font-semibold text-sm">Cashier Performance</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Cashier</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Transactions</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total Revenue</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Avg Sale</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">Cash</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">M-Pesa</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">Card</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cashierPerformance.map((c, i) => (
+                <tr key={c.name} className="border-b last:border-0 hover:bg-muted/50">
+                  <td className="py-3 px-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold">
+                        {i + 1}
+                      </span>
+                      {c.name}
+                    </div>
+                  </td>
+                  <td className="text-right py-3 px-3 font-semibold">{c.transactions}</td>
+                  <td className="text-right py-3 px-3 font-semibold">KES {c.revenue.toLocaleString()}</td>
+                  <td className="text-right py-3 px-3">KES {c.avgSale.toLocaleString()}</td>
+                  <td className="text-right py-3 px-3 hidden md:table-cell">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      {c.cashTransactions}
+                    </span>
+                  </td>
+                  <td className="text-right py-3 px-3 hidden md:table-cell">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      {c.mpesaTransactions}
+                    </span>
+                  </td>
+                  <td className="text-right py-3 px-3 hidden md:table-cell">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                      {c.cardTransactions}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {cashierPerformance.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                    No sales data for this period
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
