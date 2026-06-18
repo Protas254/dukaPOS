@@ -33,7 +33,7 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
       {filtered.map(product => {
         const isLowStock = product.stock_quantity <= (product.low_stock_threshold || 10);
         const isCriticalStock = product.stock_quantity <= Math.floor((product.low_stock_threshold || 10) * 0.5);
@@ -45,7 +45,7 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
             onClick={() => onAddToCart(product)}
             disabled={isOutOfStock}
             className={cn(
-              "bg-card border rounded-lg p-1.5 text-left transition-all duration-200 hover:shadow-md active:scale-[0.98] group relative overflow-hidden",
+              "bg-card border rounded-md p-1 text-left transition-all hover:shadow-sm active:scale-[0.99] group relative overflow-hidden",
               isOutOfStock && "opacity-50 cursor-not-allowed border-muted",
               isCriticalStock && "border-destructive/50",
               isLowStock && !isCriticalStock && "border-amber-400/50",
@@ -54,36 +54,33 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
           >
             {/* Tiny Stock Dot */}
             {!isOutOfStock && (
-              <div className="absolute top-1 right-1 flex items-center gap-0.5 z-10">
-                <div className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  isCriticalStock && "bg-destructive animate-pulse",
-                  isLowStock && !isCriticalStock && "bg-amber-500",
-                  !isLowStock && "bg-emerald-500"
-                )} />
-              </div>
+              <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full z-10"
+                style={{
+                  backgroundColor: isCriticalStock ? '#ef4444' : isLowStock ? '#f59e0b' : '#10b981'
+                }}
+              />
             )}
 
             {/* Out of Stock Overlay */}
             {isOutOfStock && (
-              <div className="absolute inset-0 bg-muted/80 flex items-center justify-center z-20 rounded-lg">
-                <span className="text-[9px] font-bold text-destructive">
-                  OOS
+              <div className="absolute inset-0 bg-muted/80 flex items-center justify-center z-20 rounded-md">
+                <span className="text-[8px] font-bold text-destructive">
+                  X
                 </span>
               </div>
             )}
             
             {/* Category emoji */}
             <div className={cn(
-              "w-7 h-7 rounded flex items-center justify-center text-lg mb-1",
-              isLowStock ? "bg-amber-50 dark:bg-amber-900/20" : "bg-muted/50"
+              "w-5 h-5 rounded-sm flex items-center justify-center text-base mb-0.5",
+              isLowStock ? "bg-amber-50 dark:bg-amber-900/20" : "bg-muted/30"
             )}>
               {categoryEmojis[product.category] || '📦'}
             </div>
             
-            <p className="text-[11px] font-medium truncate pr-4 leading-tight">{product.name}</p>
-            <p className="text-xs font-display font-bold text-primary mt-0.5">
-              KES {product.price?.toLocaleString()}
+            <p className="text-[9px] font-medium truncate leading-tight">{product.name}</p>
+            <p className="text-[10px] font-bold text-primary mt-0.5">
+              {product.price?.toLocaleString()}
             </p>
           </button>
         );
