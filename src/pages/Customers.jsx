@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Search, User, Plus, Pencil, Trash2, Gift, TrendingUp, ShoppingBag, Star } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 
 const tierColors = {
@@ -226,31 +227,83 @@ export default function Customers() {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <Gift className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-muted-foreground">Points:</span>
-                  <span className="font-semibold">{customer.loyalty_points?.toLocaleString() || 0}</span>
+              {/* Loyalty Points Progress */}
+              <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-3 border border-primary/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold">Loyalty Points</span>
+                  </div>
+                  <Badge className={cn("font-bold", tierColors[customer.tier])}>
+                    {tierIcons[customer.tier]} {customer.tier.toUpperCase()}
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-accent" />
-                  <span className="text-muted-foreground">Spent:</span>
-                  <span className="font-semibold">KES {(customer.total_spending || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <ShoppingBag className="w-3.5 h-3.5 text-chart-3" />
-                  <span className="text-muted-foreground">Visits:</span>
-                  <span className="font-semibold">{customer.total_transactions || 0}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Star className="w-3.5 h-3.5 text-yellow-500" />
-                  <span className="text-muted-foreground">Next tier:</span>
-                  <span className="font-semibold">
-                    {customer.tier === 'bronze' && 'KES 5K'}
-                    {customer.tier === 'silver' && 'KES 20K'}
-                    {customer.tier === 'gold' && 'KES 50K'}
-                    {customer.tier === 'platinum' && 'Max'}
+                <div className="flex items-end justify-between mb-1">
+                  <span className="text-2xl font-display font-bold text-primary">
+                    {(customer.loyalty_points || 0).toLocaleString()} pts
                   </span>
+                  <span className="text-xs text-muted-foreground mb-1">
+                    KES {(customer.total_spending || 0).toLocaleString()} spent
+                  </span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, ((customer.loyalty_points || 0) / 5000) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {customer.tier === 'platinum' 
+                    ? '✓ Maximum tier reached' 
+                    : `${((customer.tier === 'bronze' ? 5000 : customer.tier === 'silver' ? 20000 : 50000) - (customer.total_spending || 0)).toLocaleString()} KES to next tier`}
+                </p>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex flex-col gap-1 p-2 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>Total Spent</span>
+                  </div>
+                  <span className="font-bold text-sm">KES {(customer.total_spending || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex flex-col gap-1 p-2 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Total Visits</span>
+                  </div>
+                  <span className="font-bold text-sm">{customer.total_transactions || 0}</span>
+                </div>
+              </div>
+
+              {/* Discount Recommendations */}
+              <div className="bg-accent/10 border border-accent/30 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="w-4 h-4 text-accent" />
+                  <span className="text-xs font-semibold">Available Discounts</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  {(customer.loyalty_points || 0) >= 500 && (
+                    <div className="flex items-center justify-between text-green-700 dark:text-green-400">
+                      <span>✓ KES 100 off (500 pts)</span>
+                    </div>
+                  )}
+                  {(customer.loyalty_points || 0) >= 1000 && (
+                    <div className="flex items-center justify-between text-green-700 dark:text-green-400">
+                      <span>✓ KES 250 off (1000 pts)</span>
+                    </div>
+                  )}
+                  {(customer.loyalty_points || 0) >= 2000 && (
+                    <div className="flex items-center justify-between text-green-700 dark:text-green-400">
+                      <span>✓ KES 500 off (2000 pts)</span>
+                    </div>
+                  )}
+                  {(customer.loyalty_points || 0) < 500 && (
+                    <div className="text-muted-foreground">
+                      {500 - (customer.loyalty_points || 0)} pts needed for first discount
+                    </div>
+                  )}
                 </div>
               </div>
 
