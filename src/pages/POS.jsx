@@ -2,6 +2,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import ProductGrid from '@/components/pos/ProductGrid';
 import Cart from '@/components/pos/Cart';
 import CheckoutDialog from '@/components/pos/CheckoutDialog';
@@ -193,31 +196,53 @@ export default function POS() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top Bar */}
-      <POSTopBar 
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onClearCart={clearCart}
-        cartLength={cart.length}
-      />
+      {/* Compact Top Bar */}
+      <div className="h-12 border-b bg-card/50 backdrop-blur flex items-center justify-between px-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-display font-bold">POS Terminal</h1>
+          <Badge variant="outline" className="text-xs">
+            {cart.length} items
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {currentUser?.full_name || 'Cashier'}
+          </span>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            Logout
+          </Button>
+        </div>
+      </div>
 
-      {/* Main Content - Split Layout */}
+      {/* Main Content - Compact Split Layout */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left Panel - Products */}
-        <div className="flex-1 flex flex-col min-h-0 border-r bg-muted/20">
-          {/* Search & Category Filters */}
-          <POSFilters
-            search={search}
-            onSearchChange={setSearch}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            categories={categories}
-            onClearCart={clearCart}
-            cartLength={cart.length}
-          />
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Compact Filters */}
+          <div className="h-10 border-b flex items-center gap-2 px-3 bg-muted/20">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-7 pr-3 py-1 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Product Grid */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-2">
             <ProductGrid
               products={products}
               onAddToCart={addToCart}
@@ -226,9 +251,8 @@ export default function POS() {
           </div>
         </div>
 
-        {/* Right Panel - Cart */}
-        <div className="w-full lg:w-[450px] bg-gradient-to-b from-card to-muted/30 border-t lg:border-t-0 lg:border-l-2 border-primary/20 shadow-2xl flex flex-col relative" style={{ minHeight: '100%' }}>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/80 to-transparent" />
+        {/* Right Panel - Compact Cart */}
+        <div className="w-full lg:w-[320px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col">
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}
