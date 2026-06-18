@@ -283,7 +283,7 @@ export default function POS() {
         </div>
 
         {/* Right Panel - Cart */}
-        <div className="w-full lg:w-[400px] bg-card border-t lg:border-t-0 lg:border-l shadow-lg flex flex-col">
+        <div className="w-full lg:w-[450px] bg-card border-t lg:border-t-0 lg:border-l shadow-xl flex flex-col" style={{ minHeight: '100%' }}>
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}
