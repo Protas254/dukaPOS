@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, LogOut, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,11 @@ export default function POS() {
   const [completedSale, setCompletedSale] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = React.useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
 
   const { data: allProducts = [] } = useQuery({
     queryKey: ['products'],
@@ -173,8 +178,34 @@ export default function POS() {
     setIsProcessing(false);
   };
 
+  const handleLogout = () => {
+    if (window.confirm('Log out of POS? This will end your current session.')) {
+      base44.auth.logout('/login');
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-56px)] lg:h-screen flex flex-col lg:flex-row">
+      {/* Top Bar - Cashier Info */}
+      <div className="h-14 border-b bg-card flex items-center justify-between px-4 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <User className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{currentUser?.full_name || currentUser?.email || 'Cashier'}</p>
+            <p className="text-xs text-muted-foreground capitalize">{currentUser?.role || 'Staff'}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">Log Out</span>
+        </button>
+      </div>
+
       {/* Product Area */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Search & Filters */}
