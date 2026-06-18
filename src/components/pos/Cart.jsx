@@ -85,24 +85,20 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
           </div>
         </div>
         <div className="space-y-1">
-          <div className="flex justify-between text-[10px]">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-medium">KES {subtotal.toLocaleString()}</span>
+        <div className="flex justify-between text-[10px]">
+          <span className="text-muted-foreground">Subtotal</span>
+          <span className="font-medium">KES {subtotal.toLocaleString()}</span>
+        </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-[10px] text-green-600">
+            <span>Discount</span>
+            <span className="font-medium">-KES {discountAmount.toLocaleString()}</span>
           </div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-[10px] text-green-600">
-              <span>Discount</span>
-              <span className="font-medium">-KES {discountAmount.toLocaleString()}</span>
-            </div>
-          )}
-          <div className="flex justify-between text-[10px]">
-            <span className="text-muted-foreground">VAT ({taxRate}%)</span>
-            <span className="font-medium">KES {Math.round(taxAmount).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>Taxable Amount</span>
-            <span className="font-medium">KES {taxableAmount.toLocaleString()}</span>
-          </div>
+        )}
+        <div className="flex justify-between text-[10px]">
+          <span className="text-muted-foreground">VAT ({taxRate}%)</span>
+          <span className="font-medium">KES {Math.round(taxAmount).toLocaleString()}</span>
+        </div>
         </div>
         <div className="flex justify-between items-center pt-1 border-t">
           <span className="text-xs font-bold">Total</span>

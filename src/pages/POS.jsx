@@ -102,7 +102,7 @@ export default function POS() {
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const taxableAmount = subtotal - discount;
   const taxTotal = taxableAmount * (taxRate / (100 + taxRate));
-  const total = taxableAmount + taxTotal;
+  const total = Math.round(taxableAmount + taxTotal);
 
   const generateReceiptNumber = () => {
     const now = new Date();
@@ -135,9 +135,9 @@ export default function POS() {
     const saleData = {
       receipt_number: generateReceiptNumber(),
       items,
-      subtotal,
+      subtotal: Math.round(subtotal),
       tax_total: Math.round(taxTotal),
-      discount_amount: discount,
+      discount_amount: Math.round(discount),
       total_amount: total,
       points_earned: pointsEarned,
       cashier_name: user?.full_name || 'Cashier',
