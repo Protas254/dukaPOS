@@ -110,6 +110,9 @@ export default function POS() {
 
     const taxTotal = items.reduce((sum, i) => sum + i.tax_amount, 0);
 
+    // Calculate loyalty points (1 point per KES 100 spent)
+    const pointsEarned = Math.floor(total / 100);
+
     const saleData = {
       receipt_number: generateReceiptNumber(),
       items,
@@ -117,6 +120,7 @@ export default function POS() {
       tax_total: taxTotal,
       discount_amount: discount,
       total_amount: total,
+      points_earned: pointsEarned,
       cashier_name: user?.full_name || 'Cashier',
       ...paymentDetails,
     };
@@ -133,8 +137,34 @@ export default function POS() {
       }
     }
 
+    // Update customer loyalty if customer is linked
+    if (paymentDetails.customer_id) {
+      try {
+        const customer = await base44.entities.Customer.get(paymentDetails.customer_id);
+        const newPoints = (customer.loyalty_points || 0) + pointsEarned;
+        const newSpending = (customer.total_spending || 0) + total;
+        const newTransactions = (customer.total_transactions || 0) + 1;
+        
+        // Calculate new tier
+        let newTier = 'bronze';
+        if (newSpending >= 50000) newTier = 'platinum';
+        else if (newSpending >= 20000) newTier = 'gold';
+        else if (newSpending >= 5000) newTier = 'silver';
+
+        await base44.entities.Customer.update(paymentDetails.customer_id, {
+          loyalty_points: newPoints,
+          total_spending: newSpending,
+          total_transactions: newTransactions,
+          tier: newTier,
+        });
+      } catch (err) {
+        console.error('Failed to update customer loyalty:', err);
+      }
+    }
+
     queryClient.invalidateQueries({ queryKey: ['products'] });
     queryClient.invalidateQueries({ queryKey: ['sales'] });
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
 
     setCompletedSale({ ...saleData, id: sale.id, created_date: new Date().toISOString() });
     setCheckoutOpen(false);

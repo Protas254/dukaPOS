@@ -6,6 +6,18 @@
       "type": "string",
       "description": "Unique receipt number"
     },
+    "customer_id": {
+      "type": "string",
+      "description": "Linked customer for loyalty tracking"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Customer name (snapshot)"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "Customer phone (snapshot)"
+    },
     "items": {
       "type": "array",
       "description": "Items sold",
@@ -46,6 +58,11 @@
       "default": 0,
       "description": "Discount applied"
     },
+    "points_earned": {
+      "type": "number",
+      "default": 0,
+      "description": "Loyalty points earned from this sale"
+    },
     "total_amount": {
       "type": "number",
       "description": "Final total including tax"
@@ -71,14 +88,6 @@
     "change_given": {
       "type": "number",
       "description": "Change returned to customer"
-    },
-    "customer_phone": {
-      "type": "string",
-      "description": "Customer phone number"
-    },
-    "customer_name": {
-      "type": "string",
-      "description": "Customer name"
     },
     "status": {
       "type": "string",

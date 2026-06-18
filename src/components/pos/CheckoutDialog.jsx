@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Banknote, Smartphone, CreditCard, CheckCircle, Loader2 
+  Banknote, Smartphone, CreditCard, CheckCircle, Loader2, User, Gift
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 const paymentMethods = [
   { id: 'cash', label: 'Cash', icon: Banknote, color: 'bg-emerald-500' },
@@ -20,7 +23,29 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const [cashReceived, setCashReceived] = useState('');
   const [mpesaRef, setMpesaRef] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [customerName, setCustomerName] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers'],
+    queryFn: () => base44.entities.Customer.list(),
+    enabled: open,
+  });
+
+  // Auto-find customer by phone
+  useEffect(() => {
+    if (customerPhone.length >= 10) {
+      const found = customers.find(c => 
+        c.phone?.replace(/\s/g, '') === customerPhone.replace(/\s/g, '')
+      );
+      setSelectedCustomer(found || null);
+    } else {
+      setSelectedCustomer(null);
+    }
+  }, [customerPhone, customers]);
+
+  const customerName = selectedCustomer?.name || '';
+  const loyaltyPoints = selectedCustomer?.loyalty_points || 0;
+  const tier = selectedCustomer?.tier || 'bronze';
 
   const cashAmount = parseFloat(cashReceived) || 0;
   const change = cashAmount - total;
@@ -39,6 +64,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       mpesa_reference: method === 'mpesa' ? mpesaRef : undefined,
       customer_phone: customerPhone || undefined,
       customer_name: customerName || undefined,
+      customer_id: selectedCustomer?.id || undefined,
     });
   };
 
@@ -156,15 +182,35 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
 
           <Separator />
 
-          {/* Customer info (optional) */}
-          <div>
-            <Label className="text-xs">Customer Name (optional)</Label>
+          {/* Customer info */}
+          <div className="space-y-2">
+            <Label className="text-xs">Customer Phone (for loyalty points)</Label>
             <Input
-              value={customerName}
-              onChange={e => setCustomerName(e.target.value)}
-              placeholder="Customer name"
+              value={customerPhone}
+              onChange={e => setCustomerPhone(e.target.value)}
+              placeholder="0712 345 678"
               className="mt-1"
             />
+            {selectedCustomer && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold">{selectedCustomer.name}</span>
+                  </div>
+                  <Badge className={tier === 'gold' ? 'bg-yellow-100 text-yellow-700' : tier === 'platinum' ? 'bg-blue-100 text-blue-700' : 'bg-muted'}>
+                    {tier.toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Gift className="w-3 h-3" />
+                    <span>Points:</span>
+                  </div>
+                  <span className="font-semibold text-primary">{loyaltyPoints.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Complete */}

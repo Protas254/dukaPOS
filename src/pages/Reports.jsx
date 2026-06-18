@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, subDays, startOfDay, startOfWeek, startOfMonth, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
-import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User } from 'lucide-react';
+import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User, Gift } from 'lucide-react';
 
 const COLORS = ['hsl(174,62%,32%)', 'hsl(150,50%,45%)', 'hsl(210,60%,50%)', 'hsl(38,92%,55%)', 'hsl(0,72%,51%)'];
 
@@ -158,6 +158,11 @@ export default function Reports() {
       .map(c => ({ ...c, avgSale: c.transactions > 0 ? Math.round(c.revenue / c.transactions) : 0 }))
       .sort((a, b) => b.revenue - a.revenue);
   }, [periodSales]);
+
+  // Loyalty program stats
+  const totalPointsAwarded = periodSales.reduce((sum, s) => sum + (s.points_earned || 0), 0);
+  const salesWithCustomers = periodSales.filter(s => s.customer_id).length;
+  const customerRevenue = periodSales.reduce((sum, s) => s.customer_id ? sum + (s.total_amount || 0) : sum, 0);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
@@ -375,6 +380,34 @@ export default function Reports() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Loyalty Program Stats */}
+      <div className="bg-card rounded-2xl border p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Gift className="w-4 h-4 text-primary" />
+          <h3 className="font-display font-semibold text-sm">Loyalty Program Overview</h3>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs">Points Awarded</p>
+            <p className="font-display font-bold text-lg">{totalPointsAwarded.toLocaleString()}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs">Customer Sales</p>
+            <p className="font-display font-bold text-lg">{salesWithCustomers}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs">Customer Revenue</p>
+            <p className="font-display font-bold text-lg">KES {customerRevenue.toLocaleString()}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs">% Customer Sales</p>
+            <p className="font-display font-bold text-lg">
+              {periodSales.length > 0 ? Math.round((salesWithCustomers / periodSales.length) * 100) : 0}%
+            </p>
+          </div>
         </div>
       </div>
     </div>
