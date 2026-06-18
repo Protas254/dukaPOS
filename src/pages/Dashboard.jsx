@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, ShoppingCart, TrendingUp, Package, 
-  AlertTriangle, ArrowRight, User, Award
+  AlertTriangle, ArrowRight, User, Award, Bell
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfDay, subDays } from 'date-fns';
@@ -43,6 +43,7 @@ export default function Dashboard() {
     : 'N/A';
 
   const lowStockProducts = products.filter(p => p.stock_quantity <= (p.low_stock_threshold || 10));
+  const criticalStockProducts = products.filter(p => p.stock_quantity <= Math.floor((p.low_stock_threshold || 10) * 0.5));
 
   // Last 7 days chart data
   const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -124,14 +125,22 @@ export default function Dashboard() {
             {format(new Date(), 'EEEE, MMMM d, yyyy')}
           </p>
         </div>
-        <Link
-          to="/pos"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          Open POS
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center gap-3">
+          {criticalStockProducts.length > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+              <Bell className="w-4 h-4" />
+              <span className="text-sm font-medium">{criticalStockProducts.length} critical stock items</span>
+            </div>
+          )}
+          <Link
+            to="/pos"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Open POS
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -296,22 +305,57 @@ export default function Dashboard() {
 
       {/* Low Stock Alert */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <h3 className="font-display font-semibold text-sm text-amber-800 dark:text-amber-200">Low Stock Alert</h3>
+        <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div>
+              <h3 className="font-display font-semibold text-base text-amber-800 dark:text-amber-200">
+                Low Stock Alert - {lowStockProducts.length} item(s) need restocking
+              </h3>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                {criticalStockProducts.length > 0 
+                  ? `${criticalStockProducts.length} item(s) at critically low levels` 
+                  : 'Stock levels are below defined thresholds'}
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {lowStockProducts.slice(0, 8).map(p => (
-              <Badge key={p.id} variant="outline" className="border-amber-300 text-amber-700 dark:text-amber-300 bg-white dark:bg-transparent">
-                {p.name} ({p.stock_quantity} left)
-              </Badge>
-            ))}
-            {lowStockProducts.length > 8 && (
-              <Badge variant="outline" className="border-amber-300 text-amber-700">
-                +{lowStockProducts.length - 8} more
-              </Badge>
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {lowStockProducts.map(p => {
+              const isCritical = p.stock_quantity <= Math.floor((p.low_stock_threshold || 10) * 0.5);
+              return (
+                <div 
+                  key={p.id} 
+                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                    isCritical 
+                      ? 'bg-destructive/10 border-destructive/30' 
+                      : 'bg-white dark:bg-transparent border-amber-200 dark:border-amber-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {isCritical && <Bell className="w-3 h-3 text-destructive" />}
+                    <div>
+                      <p className={`text-sm font-medium ${isCritical ? 'text-destructive' : 'text-amber-800 dark:text-amber-200'}`}>
+                        {p.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Threshold: {p.low_stock_threshold || 10}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={isCritical ? 'destructive' : 'outline'} 
+                    className={isCritical ? '' : 'border-amber-300 text-amber-700 dark:text-amber-300'}
+                  >
+                    {p.stock_quantity} left
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4">
+            <Link to="/inventory" className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
+              View inventory <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
         </div>
       )}
