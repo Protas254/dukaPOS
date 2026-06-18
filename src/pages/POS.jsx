@@ -283,7 +283,8 @@ export default function POS() {
         </div>
 
         {/* Right Panel - Cart */}
-        <div className="w-full lg:w-[450px] bg-card border-t lg:border-t-0 lg:border-l shadow-xl flex flex-col" style={{ minHeight: '100%' }}>
+        <div className="w-full lg:w-[450px] bg-gradient-to-b from-card to-muted/30 border-t lg:border-t-0 lg:border-l-2 border-primary/20 shadow-2xl flex flex-col relative" style={{ minHeight: '100%' }}>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/80 to-transparent" />
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}

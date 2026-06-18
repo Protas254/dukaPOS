@@ -14,10 +14,12 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-6 bg-gradient-to-b from-muted/50 to-transparent">
-        <ShoppingBag className="w-20 h-20 mb-6 opacity-30" />
-        <p className="text-base font-semibold mb-2">Cart is empty</p>
-        <p className="text-sm text-center">Tap products on the left to add them to your cart</p>
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 bg-gradient-to-b from-primary/5 to-transparent">
+        <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 animate-pulse">
+          <ShoppingBag className="w-12 h-12 text-primary" />
+        </div>
+        <p className="text-lg font-bold mb-2 text-foreground">Your cart is empty</p>
+        <p className="text-sm text-center max-w-[200px]">Click products to add them here</p>
       </div>
     );
   }
@@ -25,18 +27,18 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-transparent">
+      <div className="flex items-center justify-between px-6 py-5 border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <ShoppingBag className="w-4 h-4 text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shadow-lg">
+            <ShoppingBag className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <span className="font-display font-semibold text-base block">Current Sale</span>
-            <span className="text-xs text-muted-foreground">{items.reduce((sum, i) => sum + i.quantity, 0)} items</span>
+            <span className="font-display font-bold text-lg block text-foreground">Current Sale</span>
+            <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{items.reduce((sum, i) => sum + i.quantity, 0)} items</span>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={onClearCart} className="text-destructive hover:text-destructive hover:border-destructive/50 text-xs h-8">
-          <Trash2 className="w-3 h-3 mr-1" /> Clear
+        <Button variant="outline" size="sm" onClick={onClearCart} className="text-destructive hover:text-destructive hover:bg-destructive/10 hover:border-destructive text-xs h-9 font-medium">
+          <Trash2 className="w-3 h-3 mr-1" /> Clear All
         </Button>
       </div>
 
