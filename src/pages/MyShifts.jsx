@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, startOfDay, subDays } from 'date-fns';
-import { DollarSign, ShoppingCart, TrendingUp, Clock, Calendar, Award } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Clock, Calendar, Award, Download } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +26,38 @@ export default function MyShifts() {
   const mySales = useMemo(() => {
     return sales.filter(s => s.cashier_name === cashierName);
   }, [sales, cashierName]);
+
+  const exportToCSV = () => {
+    const headers = ['Date', 'Time', 'Receipt Number', 'Items', 'Subtotal', 'Tax', 'Discount', 'Total', 'Payment Method', 'Customer', 'Points Earned'];
+    const csvRows = [headers.join(',')];
+
+    mySales.forEach(sale => {
+      const date = new Date(sale.created_date);
+      const row = [
+        format(date, 'yyyy-MM-dd'),
+        format(date, 'HH:mm:ss'),
+        sale.receipt_number,
+        sale.items?.length || 0,
+        sale.subtotal || 0,
+        sale.tax_total || 0,
+        sale.discount_amount || 0,
+        sale.total_amount || 0,
+        sale.payment_method,
+        sale.customer_name || '',
+        sale.points_earned || 0
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `shift_summary_${cashierName.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Today's stats
   const today = startOfDay(new Date());
@@ -104,6 +136,13 @@ export default function MyShifts() {
             {format(new Date(), 'EEEE, MMMM d, yyyy')} • {cashierName}
           </p>
         </div>
+        <button
+          onClick={exportToCSV}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm shadow-sm"
+        >
+          <Download className="w-4 h-4" />
+          Export to CSV
+        </button>
       </div>
 
       {/* Stats */}
