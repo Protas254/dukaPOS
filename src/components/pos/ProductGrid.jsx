@@ -45,31 +45,37 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
             onClick={() => onAddToCart(product)}
             disabled={isOutOfStock}
             className={cn(
-              "bg-card border rounded-xl p-3 text-left transition-all duration-200 hover:shadow-lg active:scale-[0.97] group relative overflow-hidden",
+              "bg-card border rounded-xl p-2.5 text-left transition-all duration-200 hover:shadow-lg active:scale-[0.97] group relative overflow-hidden",
               isOutOfStock && "opacity-50 cursor-not-allowed border-muted",
-              isCriticalStock && "border-2 border-destructive/50 shadow-destructive/20",
-              isLowStock && !isCriticalStock && "border-2 border-amber-400/50",
+              isCriticalStock && "border-destructive/50",
+              isLowStock && !isCriticalStock && "border-amber-400/50",
               !isLowStock && !isOutOfStock && "hover:border-primary/30"
             )}
           >
-            {/* Stock Status Badge */}
+            {/* Stock Dot Indicator */}
             {!isOutOfStock && (
-              <div className={cn(
-                "absolute top-2 right-2 px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 shadow-sm z-10",
-                isCriticalStock && "bg-destructive text-white animate-pulse",
-                isLowStock && !isCriticalStock && "bg-amber-400 text-amber-900",
-                !isLowStock && "bg-emerald-500 text-white"
-              )}>
-                {isCriticalStock && <AlertTriangle className="w-3 h-3" />}
-                {!isCriticalStock && !isLowStock && <CheckCircle2 className="w-3 h-3" />}
-                {product.stock_quantity} left
+              <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  isCriticalStock && "bg-destructive animate-pulse",
+                  isLowStock && !isCriticalStock && "bg-amber-500",
+                  !isLowStock && "bg-emerald-500"
+                )} />
+                <span className={cn(
+                  "text-[9px] font-bold",
+                  isCriticalStock && "text-destructive",
+                  isLowStock && !isCriticalStock && "text-amber-600",
+                  !isLowStock && "text-emerald-600"
+                )}>
+                  {product.stock_quantity}
+                </span>
               </div>
             )}
 
             {/* Out of Stock Overlay */}
             {isOutOfStock && (
               <div className="absolute inset-0 bg-muted/80 flex items-center justify-center z-20 rounded-xl">
-                <span className="text-xs font-bold text-destructive bg-destructive/10 px-3 py-1.5 rounded-lg border border-destructive/20">
+                <span className="text-[10px] font-bold text-destructive">
                   OUT OF STOCK
                 </span>
               </div>
@@ -77,34 +83,23 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
             
             {/* Category emoji */}
             <div className={cn(
-              "w-12 h-12 rounded-lg flex items-center justify-center text-2xl mb-2 transition-all",
-              isLowStock ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
+              "w-10 h-10 rounded-lg flex items-center justify-center text-xl mb-2",
+              isLowStock ? "bg-amber-50 dark:bg-amber-900/20" : "bg-muted"
             )}>
               {categoryEmojis[product.category] || '📦'}
             </div>
             
-            <p className="text-sm font-medium truncate pr-2">{product.name}</p>
-            <p className="text-lg font-display font-bold text-primary mt-0.5">
+            <p className="text-xs font-medium truncate pr-2">{product.name}</p>
+            <p className="text-base font-display font-bold text-primary mt-0.5">
               KES {product.price?.toLocaleString()}
             </p>
-            
-            {/* Stock Progress Bar */}
+
+            {/* Minimal Stock Bar */}
             {!isOutOfStock && (
-              <div className="mt-2.5">
-                <div className="flex items-center justify-between text-[10px] mb-1">
-                  <span className="text-muted-foreground">Stock level</span>
-                  <span className={cn(
-                    "font-semibold",
-                    isCriticalStock && "text-destructive",
-                    isLowStock && !isCriticalStock && "text-amber-600",
-                    !isLowStock && "text-emerald-600"
-                  )}>
-                    {Math.round((product.stock_quantity / Math.max(product.stock_quantity, (product.low_stock_threshold || 10) * 3)) * 100)}%
-                  </span>
-                </div>
-                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+              <div className="mt-2">
+                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                   <div className={cn(
-                    "h-full rounded-full transition-all duration-300",
+                    "h-full rounded-full",
                     isCriticalStock && "bg-destructive",
                     isLowStock && !isCriticalStock && "bg-amber-400",
                     !isLowStock && "bg-emerald-500"
@@ -112,18 +107,6 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
                 </div>
               </div>
             )}
-
-            <div className="flex items-center justify-between mt-2.5">
-              <span className="text-[10px] text-muted-foreground capitalize">
-                {product.category?.replace('_', ' ')}
-              </span>
-              {isLowStock && (
-                <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
-                  <AlertTriangle className="w-3 h-3" />
-                  Low stock
-                </span>
-              )}
-            </div>
 
             {/* Add animation */}
             <div className="absolute inset-0 rounded-xl border-2 border-primary opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
