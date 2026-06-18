@@ -1,16 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Search, Trash2, Tag, Clock, User, LogOut, ShoppingCart } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
 import ProductGrid from '@/components/pos/ProductGrid';
 import Cart from '@/components/pos/Cart';
 import CheckoutDialog from '@/components/pos/CheckoutDialog';
 import ReceiptView from '@/components/pos/ReceiptView';
+import POSTopBar from '@/components/pos/POSTopBar';
+import POSFilters from '@/components/pos/POSFilters';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -191,89 +188,36 @@ export default function POS() {
   };
 
   const handleLogout = () => {
-    if (window.confirm('Log out of POS? This will end your current session.')) {
-      base44.auth.logout('/login');
-    }
+    base44.auth.logout('/login');
   };
 
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <header className="h-16 border-b bg-card shadow-sm flex items-center justify-between px-6 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">{currentUser?.full_name || currentUser?.email || 'Cashier'}</p>
-              <p className="text-xs text-muted-foreground capitalize">{currentUser?.role || 'Staff'}</p>
-            </div>
-          </div>
-          <div className="h-8 w-px bg-border mx-2" />
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors border border-transparent hover:border-destructive/20"
-        >
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline font-medium">Log Out</span>
-        </button>
-      </header>
+      <POSTopBar 
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onClearCart={clearCart}
+        cartLength={cart.length}
+      />
 
       {/* Main Content - Split Layout */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left Panel - Products */}
-        <div className="flex-1 flex flex-col min-h-0 border-r">
+        <div className="flex-1 flex flex-col min-h-0 border-r bg-muted/20">
           {/* Search & Category Filters */}
-          <div className="p-4 border-b bg-card/50 backdrop-blur space-y-3">
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search products or scan barcode..."
-                  className="pl-10 h-12 rounded-xl border-2 focus:border-primary transition-colors"
-                />
-              </div>
-              {cart.length > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={clearCart}
-                  className="h-12 px-4 border-2 hover:border-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-2">Clear</span>
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              {categories.map(cat => (
-                <Badge
-                  key={cat.id}
-                  variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                  className={cn(
-                    "cursor-pointer whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                    selectedCategory === cat.id 
-                      ? "shadow-md shadow-primary/20" 
-                      : "hover:bg-primary/10 hover:text-primary"
-                  )}
-                  onClick={() => setSelectedCategory(cat.id)}
-                >
-                  {cat.label}
-                </Badge>
-              ))}
-            </div>
-          </div>
+          <POSFilters
+            search={search}
+            onSearchChange={setSearch}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            categories={categories}
+            onClearCart={clearCart}
+            cartLength={cart.length}
+          />
 
           {/* Product Grid */}
-          <div className="flex-1 overflow-y-auto p-4 bg-background">
+          <div className="flex-1 overflow-y-auto p-4">
             <ProductGrid
               products={products}
               onAddToCart={addToCart}
