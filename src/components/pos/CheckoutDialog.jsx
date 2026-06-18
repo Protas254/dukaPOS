@@ -47,6 +47,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const loyaltyPoints = selectedCustomer?.loyalty_points || 0;
   const tier = selectedCustomer?.tier || 'bronze';
 
+  const displayTotal = Math.round(total);
   const cashAmount = parseFloat(cashReceived) || 0;
   const change = cashAmount - displayTotal;
 
@@ -67,8 +68,6 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       customer_id: selectedCustomer?.id || undefined,
     });
   };
-
-  const displayTotal = Math.round(total);
 
   const quickCashAmounts = [
     Math.ceil(displayTotal / 100) * 100,
