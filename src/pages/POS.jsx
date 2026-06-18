@@ -196,44 +196,44 @@ export default function POS() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Compact Top Bar */}
-      <div className="h-12 border-b bg-card/50 backdrop-blur flex items-center justify-between px-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-display font-bold">POS Terminal</h1>
-          <Badge variant="outline" className="text-xs">
-            {cart.length} items
+      {/* Ultra Compact Top Bar */}
+      <div className="h-8 border-b bg-card flex items-center justify-between px-2 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-bold">POS</span>
+          <Badge variant="secondary" className="h-4 text-[9px] px-1">
+            {cart.length}
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
+        <div className="flex items-center gap-1">
+          <span className="text-muted-foreground truncate max-w-[120px]">
             {currentUser?.full_name || 'Cashier'}
           </span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            Logout
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleLogout}>
+            ✕
           </Button>
         </div>
       </div>
 
-      {/* Main Content - Compact Split Layout */}
+      {/* Main Content - Ultra Compact Split Layout */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left Panel - Products */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Compact Filters */}
-          <div className="h-10 border-b flex items-center gap-2 px-3 bg-muted/20">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          {/* Ultra Compact Filters */}
+          <div className="h-8 border-b flex items-center gap-1 px-2 bg-muted/30">
+            <div className="relative flex-1 max-w-[200px]">
+              <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
-                className="w-full pl-7 pr-3 py-1 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Search..."
+                className="w-full pl-6 pr-2 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary h-6"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="text-xs border rounded px-1.5 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary h-6 max-w-[120px] truncate"
             >
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.label}</option>
@@ -242,7 +242,7 @@ export default function POS() {
           </div>
 
           {/* Product Grid */}
-          <div className="flex-1 overflow-y-auto p-2">
+          <div className="flex-1 overflow-y-auto p-1">
             <ProductGrid
               products={products}
               onAddToCart={addToCart}
@@ -251,8 +251,8 @@ export default function POS() {
           </div>
         </div>
 
-        {/* Right Panel - Compact Cart */}
-        <div className="w-full lg:w-[320px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col">
+        {/* Right Panel - Ultra Compact Cart */}
+        <div className="w-full lg:w-[260px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col">
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}

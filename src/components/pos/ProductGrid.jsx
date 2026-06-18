@@ -45,71 +45,46 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
             onClick={() => onAddToCart(product)}
             disabled={isOutOfStock}
             className={cn(
-              "bg-card border rounded-xl p-2.5 text-left transition-all duration-200 hover:shadow-lg active:scale-[0.97] group relative overflow-hidden",
+              "bg-card border rounded-lg p-1.5 text-left transition-all duration-200 hover:shadow-md active:scale-[0.98] group relative overflow-hidden",
               isOutOfStock && "opacity-50 cursor-not-allowed border-muted",
               isCriticalStock && "border-destructive/50",
               isLowStock && !isCriticalStock && "border-amber-400/50",
               !isLowStock && !isOutOfStock && "hover:border-primary/30"
             )}
           >
-            {/* Stock Dot Indicator */}
+            {/* Tiny Stock Dot */}
             {!isOutOfStock && (
-              <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <div className="absolute top-1 right-1 flex items-center gap-0.5 z-10">
                 <div className={cn(
-                  "w-2 h-2 rounded-full",
+                  "w-1.5 h-1.5 rounded-full",
                   isCriticalStock && "bg-destructive animate-pulse",
                   isLowStock && !isCriticalStock && "bg-amber-500",
                   !isLowStock && "bg-emerald-500"
                 )} />
-                <span className={cn(
-                  "text-[9px] font-bold",
-                  isCriticalStock && "text-destructive",
-                  isLowStock && !isCriticalStock && "text-amber-600",
-                  !isLowStock && "text-emerald-600"
-                )}>
-                  {product.stock_quantity}
-                </span>
               </div>
             )}
 
             {/* Out of Stock Overlay */}
             {isOutOfStock && (
-              <div className="absolute inset-0 bg-muted/80 flex items-center justify-center z-20 rounded-xl">
-                <span className="text-[10px] font-bold text-destructive">
-                  OUT OF STOCK
+              <div className="absolute inset-0 bg-muted/80 flex items-center justify-center z-20 rounded-lg">
+                <span className="text-[9px] font-bold text-destructive">
+                  OOS
                 </span>
               </div>
             )}
             
             {/* Category emoji */}
             <div className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center text-xl mb-2",
-              isLowStock ? "bg-amber-50 dark:bg-amber-900/20" : "bg-muted"
+              "w-7 h-7 rounded flex items-center justify-center text-lg mb-1",
+              isLowStock ? "bg-amber-50 dark:bg-amber-900/20" : "bg-muted/50"
             )}>
               {categoryEmojis[product.category] || '📦'}
             </div>
             
-            <p className="text-xs font-medium truncate pr-2">{product.name}</p>
-            <p className="text-base font-display font-bold text-primary mt-0.5">
+            <p className="text-[11px] font-medium truncate pr-4 leading-tight">{product.name}</p>
+            <p className="text-xs font-display font-bold text-primary mt-0.5">
               KES {product.price?.toLocaleString()}
             </p>
-
-            {/* Minimal Stock Bar */}
-            {!isOutOfStock && (
-              <div className="mt-2">
-                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                  <div className={cn(
-                    "h-full rounded-full",
-                    isCriticalStock && "bg-destructive",
-                    isLowStock && !isCriticalStock && "bg-amber-400",
-                    !isLowStock && "bg-emerald-500"
-                  )} style={{ width: `${Math.min(100, (product.stock_quantity / Math.max(product.stock_quantity, (product.low_stock_threshold || 10) * 3)) * 100)}%` }} />
-                </div>
-              </div>
-            )}
-
-            {/* Add animation */}
-            <div className="absolute inset-0 rounded-xl border-2 border-primary opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </button>
         );
       })}
