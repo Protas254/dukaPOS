@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Search, Filter, LogOut, User, Trash2, ShoppingCart, Tag, Clock, X } from 'lucide-react';
+import { Search, Trash2, Tag, Clock, User, LogOut, ShoppingCart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,9 @@ const categories = [
 
 export default function POS() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  // State
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [cart, setCart] = useState([]);
@@ -34,13 +37,14 @@ export default function POS() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [completedSale, setCompletedSale] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
   const [currentUser, setCurrentUser] = React.useState(null);
 
+  // Load current user
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
+  // Fetch data
   const { data: allProducts = [] } = useQuery({
     queryKey: ['products'],
     queryFn: () => base44.entities.Product.list(),
@@ -54,10 +58,12 @@ export default function POS() {
   const businessSettings = settings[0] || {};
   const taxRate = businessSettings.default_tax_rate || 16;
 
+  // Filter products by category
   const products = selectedCategory === 'all'
     ? allProducts
     : allProducts.filter(p => p.category === selectedCategory);
 
+  // Cart operations
   const addToCart = useCallback((product) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === product.id);
@@ -68,9 +74,16 @@ export default function POS() {
         }
         return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1, tax_rate: product.tax_rate || taxRate, stock_quantity: product.stock_quantity }];
+      return [...prev, { 
+        id: product.id, 
+        name: product.name, 
+        price: product.price, 
+        quantity: 1, 
+        tax_rate: product.tax_rate || taxRate,
+        stock_quantity: product.stock_quantity 
+      }];
     });
-  }, [taxRate]);
+  }, [taxRate, toast]);
 
   const updateQuantity = (id, qty) => {
     setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, qty) } : i));
@@ -85,6 +98,7 @@ export default function POS() {
     setDiscount(0);
   };
 
+  // Calculations
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const total = subtotal - discount;
 
@@ -115,8 +129,6 @@ export default function POS() {
     });
 
     const taxTotal = items.reduce((sum, i) => sum + i.tax_amount, 0);
-
-    // Calculate loyalty points (1 point per KES 100 spent)
     const pointsEarned = Math.floor(total / 100);
 
     const saleData = {
@@ -133,7 +145,7 @@ export default function POS() {
 
     const sale = await base44.entities.Sale.create(saleData);
 
-    // Update stock quantities
+    // Update stock
     for (const item of cart) {
       const product = allProducts.find(p => p.id === item.id);
       if (product) {
@@ -143,7 +155,7 @@ export default function POS() {
       }
     }
 
-    // Update customer loyalty if customer is linked
+    // Update customer loyalty
     if (paymentDetails.customer_id) {
       try {
         const customer = await base44.entities.Customer.get(paymentDetails.customer_id);
@@ -151,7 +163,6 @@ export default function POS() {
         const newSpending = (customer.total_spending || 0) + total;
         const newTransactions = (customer.total_transactions || 0) + 1;
         
-        // Calculate new tier
         let newTier = 'bronze';
         if (newSpending >= 50000) newTier = 'platinum';
         else if (newSpending >= 20000) newTier = 'gold';
@@ -187,8 +198,8 @@ export default function POS() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top Bar - Enhanced */}
-      <div className="h-16 border-b bg-card shadow-sm flex items-center justify-between px-6 flex-shrink-0">
+      {/* Top Bar */}
+      <header className="h-16 border-b bg-card shadow-sm flex items-center justify-between px-6 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -212,13 +223,13 @@ export default function POS() {
           <LogOut className="w-4 h-4" />
           <span className="hidden sm:inline font-medium">Log Out</span>
         </button>
-      </div>
+      </header>
 
-      {/* Main Content */}
+      {/* Main Content - Split Layout */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* Product Area */}
+        {/* Left Panel - Products */}
         <div className="flex-1 flex flex-col min-h-0 border-r">
-          {/* Search & Filters */}
+          {/* Search & Category Filters */}
           <div className="p-4 border-b bg-card/50 backdrop-blur space-y-3">
             <div className="flex gap-3">
               <div className="relative flex-1">
@@ -271,8 +282,8 @@ export default function POS() {
           </div>
         </div>
 
-        {/* Cart Panel */}
-        <div className="w-full lg:w-[400px] bg-card border-t lg:border-t-0 lg:border-l shadow-lg flex flex-col h-full">
+        {/* Right Panel - Cart */}
+        <div className="w-full lg:w-[400px] bg-card border-t lg:border-t-0 lg:border-l shadow-lg flex flex-col">
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}
@@ -286,6 +297,7 @@ export default function POS() {
         </div>
       </div>
 
+      {/* Dialogs */}
       <CheckoutDialog
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
