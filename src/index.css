@@ -35,14 +35,14 @@
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --sidebar-background: 140 50% 88%;
-    --sidebar-foreground: 140 40% 15%;
-    --sidebar-primary: 140 55% 35%;
+    --sidebar-background: 142 55% 91%;
+    --sidebar-foreground: 142 45% 14%;
+    --sidebar-primary: 142 60% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 140 40% 80%;
-    --sidebar-accent-foreground: 140 40% 12%;
-    --sidebar-border: 140 30% 78%;
-    --sidebar-ring: 140 55% 35%;
+    --sidebar-accent: 142 50% 84%;
+    --sidebar-accent-foreground: 142 45% 12%;
+    --sidebar-border: 142 35% 80%;
+    --sidebar-ring: 142 60% 35%;
   }
 
   .dark {
@@ -70,14 +70,14 @@
     --chart-3: 210 55% 55%;
     --chart-4: 150 45% 50%;
     --chart-5: 0 65% 50%;
-    --sidebar-background: 210 30% 6%;
-    --sidebar-foreground: 210 15% 90%;
-    --sidebar-primary: 38 85% 50%;
+    --sidebar-background: 142 40% 12%;
+    --sidebar-foreground: 142 35% 85%;
+    --sidebar-primary: 142 50% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 25% 14%;
-    --sidebar-accent-foreground: 210 15% 90%;
-    --sidebar-border: 210 25% 14%;
-    --sidebar-ring: 38 85% 50%;
+    --sidebar-accent: 142 35% 18%;
+    --sidebar-accent-foreground: 142 35% 85%;
+    --sidebar-border: 142 30% 16%;
+    --sidebar-ring: 142 50% 40%;
   }
 }
 
