@@ -155,23 +155,26 @@ export default function POS() {
 
   const handleCheckout = async (paymentDetails) => {
     setIsProcessing(true);
+    let sale = null;
     try {
+      const loyalty_discount = paymentDetails.loyalty_discount || 0;
+      const points_redeemed = paymentDetails.points_redeemed || 0;
+      const receipt_delivery = paymentDetails.receipt_delivery;
+      const pointsEarned = Math.floor(subtotal / 100);
+      const finalTotal = Math.max(1, Math.round(total) - loyalty_discount);
+
       const items = cart.map(i => {
         const itemTotal = i.price * i.quantity;
-        const itemTax = itemTotal * (i.tax_rate / (100 + i.tax_rate));
+        const itemTax = itemTotal * ((i.tax_rate || taxRate) / (100 + (i.tax_rate || taxRate)));
         return {
           product_id: i.id,
           product_name: i.name,
           quantity: i.quantity,
           unit_price: i.price,
-          total: itemTotal,
-          tax_amount: Math.round(itemTax)
+          total: Math.round(itemTotal),
+          tax_amount: Math.round(itemTax),
         };
       });
-
-      const pointsEarned = Math.floor(subtotal / 100);
-      const { loyalty_discount = 0, points_redeemed = 0, receipt_delivery, ...salePayment } = paymentDetails;
-      const finalTotal = Math.max(0, Math.round(total) - loyalty_discount);
 
       const saleData = {
         receipt_number: generateReceiptNumber(),
@@ -179,67 +182,66 @@ export default function POS() {
         subtotal: Math.round(subtotal),
         tax_total: Math.round(taxTotal),
         discount_amount: Math.round(discount) + loyalty_discount,
-        total_amount: Math.max(1, finalTotal),
+        total_amount: finalTotal,
         points_earned: pointsEarned,
         cashier_name: currentUser?.full_name || 'Cashier',
-        ...salePayment,
+        payment_method: paymentDetails.payment_method,
       };
 
-      const sale = await base44.entities.Sale.create(saleData);
+      // Only add optional fields if they have real values
+      if (paymentDetails.cash_received) saleData.cash_received = paymentDetails.cash_received;
+      if (paymentDetails.change_given != null) saleData.change_given = paymentDetails.change_given;
+      if (paymentDetails.mpesa_reference) saleData.mpesa_reference = paymentDetails.mpesa_reference;
+      if (paymentDetails.customer_id) saleData.customer_id = paymentDetails.customer_id;
+      if (paymentDetails.customer_name) saleData.customer_name = paymentDetails.customer_name;
+      if (paymentDetails.customer_phone) saleData.customer_phone = paymentDetails.customer_phone;
 
-      // Submit to KRA eTIMS — fire and forget, never block the receipt
-      try {
-        base44.functions.invoke('submitEtimsInvoice', {
-          sale: { ...saleData, id: sale.id, created_date: new Date().toISOString() }
-        }).catch(() => {});
-      } catch (_) { /* eTIMS not configured */ }
-
-      // Update stock (non-blocking — never cancel a completed sale)
-      Promise.all(cart.map(item => {
-        const product = allProducts.find(p => p.id === item.id);
-        if (!product) return Promise.resolve();
-        const newQty = Math.max(0, (product.stock_quantity || 0) - item.quantity);
-        return base44.entities.Product.update(item.id, { stock_quantity: newQty });
-      })).catch(err => console.error('Stock update failed:', err));
-
-      // Update customer loyalty
-      if (paymentDetails.customer_id) {
-        try {
-          const customer = await base44.entities.Customer.get(paymentDetails.customer_id);
-          const newPoints = Math.max(0, (customer.loyalty_points || 0) + pointsEarned - points_redeemed);
-          const newSpending = (customer.total_spending || 0) + finalTotal;
-          const newTransactions = (customer.total_transactions || 0) + 1;
-
-          let newTier = 'bronze';
-          if (newSpending >= 50000) newTier = 'platinum';
-          else if (newSpending >= 20000) newTier = 'gold';
-          else if (newSpending >= 5000) newTier = 'silver';
-
-          await base44.entities.Customer.update(paymentDetails.customer_id, {
-            loyalty_points: newPoints,
-            total_spending: newSpending,
-            total_transactions: newTransactions,
-            tier: newTier,
-          });
-        } catch (err) {
-          console.error('Failed to update customer loyalty:', err);
-        }
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-
-      setCompletedSale({ ...saleData, id: sale.id, created_date: new Date().toISOString(), etims_status: 'not_submitted', receipt_delivery });
-      setCheckoutOpen(false);
-      setReceiptOpen(true);
-      clearCart();
+      // CRITICAL: Only await this — everything else is fire-and-forget
+      sale = await base44.entities.Sale.create(saleData);
     } catch (err) {
-      console.error('Checkout failed:', err);
-      toast({ title: 'Checkout failed', description: err.message || 'An error occurred. Please try again.', variant: 'destructive' });
-    } finally {
+      console.error('Sale creation failed:', err);
+      toast({ title: 'Checkout failed', description: err.message || 'Could not save sale. Please try again.', variant: 'destructive' });
       setIsProcessing(false);
+      return;
     }
+
+    // Sale saved — show receipt immediately, nothing below can block it
+    const receipt_delivery = paymentDetails.receipt_delivery;
+    setCompletedSale({ ...sale, etims_status: 'not_submitted', receipt_delivery });
+    setCheckoutOpen(false);
+    setReceiptOpen(true);
+    clearCart();
+    setIsProcessing(false);
+
+    // Background tasks — all fire-and-forget
+    try { base44.functions.invoke('submitEtimsInvoice', { sale }).catch(() => {}); } catch (_) {}
+
+    Promise.all(cart.map(item => {
+      const product = allProducts.find(p => p.id === item.id);
+      if (!product) return Promise.resolve();
+      return base44.entities.Product.update(item.id, { stock_quantity: Math.max(0, (product.stock_quantity || 0) - item.quantity) });
+    })).catch(() => {});
+
+    if (paymentDetails.customer_id) {
+      base44.entities.Customer.get(paymentDetails.customer_id).then(customer => {
+        const pointsEarned = Math.floor(subtotal / 100);
+        const loyalty_discount = paymentDetails.loyalty_discount || 0;
+        const points_redeemed = paymentDetails.points_redeemed || 0;
+        const finalTotal = Math.max(1, Math.round(total) - loyalty_discount);
+        const newPoints = Math.max(0, (customer.loyalty_points || 0) + pointsEarned - points_redeemed);
+        const newSpending = (customer.total_spending || 0) + finalTotal;
+        const newTransactions = (customer.total_transactions || 0) + 1;
+        let newTier = 'bronze';
+        if (newSpending >= 50000) newTier = 'platinum';
+        else if (newSpending >= 20000) newTier = 'gold';
+        else if (newSpending >= 5000) newTier = 'silver';
+        return base44.entities.Customer.update(paymentDetails.customer_id, { loyalty_points: newPoints, total_spending: newSpending, total_transactions: newTransactions, tier: newTier });
+      }).catch(() => {});
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['sales'] });
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
   };
 
   const handleLogout = () => {
