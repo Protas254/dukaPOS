@@ -7,6 +7,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import StatCard from '@/components/dashboard/StatCard';
 import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User, Gift, ArrowLeft, ArrowRight } from 'lucide-react';
 import CashierReport from '@/components/reports/CashierReport';
+import CashierComparisonChart from '@/components/reports/CashierComparisonChart';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -332,6 +333,12 @@ export default function Reports() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Cashier Comparison Chart */}
+          <div className="bg-card rounded-2xl border p-5">
+            <h3 className="font-display font-semibold text-sm mb-4">Cashier Performance Comparison</h3>
+            <CashierComparisonChart periodSales={periodSales} />
           </div>
         </TabsContent>
       </Tabs>
