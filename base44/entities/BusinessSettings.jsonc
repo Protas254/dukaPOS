@@ -6,6 +6,16 @@
       "type": "string",
       "description": "Business/store name"
     },
+    "business_type": {
+      "type": "string",
+      "enum": [
+        "individual",
+        "sme",
+        "enterprise",
+        "merchant"
+      ],
+      "description": "Type/classification of the business"
+    },
     "business_phone": {
       "type": "string"
     },

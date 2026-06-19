@@ -6,6 +6,14 @@
       "type": "string",
       "description": "Unique receipt number"
     },
+    "shift_id": {
+      "type": "string",
+      "description": "ID of the staff shift this sale belongs to"
+    },
+    "cashier_id": {
+      "type": "string",
+      "description": "User ID of the cashier who processed this sale"
+    },
     "customer_id": {
       "type": "string",
       "description": "Linked customer for loyalty tracking"

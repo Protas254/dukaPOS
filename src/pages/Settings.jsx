@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Save, Loader2, Store, Receipt, Shield, RotateCcw } from 'lucide-react';
+import { Save, Loader2, Store, Receipt, Shield, RotateCcw, Building2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function Settings() {
@@ -15,6 +15,7 @@ export default function Settings() {
   const { toast } = useToast();
   const [form, setForm] = useState({
     business_name: '',
+    business_type: '',
     business_phone: '',
     business_email: '',
     business_address: '',
@@ -35,6 +36,7 @@ export default function Settings() {
       const s = settings[0];
       setForm({
         business_name: s.business_name || '',
+        business_type: s.business_type || '',
         business_phone: s.business_phone || '',
         business_email: s.business_email || '',
         business_address: s.business_address || '',

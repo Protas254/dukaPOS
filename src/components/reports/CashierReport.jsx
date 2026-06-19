@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { subDays, startOfDay, format } from 'date-fns';
-import { User, TrendingUp, ShoppingCart, DollarSign, Clock } from 'lucide-react';
+import { subDays, startOfDay, format, formatDuration, intervalToDuration } from 'date-fns';
+import { User, TrendingUp, ShoppingCart, DollarSign, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function MetricCard({ label, value, sub }) {
@@ -16,10 +16,33 @@ function MetricCard({ label, value, sub }) {
 }
 
 export default function CashierReport({ periodSales }) {
-  const { data: sales = [] } = useQuery({
-    queryKey: ['sales'],
-    queryFn: () => base44.entities.Sale.list('-created_date', 1000),
+  const [expandedShift, setExpandedShift] = useState(null);
+
+  const { data: shifts = [] } = useQuery({
+    queryKey: ['shifts'],
+    queryFn: () => base44.entities.Shift.list('-started_at', 200),
   });
+
+  // Build per-cashier shift history from shifts within period
+  const cashierShifts = useMemo(() => {
+    const map = {};
+    shifts.forEach(shift => {
+      const name = shift.cashier_name || 'Unknown';
+      if (!map[name]) map[name] = [];
+      // Get sales for this specific shift
+      const shiftSales = periodSales.filter(s => s.shift_id === shift.id);
+      map[name].push({
+        ...shift,
+        shiftSales,
+        shiftRevenue: shiftSales.reduce((s, sale) => s + (sale.total_amount || 0), 0),
+        shiftTransactions: shiftSales.length,
+        duration: shift.ended_at
+          ? intervalToDuration({ start: new Date(shift.started_at), end: new Date(shift.ended_at) })
+          : intervalToDuration({ start: new Date(shift.started_at), end: new Date() }),
+      });
+    });
+    return map;
+  }, [shifts, periodSales]);
 
   // Build per-cashier stats from periodSales
   const cashierStats = useMemo(() => {
@@ -149,6 +172,48 @@ export default function CashierReport({ periodSales }) {
               </span>
             )}
           </div>
+
+          {/* Shift history */}
+          {cashierShifts[c.name]?.length > 0 && (
+            <div>
+              <button
+                onClick={() => setExpandedShift(expandedShift === c.name ? null : c.name)}
+                className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                {cashierShifts[c.name].length} shift{cashierShifts[c.name].length > 1 ? 's' : ''} recorded
+                {expandedShift === c.name ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              {expandedShift === c.name && (
+                <div className="mt-2 space-y-2">
+                  {cashierShifts[c.name].slice(0, 10).map(shift => {
+                    const durationStr = shift.duration
+                      ? `${shift.duration.hours || 0}h ${shift.duration.minutes || 0}m`
+                      : '—';
+                    return (
+                      <div key={shift.id} className="flex items-center justify-between bg-muted/40 rounded-lg px-3 py-2 text-xs">
+                        <div>
+                          <p className="font-medium">{format(new Date(shift.started_at), 'MMM d, yyyy')}</p>
+                          <p className="text-muted-foreground">
+                            {format(new Date(shift.started_at), 'h:mm a')}
+                            {shift.ended_at ? ` → ${format(new Date(shift.ended_at), 'h:mm a')}` : ' → Active'}
+                            {' · '}{durationStr}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-primary">KES {shift.shiftRevenue.toLocaleString()}</p>
+                          <p className="text-muted-foreground">{shift.shiftTransactions} sales</p>
+                        </div>
+                        {shift.status === 'active' && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-bold">LIVE</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ))}
 

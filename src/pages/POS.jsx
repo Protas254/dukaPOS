@@ -38,6 +38,7 @@ export default function POS() {
   const [completedSale, setCompletedSale] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
+  const [activeShift, setActiveShift] = React.useState(null);
 
   // Resizable splitter state (desktop: cart width px, mobile: cart height %)
   const [cartWidth, setCartWidth] = useState(280);
@@ -79,9 +80,28 @@ export default function POS() {
     window.addEventListener('touchend', onUp);
   }, []);
 
-  // Load current user
+  // Load current user and resolve/start their active shift
   React.useEffect(() => {
-    base44.auth.me().then(setCurrentUser).catch(() => {});
+    base44.auth.me().then(async (user) => {
+      setCurrentUser(user);
+      if (!user) return;
+      // Find an existing active shift for this user today
+      const allShifts = await base44.entities.Shift.filter({ cashier_id: user.id, status: 'active' });
+      if (allShifts.length > 0) {
+        setActiveShift(allShifts[0]);
+      } else {
+        // Auto-start a new shift
+        const shift = await base44.entities.Shift.create({
+          cashier_id: user.id,
+          cashier_name: user.full_name || user.email?.split('@')[0] || 'Cashier',
+          started_at: new Date().toISOString(),
+          status: 'active',
+          total_sales: 0,
+          total_transactions: 0,
+        });
+        setActiveShift(shift);
+      }
+    }).catch(() => {});
   }, []);
 
   // Fetch data
@@ -156,12 +176,12 @@ export default function POS() {
   const handleCheckout = async (paymentDetails) => {
     setIsProcessing(true);
     let sale = null;
+    const loyalty_discount = paymentDetails.loyalty_discount || 0;
+    const finalTotal = Math.max(1, Math.round(total) - loyalty_discount);
     try {
-      const loyalty_discount = paymentDetails.loyalty_discount || 0;
       const points_redeemed = paymentDetails.points_redeemed || 0;
       const receipt_delivery = paymentDetails.receipt_delivery;
       const pointsEarned = Math.floor(subtotal / 100);
-      const finalTotal = Math.max(1, Math.round(total) - loyalty_discount);
 
       const items = cart.map(i => {
         const itemTotal = i.price * i.quantity;
@@ -185,6 +205,8 @@ export default function POS() {
         total_amount: finalTotal,
         points_earned: pointsEarned,
         cashier_name: currentUser?.full_name || 'Cashier',
+        cashier_id: currentUser?.id || undefined,
+        shift_id: activeShift?.id || undefined,
         payment_method: paymentDetails.payment_method,
       };
 
@@ -217,6 +239,14 @@ export default function POS() {
     // Background tasks — all fire-and-forget
     try { base44.functions.invoke('submitEtimsInvoice', { sale }).catch(() => {}); } catch (_) {}
 
+    // Update shift totals
+    if (activeShift) {
+      base44.entities.Shift.update(activeShift.id, {
+        total_sales: (activeShift.total_sales || 0) + finalTotal,
+        total_transactions: (activeShift.total_transactions || 0) + 1,
+      }).then(updated => setActiveShift(updated)).catch(() => {});
+    }
+
     Promise.all(cart.map(item => {
       const product = allProducts.find(p => p.id === item.id);
       if (!product) return Promise.resolve();
@@ -226,9 +256,7 @@ export default function POS() {
     if (paymentDetails.customer_id) {
       base44.entities.Customer.get(paymentDetails.customer_id).then(customer => {
         const pointsEarned = Math.floor(subtotal / 100);
-        const loyalty_discount = paymentDetails.loyalty_discount || 0;
         const points_redeemed = paymentDetails.points_redeemed || 0;
-        const finalTotal = Math.max(1, Math.round(total) - loyalty_discount);
         const newPoints = Math.max(0, (customer.loyalty_points || 0) + pointsEarned - points_redeemed);
         const newSpending = (customer.total_spending || 0) + finalTotal;
         const newTransactions = (customer.total_transactions || 0) + 1;
@@ -245,7 +273,13 @@ export default function POS() {
     queryClient.invalidateQueries({ queryKey: ['customers'] });
   };
 
-  const handleLogout = () => {
+  const handleCloseShiftAndLogout = async () => {
+    if (activeShift) {
+      await base44.entities.Shift.update(activeShift.id, {
+        status: 'closed',
+        ended_at: new Date().toISOString(),
+      }).catch(() => {});
+    }
     base44.auth.logout('/login');
   };
 
@@ -263,7 +297,10 @@ export default function POS() {
           <span className="text-muted-foreground truncate max-w-[120px]">
             {currentUser?.full_name || 'Cashier'}
           </span>
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleLogout}>
+          {activeShift && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">SHIFT OPEN</span>
+          )}
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleCloseShiftAndLogout} title="Close shift & logout">
             ✕
           </Button>
         </div>
