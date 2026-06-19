@@ -6,12 +6,14 @@ import { format, subDays, startOfDay, startOfWeek, startOfMonth, eachDayOfInterv
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
 import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User, Gift } from 'lucide-react';
+import CashierReport from '@/components/reports/CashierReport';
 
 const COLORS = ['hsl(174,62%,32%)', 'hsl(150,50%,45%)', 'hsl(210,60%,50%)', 'hsl(38,92%,55%)', 'hsl(0,72%,51%)'];
 
 export default function Reports() {
   const [period, setPeriod] = useState('7days');
   const [selectedCashier, setSelectedCashier] = useState('all');
+  const [reportTab, setReportTab] = useState('overview');
 
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
@@ -50,7 +52,6 @@ export default function Reports() {
   const totalDiscount = periodSales.reduce((sum, s) => sum + (s.discount_amount || 0), 0);
   const avgTransaction = periodSales.length > 0 ? Math.round(totalRevenue / periodSales.length) : 0;
 
-  // Gross profit (revenue - cost of items sold)
   const totalCOGS = periodSales.reduce((sum, sale) => {
     return sum + (sale.items || []).reduce((itemSum, item) => {
       const product = products.find(p => p.id === item.product_id);
@@ -60,7 +61,6 @@ export default function Reports() {
   const grossProfit = totalRevenue - totalCOGS;
   const profitMargin = totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : 0;
 
-  // Daily revenue chart
   const days = eachDayOfInterval({ start: periodStart, end: new Date() });
   const dailyData = days.map(day => {
     const dayStart = startOfDay(day);
@@ -84,7 +84,6 @@ export default function Reports() {
     };
   });
 
-  // Payment method breakdown
   const paymentData = Object.entries(
     periodSales.reduce((acc, s) => {
       const method = s.payment_method === 'mpesa' ? 'M-Pesa' : (s.payment_method || 'other');
@@ -93,7 +92,6 @@ export default function Reports() {
     }, {})
   ).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
 
-  // Category breakdown
   const categoryData = {};
   periodSales.forEach(sale => {
     (sale.items || []).forEach(item => {
@@ -106,7 +104,6 @@ export default function Reports() {
     .map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }))
     .sort((a, b) => b.value - a.value);
 
-  // Top products
   const productSalesMap = {};
   periodSales.forEach(sale => {
     (sale.items || []).forEach(item => {
@@ -122,7 +119,6 @@ export default function Reports() {
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 10);
 
-  // Hourly distribution
   const hourlyData = Array.from({ length: 24 }, (_, h) => {
     const hourSales = periodSales.filter(s => new Date(s.created_date).getHours() === h);
     return {
@@ -132,46 +128,19 @@ export default function Reports() {
     };
   });
 
-  // Cashier performance
-  const cashierPerformance = useMemo(() => {
-    const byCashier = {};
-    periodSales.forEach(sale => {
-      const cashier = sale.cashier_name || 'Unknown';
-      if (!byCashier[cashier]) {
-        byCashier[cashier] = { 
-          name: cashier, 
-          transactions: 0, 
-          revenue: 0,
-          avgSale: 0,
-          cashTransactions: 0,
-          mpesaTransactions: 0,
-          cardTransactions: 0
-        };
-      }
-      byCashier[cashier].transactions += 1;
-      byCashier[cashier].revenue += (sale.total_amount || 0);
-      if (sale.payment_method === 'cash') byCashier[cashier].cashTransactions += 1;
-      if (sale.payment_method === 'mpesa') byCashier[cashier].mpesaTransactions += 1;
-      if (sale.payment_method === 'card') byCashier[cashier].cardTransactions += 1;
-    });
-    return Object.values(byCashier)
-      .map(c => ({ ...c, avgSale: c.transactions > 0 ? Math.round(c.revenue / c.transactions) : 0 }))
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [periodSales]);
-
-  // Loyalty program stats
   const totalPointsAwarded = periodSales.reduce((sum, s) => sum + (s.points_earned || 0), 0);
   const salesWithCustomers = periodSales.filter(s => s.customer_id).length;
   const customerRevenue = periodSales.reduce((sum, s) => s.customer_id ? sum + (s.total_amount || 0) : sum, 0);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-display font-bold">Reports</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Sales analytics & insights</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Tabs value={period} onValueChange={setPeriod}>
             <TabsList className="bg-muted">
               <TabsTrigger value="7days" className="text-xs">7 Days</TabsTrigger>
@@ -180,236 +149,190 @@ export default function Reports() {
               <TabsTrigger value="thisMonth" className="text-xs">This Month</TabsTrigger>
             </TabsList>
           </Tabs>
-          <select
-            value={selectedCashier}
-            onChange={(e) => setSelectedCashier(e.target.value)}
-            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="all">All Cashiers</option>
-            {cashiers.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          {reportTab === 'overview' && (
+            <select
+              value={selectedCashier}
+              onChange={(e) => setSelectedCashier(e.target.value)}
+              className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="all">All Cashiers</option>
+              {cashiers.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard title="Revenue" value={`KES ${totalRevenue.toLocaleString()}`} icon={DollarSign} />
-        <StatCard title="Transactions" value={periodSales.length} icon={ShoppingCart} />
-        <StatCard title="Avg. Sale" value={`KES ${avgTransaction.toLocaleString()}`} icon={TrendingUp} />
-        <StatCard title="Gross Profit" value={`KES ${grossProfit.toLocaleString()}`} icon={DollarSign} />
-        <StatCard title="Profit Margin" value={`${profitMargin}%`} icon={Percent} />
-      </div>
+      {/* Report section tabs */}
+      <Tabs value={reportTab} onValueChange={setReportTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="cashiers">Cashier Performance</TabsTrigger>
+        </TabsList>
 
-      {/* Revenue Trend */}
-      <div className="bg-card rounded-2xl border p-5">
-        <h3 className="font-display font-semibold text-sm mb-4">Revenue & Profit Trend</h3>
-        <div className="h-[280px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={dailyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '12px' }}
-                formatter={(v) => `KES ${v.toLocaleString()}`}
-              />
-              <Legend />
-              <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="profit" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        {/* ── Cashier Performance Tab ── */}
+        <TabsContent value="cashiers" className="mt-6">
+          <CashierReport periodSales={periodSales} />
+        </TabsContent>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Payment Methods */}
-        <div className="bg-card rounded-2xl border p-5">
-          <h3 className="font-display font-semibold text-sm mb-4">Payment Methods</h3>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={paymentData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {paymentData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip formatter={v => `KES ${v.toLocaleString()}`} />
-              </PieChart>
-            </ResponsiveContainer>
+        {/* ── Overview Tab ── */}
+        <TabsContent value="overview" className="mt-6 space-y-6">
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <StatCard title="Revenue" value={`KES ${totalRevenue.toLocaleString()}`} icon={DollarSign} />
+            <StatCard title="Transactions" value={periodSales.length} icon={ShoppingCart} />
+            <StatCard title="Avg. Sale" value={`KES ${avgTransaction.toLocaleString()}`} icon={TrendingUp} />
+            <StatCard title="Gross Profit" value={`KES ${grossProfit.toLocaleString()}`} icon={DollarSign} />
+            <StatCard title="Profit Margin" value={`${profitMargin}%`} icon={Percent} />
           </div>
-        </div>
 
-        {/* Category Breakdown */}
-        <div className="bg-card rounded-2xl border p-5">
-          <h3 className="font-display font-semibold text-sm mb-4">Sales by Category</h3>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryChartData.slice(0, 8)} layout="vertical" barSize={20}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip formatter={v => `KES ${v.toLocaleString()}`} />
-                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Revenue Trend */}
+          <div className="bg-card rounded-2xl border p-5">
+            <h3 className="font-display font-semibold text-sm mb-4">Revenue & Profit Trend</h3>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '12px' }}
+                    formatter={(v) => `KES ${v.toLocaleString()}`}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="profit" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Hourly Distribution & Top Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-card rounded-2xl border p-5">
-          <h3 className="font-display font-semibold text-sm mb-4">Peak Hours</h3>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hourlyData} barSize={12}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="hour" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval={2} />
-                <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip formatter={(v, name) => name === 'revenue' ? `KES ${v.toLocaleString()}` : v} />
-                <Bar dataKey="transactions" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-card rounded-2xl border p-5">
-          <h3 className="font-display font-semibold text-sm mb-4">Top Selling Products</h3>
-          <div className="space-y-3 max-h-[280px] overflow-y-auto">
-            {topProductsList.map((p, i) => (
-              <div key={p.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold">
-                    {i + 1}
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.quantity} units sold</p>
-                  </div>
-                </div>
-                <span className="text-sm font-semibold">KES {p.revenue.toLocaleString()}</span>
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-card rounded-2xl border p-5">
+              <h3 className="font-display font-semibold text-sm mb-4">Payment Methods</h3>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={paymentData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                      {paymentData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={v => `KES ${v.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-            {topProductsList.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">No data for this period</p>
-            )}
-          </div>
-        </div>
-      </div>
+            </div>
 
-      {/* Summary */}
-      <div className="bg-card rounded-2xl border p-5">
-        <h3 className="font-display font-semibold text-sm mb-4">Period Summary</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Total Revenue</p>
-            <p className="font-display font-bold text-lg">KES {totalRevenue.toLocaleString()}</p>
+            <div className="bg-card rounded-2xl border p-5">
+              <h3 className="font-display font-semibold text-sm mb-4">Sales by Category</h3>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryChartData.slice(0, 8)} layout="vertical" barSize={20}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip formatter={v => `KES ${v.toLocaleString()}`} />
+                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Tax Collected</p>
-            <p className="font-display font-bold text-lg">KES {totalTax.toLocaleString()}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Discounts Given</p>
-            <p className="font-display font-bold text-lg">KES {totalDiscount.toLocaleString()}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Net Revenue</p>
-            <p className="font-display font-bold text-lg">KES {(totalRevenue - totalTax).toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Cashier Performance */}
-      <div className="bg-card rounded-2xl border p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <User className="w-4 h-4 text-primary" />
-          <h3 className="font-display font-semibold text-sm">Cashier Performance</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Cashier</th>
-                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Transactions</th>
-                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total Revenue</th>
-                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Avg Sale</th>
-                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">Cash</th>
-                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">M-Pesa</th>
-                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">Card</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cashierPerformance.map((c, i) => (
-                <tr key={c.name} className="border-b last:border-0 hover:bg-muted/50">
-                  <td className="py-3 px-3 font-medium">
-                    <div className="flex items-center gap-2">
+          {/* Hourly Distribution & Top Products */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-card rounded-2xl border p-5">
+              <h3 className="font-display font-semibold text-sm mb-4">Peak Hours</h3>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hourlyData} barSize={12}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval={2} />
+                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip formatter={(v, name) => name === 'revenue' ? `KES ${v.toLocaleString()}` : v} />
+                    <Bar dataKey="transactions" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-2xl border p-5">
+              <h3 className="font-display font-semibold text-sm mb-4">Top Selling Products</h3>
+              <div className="space-y-3 max-h-[280px] overflow-y-auto">
+                {topProductsList.map((p, i) => (
+                  <div key={p.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
                       <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold">
                         {i + 1}
                       </span>
-                      {c.name}
+                      <div>
+                        <p className="text-sm font-medium">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">{p.quantity} units sold</p>
+                      </div>
                     </div>
-                  </td>
-                  <td className="text-right py-3 px-3 font-semibold">{c.transactions}</td>
-                  <td className="text-right py-3 px-3 font-semibold">KES {c.revenue.toLocaleString()}</td>
-                  <td className="text-right py-3 px-3">KES {c.avgSale.toLocaleString()}</td>
-                  <td className="text-right py-3 px-3 hidden md:table-cell">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      {c.cashTransactions}
-                    </span>
-                  </td>
-                  <td className="text-right py-3 px-3 hidden md:table-cell">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                      {c.mpesaTransactions}
-                    </span>
-                  </td>
-                  <td className="text-right py-3 px-3 hidden md:table-cell">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-                      {c.cardTransactions}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {cashierPerformance.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No sales data for this period
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    <span className="text-sm font-semibold">KES {p.revenue.toLocaleString()}</span>
+                  </div>
+                ))}
+                {topProductsList.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">No data for this period</p>
+                )}
+              </div>
+            </div>
+          </div>
 
-      {/* Loyalty Program Stats */}
-      <div className="bg-card rounded-2xl border p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Gift className="w-4 h-4 text-primary" />
-          <h3 className="font-display font-semibold text-sm">Loyalty Program Overview</h3>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Points Awarded</p>
-            <p className="font-display font-bold text-lg">{totalPointsAwarded.toLocaleString()}</p>
+          {/* Summary */}
+          <div className="bg-card rounded-2xl border p-5">
+            <h3 className="font-display font-semibold text-sm mb-4">Period Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Total Revenue</p>
+                <p className="font-display font-bold text-lg">KES {totalRevenue.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Tax Collected</p>
+                <p className="font-display font-bold text-lg">KES {totalTax.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Discounts Given</p>
+                <p className="font-display font-bold text-lg">KES {totalDiscount.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Net Revenue</p>
+                <p className="font-display font-bold text-lg">KES {(totalRevenue - totalTax).toLocaleString()}</p>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Customer Sales</p>
-            <p className="font-display font-bold text-lg">{salesWithCustomers}</p>
+
+          {/* Loyalty Program Stats */}
+          <div className="bg-card rounded-2xl border p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Gift className="w-4 h-4 text-primary" />
+              <h3 className="font-display font-semibold text-sm">Loyalty Program Overview</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Points Awarded</p>
+                <p className="font-display font-bold text-lg">{totalPointsAwarded.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Customer Sales</p>
+                <p className="font-display font-bold text-lg">{salesWithCustomers}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Customer Revenue</p>
+                <p className="font-display font-bold text-lg">KES {customerRevenue.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">% Customer Sales</p>
+                <p className="font-display font-bold text-lg">
+                  {periodSales.length > 0 ? Math.round((salesWithCustomers / periodSales.length) * 100) : 0}%
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Customer Revenue</p>
-            <p className="font-display font-bold text-lg">KES {customerRevenue.toLocaleString()}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">% Customer Sales</p>
-            <p className="font-display font-bold text-lg">
-              {periodSales.length > 0 ? Math.round((salesWithCustomers / periodSales.length) * 100) : 0}%
-            </p>
-          </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
