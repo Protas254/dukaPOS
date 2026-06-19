@@ -188,9 +188,11 @@ export default function POS() {
       const sale = await base44.entities.Sale.create(saleData);
 
       // Submit to KRA eTIMS — fire and forget, never block the receipt
-      base44.functions.invoke('submitEtimsInvoice', {
-        sale: { ...saleData, id: sale.id, created_date: new Date().toISOString() }
-      }).catch(() => {});
+      try {
+        base44.functions.invoke('submitEtimsInvoice', {
+          sale: { ...saleData, id: sale.id, created_date: new Date().toISOString() }
+        }).catch(() => {});
+      } catch (_) { /* eTIMS not configured */ }
 
       // Update stock (non-blocking — never cancel a completed sale)
       Promise.all(cart.map(item => {
