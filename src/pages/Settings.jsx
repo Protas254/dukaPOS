@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Save, Loader2, Store, Receipt, Shield, RotateCcw, Building2 } from 'lucide-react';
+import { Save, Loader2, Store, Receipt, Shield, RotateCcw, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Link } from 'react-router-dom';
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -265,6 +266,20 @@ export default function Settings() {
         )}
         Save Settings
       </Button>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/onboarding">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: Onboarding
+          </Button>
+        </Link>
+        <Button disabled className="gap-2">
+          Next
+          <ArrowRight className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }

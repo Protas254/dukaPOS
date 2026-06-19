@@ -1,8 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, CheckCircle, ArrowRight, Store, Package, Users, Receipt, BarChart3, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Store, Package, Users, Receipt, BarChart3, Settings } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const onboardingSteps = [
   {
@@ -101,6 +101,20 @@ export default function Onboarding() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between mt-8">
+        <Button variant="outline" disabled className="gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Previous
+        </Button>
+        <Link to="/settings">
+          <Button className="gap-2">
+            Next: Settings
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
