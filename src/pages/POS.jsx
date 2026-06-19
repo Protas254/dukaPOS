@@ -199,8 +199,9 @@ export default function POS() {
       // CRITICAL: Only await this — everything else is fire-and-forget
       sale = await base44.entities.Sale.create(saleData);
     } catch (err) {
+      const msg = err?.message || err?.response?.data?.detail || JSON.stringify(err) || 'Unknown error';
       console.error('Sale creation failed:', err);
-      toast({ title: 'Checkout failed', description: err.message || 'Could not save sale. Please try again.', variant: 'destructive' });
+      toast({ title: 'Checkout failed', description: msg, variant: 'destructive' });
       setIsProcessing(false);
       return;
     }
