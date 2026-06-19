@@ -99,6 +99,31 @@ export default function Settings() {
               />
             </div>
             <div>
+              <Label className="text-xs">Business Type</Label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                {[
+                  { id: 'individual', label: 'Individual', desc: 'Solo trader / freelancer' },
+                  { id: 'sme', label: 'SME', desc: 'Small & medium enterprise' },
+                  { id: 'merchant', label: 'Merchant', desc: 'Retail / wholesale' },
+                  { id: 'enterprise', label: 'Enterprise', desc: 'Large organisation' },
+                ].map(type => (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() => handleChange('business_type', type.id)}
+                    className={`text-left rounded-lg border px-3 py-2 transition-all ${
+                      form.business_type === type.id
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                        : 'border-input hover:border-primary/40'
+                    }`}
+                  >
+                    <p className="text-xs font-semibold">{type.label}</p>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{type.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
               <Label className="text-xs">Phone Number</Label>
               <Input
                 value={form.business_phone}
