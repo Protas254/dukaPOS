@@ -69,7 +69,7 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
       </ScrollArea>
 
       {/* Totals & Checkout */}
-      <div className="border-t px-3 py-3 space-y-2 bg-muted/30 flex-shrink-0">
+      <div className="border-t px-3 py-3 space-y-2 bg-muted/30 flex-shrink-0 sticky bottom-0">
         <div className="flex items-center gap-2">
           <label className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Discount</label>
           <div className="flex-1 relative">
@@ -105,12 +105,13 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
           <span className="text-lg font-display font-bold text-primary">KES {Math.round(total).toLocaleString()}</span>
         </div>
         {items.length > 0 && onCheckout && (
-          <Button
+          <button
             onClick={onCheckout}
-            className="w-full h-8 rounded-md text-sm font-bold bg-primary hover:bg-primary/90 mt-2"
+            className="w-full rounded-lg font-bold bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all mt-2 touch-manipulation select-none"
+            style={{ minHeight: '48px', fontSize: '15px' }}
           >
             Charge KES {Math.round(total).toLocaleString()}
-          </Button>
+          </button>
         )}
       </div>
     </div>
