@@ -5,15 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Receipt, Eye, Calendar } from 'lucide-react';
+import { Search, Receipt, Eye, Calendar, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import ReceiptView from '@/components/pos/ReceiptView';
+import ReturnDialog from '@/components/pos/ReturnDialog';
 
 export default function Transactions() {
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [selectedSale, setSelectedSale] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [returnSale, setReturnSale] = useState(null);
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['sales'],
@@ -119,7 +122,18 @@ export default function Transactions() {
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 <p className="text-base font-display font-bold">KES {sale.total_amount?.toLocaleString()}</p>
-                <Eye className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Eye className="w-4 h-4 text-muted-foreground" />
+                  {sale.status === 'completed' && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setReturnSale(sale); setReturnOpen(true); }}
+                      className="ml-1 p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      title="Process Return"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -138,6 +152,12 @@ export default function Transactions() {
         onClose={() => setReceiptOpen(false)}
         sale={selectedSale}
         businessSettings={settings[0]}
+      />
+
+      <ReturnDialog
+        open={returnOpen}
+        onClose={() => { setReturnOpen(false); setReturnSale(null); }}
+        sale={returnSale}
       />
     </div>
   );
