@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Save, Loader2, Store, Receipt, Shield } from 'lucide-react';
+import { Save, Loader2, Store, Receipt, Shield, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function Settings() {
@@ -22,6 +22,7 @@ export default function Settings() {
     default_tax_rate: 16,
     currency: 'KES',
     receipt_footer: 'Thank you for shopping with us!',
+    return_policy: '',
   });
 
   const { data: settings = [], isLoading } = useQuery({
@@ -41,6 +42,7 @@ export default function Settings() {
         default_tax_rate: s.default_tax_rate || 16,
         currency: s.currency || 'KES',
         receipt_footer: s.receipt_footer || 'Thank you for shopping with us!',
+        return_policy: s.return_policy || '',
       });
     }
   }, [settings]);
@@ -192,6 +194,33 @@ export default function Settings() {
               placeholder="Thank you for shopping with us!"
               className="mt-1 h-20"
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Return Policy */}
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <RotateCcw className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="font-display text-base">Return Policy</CardTitle>
+              <CardDescription className="text-xs">Define your store's return & refund terms for staff and customers</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-xs">Policy Terms</Label>
+            <Textarea
+              value={form.return_policy}
+              onChange={e => handleChange('return_policy', e.target.value)}
+              placeholder={`e.g. Items can be returned within 7 days of purchase with original receipt. Perishable goods are non-refundable. Exchanges accepted within 14 days for defective products.`}
+              className="mt-1 h-36"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1.5">This policy will be visible to your cashiers and can be printed on receipts.</p>
           </div>
         </CardContent>
       </Card>

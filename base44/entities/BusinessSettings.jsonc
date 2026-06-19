@@ -34,6 +34,10 @@
     },
     "logo_url": {
       "type": "string"
+    },
+    "return_policy": {
+      "type": "string",
+      "description": "Store return & refund policy shown to staff and on receipts"
     }
   },
   "required": [
