@@ -105,6 +105,20 @@
     "notes": {
       "type": "string",
       "description": "Additional notes"
+    },
+    "cuin": {
+      "type": "string",
+      "description": "KRA eTIMS Control Unit Invoice Number"
+    },
+    "etims_status": {
+      "type": "string",
+      "enum": [
+        "not_submitted",
+        "submitted",
+        "failed"
+      ],
+      "default": "not_submitted",
+      "description": "KRA eTIMS submission status"
     }
   },
   "required": [
