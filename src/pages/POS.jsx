@@ -171,15 +171,15 @@ export default function POS() {
 
       const pointsEarned = Math.floor(subtotal / 100);
       const { loyalty_discount = 0, points_redeemed = 0, receipt_delivery, ...salePayment } = paymentDetails;
-      const finalTotal = Math.max(0, total - loyalty_discount);
+      const finalTotal = Math.max(0, Math.round(total) - loyalty_discount);
 
       const saleData = {
         receipt_number: generateReceiptNumber(),
         items,
         subtotal: Math.round(subtotal),
         tax_total: Math.round(taxTotal),
-        discount_amount: Math.round(discount + loyalty_discount),
-        total_amount: finalTotal,
+        discount_amount: Math.round(discount) + loyalty_discount,
+        total_amount: Math.max(1, finalTotal),
         points_earned: pointsEarned,
         cashier_name: currentUser?.full_name || 'Cashier',
         ...salePayment,

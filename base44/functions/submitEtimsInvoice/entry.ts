@@ -21,6 +21,7 @@ const PMT_CODE = { cash: '01', card: '02', split: '04', mpesa: '05' };
 
 Deno.serve(async (req) => {
   try {
+    const body = await req.json();
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { sale } = await req.json();
+    const { sale } = body;
     if (!sale) return Response.json({ error: 'sale is required' }, { status: 400 });
 
     const saleDate = new Date(sale.created_date || new Date());
