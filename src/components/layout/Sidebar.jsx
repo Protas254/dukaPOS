@@ -16,8 +16,8 @@ const navItems = [
   { icon: Users, label: 'Customers', path: '/customers' },
   { icon: Clock, label: 'My Shifts', path: '/my-shifts' },
   { icon: ShieldCheck, label: 'eTIMS', path: '/etims' },
-  { icon: Settings, label: 'Settings', path: '/settings' },
   { icon: BookOpen, label: 'Onboarding', path: '/onboarding' },
+  { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
 export default function Sidebar({ collapsed, onToggle }) {
