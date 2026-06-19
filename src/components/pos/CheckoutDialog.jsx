@@ -17,7 +17,7 @@ const paymentMethods = [
   { id: 'card',  label: 'Card',   icon: CreditCard,   color: 'bg-blue-500'    },
 ];
 
-export default function CheckoutDialog({ open, onClose, total, onComplete, isProcessing }) {
+export default function CheckoutDialog({ open, onClose, total, onComplete, isProcessing, preselectedCustomer }) {
   const [method, setMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
   const [mpesaRef, setMpesaRef] = useState('');
@@ -50,6 +50,20 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   useEffect(() => {
     setSelectedRedemption(null);
   }, [selectedCustomer?.id]);
+
+  // Pre-fill from POS customer search selection
+  useEffect(() => {
+    if (open && preselectedCustomer) {
+      setSelectedCustomer(preselectedCustomer);
+      setCustomerPhone(preselectedCustomer.phone || '');
+      setReceiptFields(f => ({
+        ...f,
+        sms: preselectedCustomer.phone || f.sms,
+        whatsapp: preselectedCustomer.phone || f.whatsapp,
+        email: preselectedCustomer.email || f.email,
+      }));
+    }
+  }, [open, preselectedCustomer?.id]);
 
   // Reset on dialog close
   useEffect(() => {

@@ -11,6 +11,7 @@ import CheckoutDialog from '@/components/pos/CheckoutDialog';
 import ReceiptView from '@/components/pos/ReceiptView';
 import POSTopBar from '@/components/pos/POSTopBar';
 import POSFilters from '@/components/pos/POSFilters';
+import CustomerSearchBar from '@/components/pos/CustomerSearchBar';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -39,6 +40,7 @@ export default function POS() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [activeShift, setActiveShift] = React.useState(null);
+  const [selectedCustomer, setSelectedCustomer] = React.useState(null);
 
   // Resizable splitter state (desktop: cart width px, mobile: cart height %)
   const [cartWidth, setCartWidth] = useState(280);
@@ -234,6 +236,7 @@ export default function POS() {
     setCheckoutOpen(false);
     setReceiptOpen(true);
     clearCart();
+    setSelectedCustomer(null);
     setIsProcessing(false);
 
     // Background tasks — all fire-and-forget
@@ -364,6 +367,10 @@ export default function POS() {
           @media (max-width: 1023px) { .cart-panel { height: ${cartHeightPct}vh; flex-shrink: 0; } }
         `}</style>
         <div className="cart-panel bg-card border-t lg:border-t-0 flex flex-col min-h-0">
+          {/* Customer Search */}
+          <div className="px-2 py-1.5 border-b bg-muted/20">
+            <CustomerSearchBar selectedCustomer={selectedCustomer} onSelectCustomer={setSelectedCustomer} />
+          </div>
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}
@@ -384,6 +391,7 @@ export default function POS() {
         total={total}
         onComplete={handleCheckout}
         isProcessing={isProcessing}
+        preselectedCustomer={selectedCustomer}
       />
 
       <ReceiptView
