@@ -336,9 +336,9 @@ export default function MyShifts() {
             Previous: Customers
           </Button>
         </Link>
-        <Link to="/etims">
+        <Link to="/employees">
           <Button className="gap-2">
-            Next: eTIMS
+            Next: Employees
             <ArrowRight className="w-4 h-4" />
           </Button>
         </Link>

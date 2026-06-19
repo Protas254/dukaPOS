@@ -25,6 +25,7 @@ import Customers from '@/pages/Customers';
 import MyShifts from '@/pages/MyShifts';
 import Settings from '@/pages/Settings';
 import EtimsCompliance from '@/pages/EtimsCompliance';
+import Employees from '@/pages/Employees';
 import Onboarding from '@/pages/Onboarding';
 
 const AuthenticatedApp = () => {
@@ -65,6 +66,7 @@ const AuthenticatedApp = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/my-shifts" element={<MyShifts />} />
+          <Route path="/employees" element={<Employees />} />
           <Route path="/etims" element={<EtimsCompliance />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/onboarding" element={<Onboarding />} />

@@ -6,29 +6,27 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, User, Plus, ArrowLeft, ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { User, Plus, ArrowLeft, ArrowRight, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import CustomerProfileDialog from '@/components/customers/CustomerProfileDialog';
 import CustomerSummaryDashboard from '@/components/customers/CustomerSummaryDashboard';
 import CustomerCard from '@/components/customers/CustomerCard';
+import CustomerFilters from '@/components/customers/CustomerFilters';
 
 export default function Customers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState('all');
+  const [sort, setSort] = useState('recent');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [profileCustomer, setProfileCustomer] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    notes: '',
-  });
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' });
 
-  const { data: customers = [], isLoading } = useQuery({
+  const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
     queryFn: () => base44.entities.Customer.list('-created_date'),
   });
@@ -59,32 +57,41 @@ export default function Customers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       toast({ title: 'Customer deleted', description: 'Profile removed successfully' });
-      setSelectedCustomer(null);
     },
   });
 
   const filteredCustomers = useMemo(() => {
-    if (!search) return customers;
-    const q = search.toLowerCase();
-    return customers.filter(c =>
-      c.name?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q)
-    );
-  }, [customers, search]);
+    let list = [...customers];
 
-  const resetForm = () => {
-    setFormData({ name: '', phone: '', email: '', notes: '' });
-  };
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(c =>
+        c.name?.toLowerCase().includes(q) ||
+        c.phone?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q)
+      );
+    }
+
+    if (tierFilter !== 'all') {
+      list = list.filter(c => c.tier === tierFilter);
+    }
+
+    switch (sort) {
+      case 'spending': list.sort((a, b) => (b.total_spending || 0) - (a.total_spending || 0)); break;
+      case 'points':   list.sort((a, b) => (b.loyalty_points || 0) - (a.loyalty_points || 0)); break;
+      case 'visits':   list.sort((a, b) => (b.total_transactions || 0) - (a.total_transactions || 0)); break;
+      case 'name':     list.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
+      default: break; // recent = default order from API
+    }
+
+    return list;
+  }, [customers, search, tierFilter, sort]);
+
+  const resetForm = () => setFormData({ name: '', phone: '', email: '', notes: '' });
 
   const handleEdit = (customer) => {
     setSelectedCustomer(customer);
-    setFormData({
-      name: customer.name || '',
-      phone: customer.phone || '',
-      email: customer.email || '',
-      notes: customer.notes || '',
-    });
+    setFormData({ name: customer.name || '', phone: customer.phone || '', email: customer.email || '', notes: customer.notes || '' });
     setEditDialogOpen(true);
   };
 
@@ -99,15 +106,25 @@ export default function Customers() {
     if (selectedCustomer) {
       updateMutation.mutate({ id: selectedCustomer.id, data: formData });
     } else {
-      createMutation.mutate({
-        ...formData,
-        loyalty_points: 0,
-        total_spending: 0,
-        total_transactions: 0,
-        tier: 'bronze',
-        is_active: true,
-      });
+      createMutation.mutate({ ...formData, loyalty_points: 0, total_spending: 0, total_transactions: 0, tier: 'bronze', is_active: true });
     }
+  };
+
+  const exportCSV = () => {
+    const headers = ['Name', 'Phone', 'Email', 'Tier', 'Loyalty Points', 'Total Spending (KES)', 'Total Transactions', 'Member Since'];
+    const rows = customers.map(c => [
+      c.name, c.phone || '', c.email || '', c.tier || 'bronze',
+      c.loyalty_points || 0, c.total_spending || 0, c.total_transactions || 0,
+      c.created_date ? format(new Date(c.created_date), 'yyyy-MM-dd') : ''
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customers_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -117,80 +134,65 @@ export default function Customers() {
           <h1 className="text-2xl md:text-3xl font-display font-bold">Customers</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Loyalty program & customer profiles</p>
         </div>
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddNew}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Customer
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{selectedCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div>
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone *</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {selectedCustomer ? 'Update' : 'Create'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={exportCSV} className="gap-2">
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleAddNew}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Customer
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{selectedCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="name">Name *</Label>
+                  <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone *</Label>
+                  <Input id="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                    {selectedCustomer ? 'Update' : 'Create'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Summary Dashboard */}
       {customers.length > 0 && <CustomerSummaryDashboard customers={customers} />}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, phone, or email..."
-          className="pl-10"
-        />
-      </div>
+      {/* Filters */}
+      <CustomerFilters
+        search={search} onSearch={setSearch}
+        tier={tierFilter} onTier={setTierFilter}
+        sort={sort} onSort={setSort}
+      />
+
+      {/* Results count */}
+      <p className="text-xs text-muted-foreground -mt-2">
+        Showing {filteredCustomers.length} of {customers.length} customers
+      </p>
 
       {/* Customers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -213,10 +215,15 @@ export default function Customers() {
 
       {filteredCustomers.length === 0 && (
         <div className="text-center py-12">
-          <User className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">
-            {search ? 'No customers found' : 'No customers yet. Add your first customer!'}
+          <User className="w-12 h-12 mx-auto text-muted-foreground mb-3 opacity-30" />
+          <p className="text-muted-foreground font-medium">
+            {search || tierFilter !== 'all' ? 'No customers match your filters' : 'No customers yet. Add your first customer!'}
           </p>
+          {(search || tierFilter !== 'all') && (
+            <button onClick={() => { setSearch(''); setTierFilter('all'); }} className="text-primary text-sm hover:underline mt-1">
+              Clear filters
+            </button>
+          )}
         </div>
       )}
 
