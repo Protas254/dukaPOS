@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import LoyaltyRedemption from './LoyaltyRedemption';
 
 const paymentMethods = [
   { id: 'cash', label: 'Cash', icon: Banknote, color: 'bg-emerald-500' },
@@ -24,6 +25,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const [mpesaRef, setMpesaRef] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedRedemption, setSelectedRedemption] = useState(null);
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -43,16 +45,24 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
     }
   }, [customerPhone, customers]);
 
+  // Reset redemption when the customer changes
+  useEffect(() => {
+    setSelectedRedemption(null);
+  }, [selectedCustomer?.id]);
+
   const customerName = selectedCustomer?.name || '';
   const loyaltyPoints = selectedCustomer?.loyalty_points || 0;
   const tier = selectedCustomer?.tier || 'bronze';
 
   const displayTotal = Math.round(total);
+  const redemptionValue = selectedRedemption?.value || 0;
+  const pointsRedeemed = selectedRedemption?.points || 0;
+  const finalTotal = Math.max(0, displayTotal - redemptionValue);
   const cashAmount = parseFloat(cashReceived) || 0;
-  const change = cashAmount - displayTotal;
+  const change = cashAmount - finalTotal;
 
   const canComplete = () => {
-    if (method === 'cash') return cashAmount >= displayTotal;
+    if (method === 'cash') return cashAmount >= finalTotal;
     if (method === 'mpesa') return mpesaRef.trim().length > 0;
     return true;
   };
@@ -66,15 +76,17 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       customer_phone: customerPhone || undefined,
       customer_name: customerName || undefined,
       customer_id: selectedCustomer?.id || undefined,
+      loyalty_discount: redemptionValue || undefined,
+      points_redeemed: pointsRedeemed || undefined,
     });
   };
 
   const quickCashAmounts = [
-    Math.ceil(displayTotal / 100) * 100,
-    Math.ceil(displayTotal / 500) * 500,
-    Math.ceil(displayTotal / 1000) * 1000,
-    displayTotal
-  ].filter((v, i, a) => a.indexOf(v) === i && v >= displayTotal).slice(0, 4);
+    Math.ceil(finalTotal / 100) * 100,
+    Math.ceil(finalTotal / 500) * 500,
+    Math.ceil(finalTotal / 1000) * 1000,
+    finalTotal
+  ].filter((v, i, a) => a.indexOf(v) === i && v >= finalTotal).slice(0, 4);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -87,13 +99,23 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
           {/* Total & Points */}
           <div className="text-center py-4 bg-gradient-to-br from-muted to-primary/5 rounded-xl border border-primary/20">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Amount Due</p>
+            {redemptionValue > 0 && (
+              <p className="text-sm text-muted-foreground line-through mt-1">
+                KES {displayTotal.toLocaleString()}
+              </p>
+            )}
             <p className="text-3xl font-display font-bold text-primary mt-1">
-              KES {displayTotal.toLocaleString()}
+              KES {finalTotal.toLocaleString()}
             </p>
+            {redemptionValue > 0 && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                KES {redemptionValue.toLocaleString()} loyalty discount ({pointsRedeemed.toLocaleString()} pts)
+              </p>
+            )}
             <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
               <Gift className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-primary">
-                Earn {Math.floor(displayTotal / 100)} pts
+                Earn {Math.floor(finalTotal / 100)} pts
               </span>
             </div>
           </div>
@@ -223,10 +245,17 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
                       <Gift className="w-2.5 h-2.5 text-primary" />
                       <span>After</span>
                     </div>
-                    <p className="text-sm font-bold text-primary">{(loyaltyPoints + Math.floor(displayTotal / 100)).toLocaleString()}</p>
+                    <p className="text-sm font-bold text-primary">{Math.max(0, loyaltyPoints + Math.floor(finalTotal / 100) - pointsRedeemed).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
+              )}
+              {selectedCustomer && (
+                <LoyaltyRedemption
+                  availablePoints={loyaltyPoints}
+                  selectedRedemption={selectedRedemption}
+                  onSelect={setSelectedRedemption}
+                />
               )}
             </div>
           )}
@@ -245,7 +274,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
             ) : (
               <>
                 <CheckCircle className="w-5 h-5 mr-2" />
-                Complete Sale — KES {displayTotal.toLocaleString()}
+                Complete Sale — KES {finalTotal.toLocaleString()}
               </>
             )}
           </Button>

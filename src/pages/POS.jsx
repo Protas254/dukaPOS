@@ -131,17 +131,19 @@ export default function POS() {
     });
 
     const pointsEarned = Math.floor(subtotal / 100);
+    const { loyalty_discount = 0, points_redeemed = 0, ...salePayment } = paymentDetails;
+    const finalTotal = Math.max(0, total - loyalty_discount);
 
     const saleData = {
       receipt_number: generateReceiptNumber(),
       items,
       subtotal: Math.round(subtotal),
       tax_total: Math.round(taxTotal),
-      discount_amount: Math.round(discount),
-      total_amount: total,
+      discount_amount: Math.round(discount + loyalty_discount),
+      total_amount: finalTotal,
       points_earned: pointsEarned,
       cashier_name: user?.full_name || 'Cashier',
-      ...paymentDetails,
+      ...salePayment,
     };
 
     const sale = await base44.entities.Sale.create(saleData);
@@ -160,8 +162,8 @@ export default function POS() {
     if (paymentDetails.customer_id) {
       try {
         const customer = await base44.entities.Customer.get(paymentDetails.customer_id);
-        const newPoints = (customer.loyalty_points || 0) + pointsEarned;
-        const newSpending = (customer.total_spending || 0) + total;
+        const newPoints = Math.max(0, (customer.loyalty_points || 0) + pointsEarned - points_redeemed);
+        const newSpending = (customer.total_spending || 0) + finalTotal;
         const newTransactions = (customer.total_transactions || 0) + 1;
         
         let newTier = 'bronze';
