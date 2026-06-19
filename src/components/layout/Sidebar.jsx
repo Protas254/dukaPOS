@@ -40,13 +40,14 @@ export default function Sidebar({ collapsed, onToggle }) {
             </div>
           )}
         </div>
-        <button
-          onClick={onToggle}
-          className="p-1.5 rounded-lg hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
-          title={collapsed ? 'Open sidebar' : 'Close sidebar'}
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {!collapsed && (
+          <button
+            onClick={onToggle}
+            className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition-colors"
+          >
+            Close
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
