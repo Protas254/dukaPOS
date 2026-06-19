@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Search, User, Plus, Pencil, Trash2, Gift, TrendingUp, ShoppingBag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import CustomerProfileDialog from '@/components/customers/CustomerProfileDialog';
 
 const tierColors = {
   bronze: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -32,6 +33,7 @@ export default function Customers() {
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [profileCustomer, setProfileCustomer] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -316,6 +318,15 @@ export default function Customers() {
                   variant="outline"
                   size="sm"
                   className="flex-1 text-xs"
+                  onClick={() => setProfileCustomer(customer)}
+                >
+                  <User className="w-3 h-3 mr-1" />
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
                   onClick={() => handleEdit(customer)}
                 >
                   <Pencil className="w-3 h-3 mr-1" />
@@ -338,6 +349,12 @@ export default function Customers() {
           </Card>
         ))}
       </div>
+
+      <CustomerProfileDialog
+        customer={profileCustomer}
+        open={!!profileCustomer}
+        onClose={() => setProfileCustomer(null)}
+      />
 
       {filteredCustomers.length === 0 && (
         <div className="text-center py-12">
