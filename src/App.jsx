@@ -24,6 +24,7 @@ import Reports from '@/pages/Reports';
 import Customers from '@/pages/Customers';
 import MyShifts from '@/pages/MyShifts';
 import Settings from '@/pages/Settings';
+import EtimsCompliance from '@/pages/EtimsCompliance';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/my-shifts" element={<MyShifts />} />
+          <Route path="/etims" element={<EtimsCompliance />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
