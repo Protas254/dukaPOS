@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import {
   FileDown, RefreshCw, CheckCircle, XCircle, Clock,
-  AlertTriangle, ChevronLeft, ChevronRight, FileJson, FileText
+  AlertTriangle, ChevronLeft, ChevronRight, FileJson, FileText, ArrowLeft, ArrowRight
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const STATUS_CONFIG = {
   submitted:    { label: 'Submitted',     icon: CheckCircle,    cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
@@ -384,6 +385,22 @@ export default function EtimsCompliance() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/my-shifts">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: My Shifts
+          </Button>
+        </Link>
+        <Link to="/settings">
+          <Button className="gap-2">
+            Next: Settings
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

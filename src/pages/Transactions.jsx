@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Receipt, Eye, Calendar, RotateCcw, User } from 'lucide-react';
+import { Search, Receipt, Eye, Calendar, RotateCcw, User, ArrowLeft, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import ReceiptView from '@/components/pos/ReceiptView';
 import ReturnDialog from '@/components/pos/ReturnDialog';
+import { Link } from 'react-router-dom';
 
 export default function Transactions() {
   const [search, setSearch] = useState('');
@@ -176,6 +177,22 @@ export default function Transactions() {
         onClose={() => { setReturnOpen(false); setReturnSale(null); }}
         sale={returnSale}
       />
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/inventory">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: Inventory
+          </Button>
+        </Link>
+        <Link to="/reports">
+          <Button className="gap-2">
+            Next: Reports
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

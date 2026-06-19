@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, User, Plus } from 'lucide-react';
+import { Search, User, Plus, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { Link } from 'react-router-dom';
 import CustomerProfileDialog from '@/components/customers/CustomerProfileDialog';
 import CustomerSummaryDashboard from '@/components/customers/CustomerSummaryDashboard';
 import CustomerCard from '@/components/customers/CustomerCard';
@@ -218,6 +219,22 @@ export default function Customers() {
           </p>
         </div>
       )}
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/reports">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: Reports
+          </Button>
+        </Link>
+        <Link to="/my-shifts">
+          <Button className="gap-2">
+            Next: My Shifts
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

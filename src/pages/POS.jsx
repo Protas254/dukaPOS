@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import ProductGrid from '@/components/pos/ProductGrid';
 import Cart from '@/components/pos/Cart';
 import CheckoutDialog from '@/components/pos/CheckoutDialog';
@@ -401,6 +402,22 @@ export default function POS() {
         businessSettings={businessSettings}
         receiptDelivery={completedSale?.receipt_delivery}
       />
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between p-4 border-t bg-card">
+        <Link to="/dashboard">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: Dashboard
+          </Button>
+        </Link>
+        <Link to="/inventory">
+          <Button className="gap-2">
+            Next: Inventory
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

@@ -5,8 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, subDays, startOfDay, startOfWeek, startOfMonth, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
-import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User, Gift } from 'lucide-react';
+import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User, Gift, ArrowLeft, ArrowRight } from 'lucide-react';
 import CashierReport from '@/components/reports/CashierReport';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const COLORS = ['hsl(174,62%,32%)', 'hsl(150,50%,45%)', 'hsl(210,60%,50%)', 'hsl(38,92%,55%)', 'hsl(0,72%,51%)'];
 
@@ -333,6 +335,22 @@ export default function Reports() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/transactions">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: Transactions
+          </Button>
+        </Link>
+        <Link to="/customers">
+          <Button className="gap-2">
+            Next: Customers
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

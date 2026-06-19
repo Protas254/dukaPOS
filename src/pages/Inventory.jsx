@@ -10,9 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowUpDown, AlertTriangle, Loader2, Upload, Download
+  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
@@ -488,6 +489,22 @@ export default function Inventory() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/pos">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: POS
+          </Button>
+        </Link>
+        <Link to="/transactions">
+          <Button className="gap-2">
+            Next: Transactions
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

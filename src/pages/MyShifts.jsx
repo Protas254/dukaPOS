@@ -2,9 +2,11 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, startOfDay, subDays } from 'date-fns';
-import { DollarSign, ShoppingCart, TrendingUp, Clock, Calendar, Award, Download } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Clock, Calendar, Award, Download, ArrowLeft, ArrowRight } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -325,6 +327,22 @@ export default function MyShifts() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/customers">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: Customers
+          </Button>
+        </Link>
+        <Link to="/etims">
+          <Button className="gap-2">
+            Next: eTIMS
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

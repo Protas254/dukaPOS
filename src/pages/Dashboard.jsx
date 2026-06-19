@@ -3,13 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, ShoppingCart, TrendingUp, Package, 
-  AlertTriangle, ArrowRight, User, Award, Bell
+  AlertTriangle, ArrowRight, ArrowLeft, User, Award, Bell
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfDay, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const PAYMENT_COLORS = {
   cash: 'hsl(174, 62%, 32%)',
@@ -441,6 +442,22 @@ export default function Dashboard() {
         ) : (
           <p className="text-sm text-muted-foreground text-center py-8">No sales data yet</p>
         )}
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4 border-t">
+        <Link to="/onboarding">
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Previous: Onboarding
+          </Button>
+        </Link>
+        <Link to="/pos">
+          <Button className="gap-2">
+            Next: POS
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
       </div>
     </div>
   );
