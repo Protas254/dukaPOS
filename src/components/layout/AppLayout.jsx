@@ -30,7 +30,7 @@ export default function AppLayout() {
       {/* Main content */}
       <main className={cn(
         "transition-all duration-300 min-h-screen",
-        collapsed ? "lg:ml-[72px]" : "lg:ml-[240px]"
+        collapsed ? "lg:ml-[84px]" : "lg:ml-[270px]"
       )}>
         {/* Mobile header */}
         <div className="lg:hidden flex items-center gap-3 px-4 h-14 border-b bg-card sticky top-0 z-20">

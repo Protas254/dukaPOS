@@ -25,7 +25,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   return (
     <aside className={cn(
       "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-40 transition-all duration-300 flex flex-col",
-      collapsed ? "w-[72px]" : "w-[240px]"
+      collapsed ? "w-[84px]" : "w-[270px]"
     )}>
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-border">
