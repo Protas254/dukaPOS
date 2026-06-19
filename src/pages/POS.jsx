@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
@@ -38,6 +38,46 @@ export default function POS() {
   const [completedSale, setCompletedSale] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
+
+  // Resizable splitter state (desktop: cart width px, mobile: cart height %)
+  const [cartWidth, setCartWidth] = useState(280);
+  const [cartHeightPct, setCartHeightPct] = useState(45);
+  const isDragging = useRef(false);
+  const containerRef = useRef(null);
+
+  const startDragH = React.useCallback((e) => {
+    e.preventDefault();
+    isDragging.current = true;
+    const onMove = (ev) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const rect = containerRef.current.getBoundingClientRect();
+      const newCartWidth = rect.right - clientX;
+      setCartWidth(Math.min(500, Math.max(180, newCartWidth)));
+    };
+    const onUp = () => { isDragging.current = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+  }, []);
+
+  const startDragV = React.useCallback((e) => {
+    e.preventDefault();
+    isDragging.current = true;
+    const onMove = (ev) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((rect.bottom - clientY) / rect.height) * 100;
+      setCartHeightPct(Math.min(80, Math.max(20, pct)));
+    };
+    const onUp = () => { isDragging.current = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+  }, []);
 
   // Load current user
   React.useEffect(() => {
@@ -230,10 +270,10 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Main Content - Ultra Compact Split Layout */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+      {/* Main Content - Resizable Split Layout */}
+      <div ref={containerRef} className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left Panel - Products */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0" style={{ minWidth: 0 }}>
           {/* Ultra Compact Filters */}
           <div className="h-8 border-b flex items-center gap-1 px-2 bg-muted/30">
             <div className="relative flex-1 max-w-[200px]">
@@ -256,19 +296,38 @@ export default function POS() {
               ))}
             </select>
           </div>
-
           {/* Product Grid */}
           <div className="flex-1 overflow-y-auto p-1">
-            <ProductGrid
-              products={products}
-              onAddToCart={addToCart}
-              searchQuery={search}
-            />
+            <ProductGrid products={products} onAddToCart={addToCart} searchQuery={search} />
           </div>
         </div>
 
-        {/* Right Panel - Ultra Compact Cart */}
-        <div className="w-full lg:w-[260px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col min-h-0 max-h-[45vh] lg:max-h-none">
+        {/* Vertical drag handle (mobile) */}
+        <div
+          onMouseDown={startDragV}
+          onTouchStart={startDragV}
+          className="lg:hidden h-2 bg-border hover:bg-primary/40 cursor-row-resize flex items-center justify-center select-none touch-none"
+          title="Drag to resize"
+        >
+          <div className="w-8 h-1 rounded-full bg-muted-foreground/40" />
+        </div>
+
+        {/* Horizontal drag handle (desktop) */}
+        <div
+          onMouseDown={startDragH}
+          onTouchStart={startDragH}
+          className="hidden lg:flex w-1.5 bg-border hover:bg-primary/40 cursor-col-resize items-center justify-center select-none touch-none"
+          title="Drag to resize"
+        >
+          <div className="h-8 w-0.5 rounded-full bg-muted-foreground/40" />
+        </div>
+
+        {/* Right Panel - Cart */}
+        <style>{`
+          @media (min-width: 1024px) { .cart-panel { width: ${cartWidth}px; flex-shrink: 0; } }
+          @media (max-width: 1023px) { .cart-panel { height: ${cartHeightPct}vh; flex-shrink: 0; } }
+        `}</style>
+        <div className="cart-panel bg-card border-t lg:border-t-0 flex flex-col min-h-0">
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}
