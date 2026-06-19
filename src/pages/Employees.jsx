@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { format, formatDuration, intervalToDuration, subDays, startOfDay } from 'date-fns';
 import {
   Users, Clock, DollarSign, ShoppingCart, TrendingUp, ChevronDown, ChevronUp,
-  ArrowLeft, ArrowRight, Search, Award, Calendar, Download
+  ArrowLeft, ArrowRight, Search, Award, Calendar, Download, Star
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,31 @@ function StatBox({ label, value, sub, highlight }) {
     </div>
   );
 }
+
+// Compute a 1-5 star rating based on revenue + transactions relative to peers
+function computeRating(emp, allEmployees) {
+  if (allEmployees.length === 0) return 0;
+  const maxRevenue = Math.max(...allEmployees.map(e => e.totalRevenue), 1);
+  const maxTx = Math.max(...allEmployees.map(e => e.totalTransactions), 1);
+  const score = (emp.totalRevenue / maxRevenue) * 0.6 + (emp.totalTransactions / maxTx) * 0.4;
+  return Math.max(1, Math.round(score * 5));
+}
+
+function StarRating({ rating, max = 5 }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: max }).map((_, i) => (
+        <Star
+          key={i}
+          className={`w-3.5 h-3.5 ${i < rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+        />
+      ))}
+      <span className="text-xs text-muted-foreground ml-1">{rating}/{max}</span>
+    </div>
+  );
+}
+
+const RATING_LABELS = { 5: 'Top Performer', 4: 'High Performer', 3: 'Good', 2: 'Average', 1: 'Needs Support' };
 
 const STATUS_COLORS = {
   active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -222,6 +247,7 @@ export default function Employees() {
         {filtered.map((emp, idx) => {
           const isExpanded = expandedEmployee === emp.name;
           const avgTicket = emp.totalTransactions > 0 ? Math.round(emp.totalRevenue / emp.totalTransactions) : 0;
+          const rating = computeRating(emp, employeesWithToday);
 
           return (
             <Card key={emp.name} className="overflow-hidden">
@@ -243,6 +269,15 @@ export default function Employees() {
                         {emp.name === currentUser?.full_name && (
                           <Badge variant="outline" className="text-[10px]">You</Badge>
                         )}
+                        {rating === 5 && (
+                          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
+                            ⭐ Top Performer
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <StarRating rating={rating} />
+                        <span className="text-[10px] text-muted-foreground">· {RATING_LABELS[rating]}</span>
                       </div>
                       <p className="text-xs text-muted-foreground">{emp.shifts.length} shifts recorded</p>
                     </div>
