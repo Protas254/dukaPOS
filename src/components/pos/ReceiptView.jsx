@@ -126,15 +126,18 @@ export default function ReceiptView({ open, onClose, sale, businessSettings, rec
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm p-0 overflow-hidden">
-        <div className="p-6 space-y-4">
-          {/* Success indicator */}
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mx-auto flex items-center justify-center mb-3">
-              <CheckCircle className="w-8 h-8 text-emerald-600" />
-            </div>
-            <h2 className="font-display font-bold text-lg">Payment Successful!</h2>
+      <DialogContent className="sm:max-w-sm p-0 overflow-hidden max-h-[92vh] flex flex-col">
+
+        {/* Fixed header */}
+        <div className="px-6 pt-5 pb-3 flex-shrink-0 text-center border-b">
+          <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mx-auto flex items-center justify-center mb-2">
+            <CheckCircle className="w-6 h-6 text-emerald-600" />
           </div>
+          <h2 className="font-display font-bold text-base">Payment Successful!</h2>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
 
           {/* Receipt */}
           <div className="border rounded-xl p-4 space-y-2 bg-muted/30 font-mono text-xs" id="receipt-content">
@@ -273,6 +276,7 @@ export default function ReceiptView({ open, onClose, sale, businessSettings, rec
           <div className="space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Send Receipt</p>
 
+
             {/* Contact input */}
             <Input
               placeholder={defaultContact || 'Phone number or email address'}
@@ -324,9 +328,11 @@ export default function ReceiptView({ open, onClose, sale, businessSettings, rec
               Receipters ingests your receipt into a consumer analytics engine
             </p>
           </div>
+        </div>
 
-          {/* Close */}
-          <Button variant="outline" onClick={onClose} className="w-full">
+        {/* Fixed footer — always visible */}
+        <div className="px-6 pb-5 pt-3 border-t flex-shrink-0">
+          <Button variant="outline" onClick={onClose} className="w-full rounded-xl">
             <X className="w-4 h-4 mr-1" />
             Close
           </Button>
