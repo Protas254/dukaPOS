@@ -305,57 +305,76 @@ export default function Dashboard() {
 
       {/* Low Stock Alert */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-            <div>
-              <h3 className="font-display font-semibold text-base text-amber-800 dark:text-amber-200">
-                Low Stock Alert - {lowStockProducts.length} item(s) need restocking
-              </h3>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                {criticalStockProducts.length > 0 
-                  ? `${criticalStockProducts.length} item(s) at critically low levels` 
-                  : 'Stock levels are below defined thresholds'}
-              </p>
+        <div className={`rounded-2xl border-2 p-5 ${criticalStockProducts.length > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-300 dark:border-red-700' : 'bg-amber-50 dark:bg-amber-900/10 border-amber-300 dark:border-amber-700'}`}>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-xl ${criticalStockProducts.length > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+                <AlertTriangle className={`w-5 h-5 ${criticalStockProducts.length > 0 ? 'text-red-600' : 'text-amber-600'}`} />
+              </div>
+              <div>
+                <h3 className={`font-display font-bold text-base ${criticalStockProducts.length > 0 ? 'text-red-800 dark:text-red-200' : 'text-amber-800 dark:text-amber-200'}`}>
+                  {criticalStockProducts.length > 0 ? '🚨 Critical Stock Alert' : '⚠️ Low Stock Alert'}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {criticalStockProducts.length > 0 && <span className="text-red-600 font-semibold">{criticalStockProducts.length} critical</span>}
+                  {criticalStockProducts.length > 0 && lowStockProducts.length - criticalStockProducts.length > 0 && <span className="text-muted-foreground"> · </span>}
+                  {lowStockProducts.length - criticalStockProducts.length > 0 && <span className="text-amber-600 font-semibold">{lowStockProducts.length - criticalStockProducts.length} low</span>}
+                  <span className="text-muted-foreground"> — restock soon to avoid stockouts</span>
+                </p>
+              </div>
             </div>
+            <Link to="/inventory" className="shrink-0 text-sm text-primary font-semibold hover:underline inline-flex items-center gap-1">
+              Manage Inventory <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
+
+          {/* Critical items first, then warning */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {lowStockProducts.map(p => {
-              const isCritical = p.stock_quantity <= Math.floor((p.low_stock_threshold || 10) * 0.5);
+            {[...criticalStockProducts, ...lowStockProducts.filter(p => !criticalStockProducts.find(c => c.id === p.id))].map(p => {
+              const threshold = p.low_stock_threshold || 10;
+              const isCritical = p.stock_quantity <= Math.floor(threshold * 0.5);
+              const isOutOfStock = p.stock_quantity <= 0;
+              const pct = isOutOfStock ? 0 : Math.min(100, Math.round((p.stock_quantity / threshold) * 100));
+              const barColor = isOutOfStock ? 'bg-red-600' : isCritical ? 'bg-red-500' : 'bg-amber-400';
               return (
-                <div 
-                  key={p.id} 
-                  className={`flex items-center justify-between p-3 rounded-lg border ${
-                    isCritical 
-                      ? 'bg-destructive/10 border-destructive/30' 
-                      : 'bg-white dark:bg-transparent border-amber-200 dark:border-amber-700'
+                <div
+                  key={p.id}
+                  className={`p-3.5 rounded-xl border ${
+                    isOutOfStock ? 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700' :
+                    isCritical ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
+                    'bg-white dark:bg-card border-amber-200 dark:border-amber-800'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    {isCritical && <Bell className="w-3 h-3 text-destructive" />}
-                    <div>
-                      <p className={`text-sm font-medium ${isCritical ? 'text-destructive' : 'text-amber-800 dark:text-amber-200'}`}>
-                        {p.name}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold truncate ${isCritical || isOutOfStock ? 'text-red-700 dark:text-red-300' : 'text-amber-800 dark:text-amber-200'}`}>
+                        {isOutOfStock && '🚫 '}{p.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Threshold: {p.low_stock_threshold || 10}
-                      </p>
+                      <p className="text-[11px] text-muted-foreground">Threshold: {threshold} {p.unit || 'units'}</p>
                     </div>
+                    <Badge
+                      className={`ml-2 shrink-0 text-xs font-bold ${
+                        isOutOfStock ? 'bg-red-600 text-white' :
+                        isCritical ? 'bg-red-100 text-red-700 border border-red-300' :
+                        'bg-amber-100 text-amber-700 border border-amber-300'
+                      }`}
+                      variant="outline"
+                    >
+                      {isOutOfStock ? 'OUT' : `${p.stock_quantity} left`}
+                    </Badge>
                   </div>
-                  <Badge 
-                    variant={isCritical ? 'destructive' : 'outline'} 
-                    className={isCritical ? '' : 'border-amber-300 text-amber-700 dark:text-amber-300'}
-                  >
-                    {p.stock_quantity} left
-                  </Badge>
+                  {/* Stock level bar */}
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${barColor}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">{pct}% of threshold remaining</p>
                 </div>
               );
             })}
-          </div>
-          <div className="mt-4">
-            <Link to="/inventory" className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
-              View inventory <ArrowRight className="w-3 h-3" />
-            </Link>
           </div>
         </div>
       )}
