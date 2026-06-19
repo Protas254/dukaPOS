@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Banknote, Smartphone, CreditCard, CheckCircle, Loader2, User, Gift, Building2, FileText, SplitSquareHorizontal, Plus, Trash2 } from 'lucide-react';
+import { Banknote, Smartphone, CreditCard, CheckCircle, Loader2, User, Gift, Building2, FileText, Split, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -17,7 +17,7 @@ const PAYMENT_METHODS = [
   { id: 'card',          label: 'Card',          icon: CreditCard,            color: 'bg-blue-500'    },
   { id: 'bank_transfer', label: 'Bank Transfer', icon: Building2,             color: 'bg-indigo-500'  },
   { id: 'cheque',        label: 'Cheque',        icon: FileText,              color: 'bg-orange-500'  },
-  { id: 'split',         label: 'Split',         icon: SplitSquareHorizontal, color: 'bg-purple-500'  },
+  { id: 'split',         label: 'Split',         icon: Split,                 color: 'bg-purple-500'  },
 ];
 
 const SPLIT_METHODS = [
