@@ -35,7 +35,7 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
       </div>
 
       {/* Items */}
-      <ScrollArea className="flex-1 px-3">
+      <ScrollArea className="flex-1 min-h-0 px-3">
         <div className="space-y-1.5 py-2">
           {items.map(item => (
             <div key={item.id} className="flex items-center justify-between gap-2 p-2 rounded-md border bg-card">
@@ -69,7 +69,7 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
       </ScrollArea>
 
       {/* Totals & Checkout */}
-      <div className="border-t px-3 py-3 space-y-2 bg-muted/30">
+      <div className="border-t px-3 py-3 space-y-2 bg-muted/30 flex-shrink-0">
         <div className="flex items-center gap-2">
           <label className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Discount</label>
           <div className="flex-1 relative">

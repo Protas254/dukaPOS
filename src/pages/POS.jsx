@@ -268,7 +268,7 @@ export default function POS() {
         </div>
 
         {/* Right Panel - Ultra Compact Cart */}
-        <div className="w-full lg:w-[260px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col">
+        <div className="w-full lg:w-[260px] bg-card border-t lg:border-t-0 lg:border-l flex flex-col min-h-0 max-h-[45vh] lg:max-h-none">
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}
