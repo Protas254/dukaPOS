@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import DiscountPanel from './DiscountPanel';
-import ReceiptDelivery from './ReceiptDelivery';
 
 const paymentMethods = [
   { id: 'cash',  label: 'Cash',   icon: Banknote,     color: 'bg-emerald-500' },
@@ -26,7 +25,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedRedemption, setSelectedRedemption] = useState(null);
   const [manualDiscount, setManualDiscount] = useState(0);
-  const [receiptDelivery, setReceiptDelivery] = useState({});
+  const [receiptFields, setReceiptFields] = useState({ receipters_id: '', sms: '', whatsapp: '', email: '' });
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -34,13 +33,14 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
     enabled: open,
   });
 
-  // Auto-find customer by phone
+  // Auto-find customer by phone & pre-fill receipt fields
   useEffect(() => {
     if (customerPhone.length >= 10) {
       const found = customers.find(c =>
         c.phone?.replace(/\s/g, '') === customerPhone.replace(/\s/g, '')
       );
       setSelectedCustomer(found || null);
+      setReceiptFields(f => ({ ...f, sms: customerPhone, whatsapp: customerPhone, email: found?.email || f.email }));
     } else {
       setSelectedCustomer(null);
     }
@@ -60,7 +60,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       setSelectedCustomer(null);
       setSelectedRedemption(null);
       setManualDiscount(0);
-      setReceiptDelivery({});
+      setReceiptFields({ receipters_id: '', sms: '', whatsapp: '', email: '' });
       setMethod('cash');
     }
   }, [open]);
@@ -103,7 +103,14 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       customer_id:     selectedCustomer?.id   || undefined,
       loyalty_discount: (manualDiscount + redemptionValue) || undefined,
       points_redeemed:  pointsRedeemed || undefined,
-      receipt_delivery: Object.keys(receiptDelivery).length ? receiptDelivery : undefined,
+      receipt_delivery: (() => {
+        const d = {};
+        if (receiptFields.receipters_id.trim()) d.receipters = receiptFields.receipters_id.trim();
+        if (receiptFields.sms.trim()) d.sms = receiptFields.sms.trim();
+        if (receiptFields.whatsapp.trim()) d.whatsapp = receiptFields.whatsapp.trim();
+        if (receiptFields.email.trim()) d.email = receiptFields.email.trim();
+        return Object.keys(d).length ? d : undefined;
+      })(),
     });
   };
 
@@ -249,11 +256,58 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
           />
 
           {/* Receipt Delivery */}
-          <ReceiptDelivery
-            defaultPhone={customerPhone || undefined}
-            defaultEmail={undefined}
-            onChange={setReceiptDelivery}
-          />
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Send Digital Receipt</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
+                  <span>📊</span> Receipters ID
+                </Label>
+                <Input
+                  value={receiptFields.receipters_id}
+                  onChange={e => setReceiptFields(f => ({ ...f, receipters_id: e.target.value }))}
+                  placeholder="RCPT-XXXXXXXX"
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
+                  <span>✉️</span> Email
+                </Label>
+                <Input
+                  type="email"
+                  value={receiptFields.email}
+                  onChange={e => setReceiptFields(f => ({ ...f, email: e.target.value }))}
+                  placeholder="customer@email.com"
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
+                  <span>💬</span> SMS
+                </Label>
+                <Input
+                  type="tel"
+                  value={receiptFields.sms}
+                  onChange={e => setReceiptFields(f => ({ ...f, sms: e.target.value }))}
+                  placeholder="0712 345 678"
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
+                  <span>📱</span> WhatsApp
+                </Label>
+                <Input
+                  type="tel"
+                  value={receiptFields.whatsapp}
+                  onChange={e => setReceiptFields(f => ({ ...f, whatsapp: e.target.value }))}
+                  placeholder="0712 345 678"
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Complete */}
           <Button
