@@ -192,15 +192,13 @@ export default function POS() {
         sale: { ...saleData, id: sale.id, created_date: new Date().toISOString() }
       }).catch(() => {});
 
-      // Update stock
-      for (const item of cart) {
+      // Update stock (non-blocking — never cancel a completed sale)
+      Promise.all(cart.map(item => {
         const product = allProducts.find(p => p.id === item.id);
-        if (product) {
-          await base44.entities.Product.update(item.id, {
-            stock_quantity: Math.max(0, product.stock_quantity - item.quantity)
-          });
-        }
-      }
+        if (!product) return Promise.resolve();
+        const newQty = Math.max(0, (product.stock_quantity || 0) - item.quantity);
+        return base44.entities.Product.update(item.id, { stock_quantity: newQty });
+      })).catch(err => console.error('Stock update failed:', err));
 
       // Update customer loyalty
       if (paymentDetails.customer_id) {
