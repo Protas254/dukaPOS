@@ -217,6 +217,9 @@ export default function POS() {
       if (paymentDetails.cash_received) saleData.cash_received = paymentDetails.cash_received;
       if (paymentDetails.change_given != null) saleData.change_given = paymentDetails.change_given;
       if (paymentDetails.mpesa_reference) saleData.mpesa_reference = paymentDetails.mpesa_reference;
+      if (paymentDetails.bank_reference) saleData.bank_reference = paymentDetails.bank_reference;
+      if (paymentDetails.cheque_number) saleData.cheque_number = paymentDetails.cheque_number;
+      if (paymentDetails.split_payments) saleData.split_payments = paymentDetails.split_payments;
       if (paymentDetails.customer_id) saleData.customer_id = paymentDetails.customer_id;
       if (paymentDetails.customer_name) saleData.customer_name = paymentDetails.customer_name;
       if (paymentDetails.customer_phone) saleData.customer_phone = paymentDetails.customer_phone;

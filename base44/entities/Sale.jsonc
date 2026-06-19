@@ -81,13 +81,41 @@
         "cash",
         "mpesa",
         "card",
+        "bank_transfer",
+        "cheque",
         "split"
       ],
       "description": "Payment method used"
     },
+    "split_payments": {
+      "type": "array",
+      "description": "Breakdown for split payments",
+      "items": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "mpesa_reference": {
       "type": "string",
       "description": "M-Pesa transaction reference"
+    },
+    "bank_reference": {
+      "type": "string",
+      "description": "Bank transfer reference number"
+    },
+    "cheque_number": {
+      "type": "string",
+      "description": "Cheque number"
     },
     "cash_received": {
       "type": "number",

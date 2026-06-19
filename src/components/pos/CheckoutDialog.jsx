@@ -5,22 +5,72 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Banknote, Smartphone, CreditCard, CheckCircle, Loader2, User, Gift } from 'lucide-react';
+import { Banknote, Smartphone, CreditCard, CheckCircle, Loader2, User, Gift, Building2, FileText, SplitSquareHorizontal, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import DiscountPanel from './DiscountPanel';
 
-const paymentMethods = [
-  { id: 'cash',  label: 'Cash',   icon: Banknote,     color: 'bg-emerald-500' },
-  { id: 'mpesa', label: 'M-Pesa', icon: Smartphone,   color: 'bg-green-600'   },
-  { id: 'card',  label: 'Card',   icon: CreditCard,   color: 'bg-blue-500'    },
+const PAYMENT_METHODS = [
+  { id: 'cash',          label: 'Cash',          icon: Banknote,              color: 'bg-emerald-500' },
+  { id: 'mpesa',         label: 'M-Pesa',        icon: Smartphone,            color: 'bg-green-600'   },
+  { id: 'card',          label: 'Card',          icon: CreditCard,            color: 'bg-blue-500'    },
+  { id: 'bank_transfer', label: 'Bank Transfer', icon: Building2,             color: 'bg-indigo-500'  },
+  { id: 'cheque',        label: 'Cheque',        icon: FileText,              color: 'bg-orange-500'  },
+  { id: 'split',         label: 'Split',         icon: SplitSquareHorizontal, color: 'bg-purple-500'  },
 ];
+
+const SPLIT_METHODS = [
+  { id: 'cash',          label: 'Cash',          icon: Banknote  },
+  { id: 'mpesa',         label: 'M-Pesa',        icon: Smartphone },
+  { id: 'card',          label: 'Card',          icon: CreditCard },
+  { id: 'bank_transfer', label: 'Bank Transfer', icon: Building2  },
+];
+
+function SplitPaymentRow({ entry, index, onUpdate, onRemove, remaining }) {
+  return (
+    <div className="flex items-center gap-2 bg-muted/40 rounded-lg p-2">
+      <select
+        value={entry.method}
+        onChange={e => onUpdate(index, 'method', e.target.value)}
+        className="text-xs border rounded px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+      >
+        {SPLIT_METHODS.map(m => (
+          <option key={m.id} value={m.id}>{m.label}</option>
+        ))}
+      </select>
+      <Input
+        type="number"
+        value={entry.amount}
+        onChange={e => onUpdate(index, 'amount', e.target.value)}
+        placeholder="Amount"
+        className="h-8 text-xs flex-1"
+      />
+      {(entry.method === 'mpesa' || entry.method === 'bank_transfer') && (
+        <Input
+          value={entry.reference}
+          onChange={e => onUpdate(index, 'reference', e.target.value)}
+          placeholder="Ref #"
+          className="h-8 text-xs flex-1 font-mono uppercase"
+        />
+      )}
+      <button onClick={() => onRemove(index)} className="text-destructive hover:text-destructive/80 p-1">
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
 
 export default function CheckoutDialog({ open, onClose, total, onComplete, isProcessing, preselectedCustomer }) {
   const [method, setMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
   const [mpesaRef, setMpesaRef] = useState('');
+  const [bankRef, setBankRef] = useState('');
+  const [chequeNumber, setChequeNumber] = useState('');
+  const [splitEntries, setSplitEntries] = useState([
+    { method: 'cash', amount: '', reference: '' },
+    { method: 'mpesa', amount: '', reference: '' },
+  ]);
   const [customerPhone, setCustomerPhone] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedRedemption, setSelectedRedemption] = useState(null);
@@ -33,7 +83,6 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
     enabled: open,
   });
 
-  // Auto-find customer by phone & pre-fill receipt fields
   useEffect(() => {
     if (customerPhone.length >= 10) {
       const found = customers.find(c =>
@@ -46,12 +95,10 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
     }
   }, [customerPhone, customers]);
 
-  // Reset redemption when customer changes
   useEffect(() => {
     setSelectedRedemption(null);
   }, [selectedCustomer?.id]);
 
-  // Pre-fill from POS customer search selection
   useEffect(() => {
     if (open && preselectedCustomer) {
       setSelectedCustomer(preselectedCustomer);
@@ -65,17 +112,14 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
     }
   }, [open, preselectedCustomer?.id]);
 
-  // Reset on dialog close
   useEffect(() => {
     if (!open) {
-      setCashReceived('');
-      setMpesaRef('');
-      setCustomerPhone('');
-      setSelectedCustomer(null);
-      setSelectedRedemption(null);
+      setCashReceived(''); setMpesaRef(''); setBankRef(''); setChequeNumber('');
+      setCustomerPhone(''); setSelectedCustomer(null); setSelectedRedemption(null);
       setManualDiscount(0);
       setReceiptFields({ receipters_id: '', sms: '', whatsapp: '', email: '' });
       setMethod('cash');
+      setSplitEntries([{ method: 'cash', amount: '', reference: '' }, { method: 'mpesa', amount: '', reference: '' }]);
     }
   }, [open]);
 
@@ -93,6 +137,9 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const cashAmount      = parseFloat(cashReceived) || 0;
   const change          = cashAmount - finalTotal;
 
+  const splitTotal = splitEntries.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+  const splitRemaining = finalTotal - splitTotal;
+
   const quickCashAmounts = [
     Math.ceil(finalTotal / 100) * 100,
     Math.ceil(finalTotal / 500) * 500,
@@ -102,7 +149,26 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
 
   const canComplete = () => {
     if (method === 'mpesa') return mpesaRef.trim().length > 0;
+    if (method === 'bank_transfer') return bankRef.trim().length > 0;
+    if (method === 'cheque') return chequeNumber.trim().length > 0;
+    if (method === 'split') {
+      return splitEntries.length >= 2 &&
+        Math.abs(splitRemaining) < 1 &&
+        splitEntries.every(e => parseFloat(e.amount) > 0);
+    }
     return true;
+  };
+
+  const updateSplitEntry = (index, field, value) => {
+    setSplitEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
+  };
+
+  const addSplitEntry = () => {
+    setSplitEntries(prev => [...prev, { method: 'cash', amount: '', reference: '' }]);
+  };
+
+  const removeSplitEntry = (index) => {
+    setSplitEntries(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleComplete = () => {
@@ -112,6 +178,13 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       cash_received:   method === 'cash'  ? effectiveCash : undefined,
       change_given:    method === 'cash'  ? Math.max(0, (effectiveCash - finalTotal)) : undefined,
       mpesa_reference: method === 'mpesa' ? mpesaRef : undefined,
+      bank_reference:  method === 'bank_transfer' ? bankRef : undefined,
+      cheque_number:   method === 'cheque' ? chequeNumber : undefined,
+      split_payments:  method === 'split' ? splitEntries.map(e => ({
+        method: e.method,
+        amount: parseFloat(e.amount) || 0,
+        reference: e.reference || undefined,
+      })) : undefined,
       customer_phone:  customerPhone || undefined,
       customer_name:   selectedCustomer?.name || undefined,
       customer_id:     selectedCustomer?.id   || undefined,
@@ -142,13 +215,9 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
           <div className="text-center py-4 bg-gradient-to-br from-muted to-primary/5 rounded-xl border border-primary/20">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Amount Due</p>
             {totalSavings > 0 && (
-              <p className="text-sm text-muted-foreground line-through mt-1">
-                KES {Math.round(total).toLocaleString()}
-              </p>
+              <p className="text-sm text-muted-foreground line-through mt-1">KES {Math.round(total).toLocaleString()}</p>
             )}
-            <p className="text-3xl font-display font-bold text-primary mt-1">
-              KES {finalTotal.toLocaleString()}
-            </p>
+            <p className="text-3xl font-display font-bold text-primary mt-1">KES {finalTotal.toLocaleString()}</p>
             {totalSavings > 0 && (
               <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
                 Saving KES {totalSavings.toLocaleString()}
@@ -157,29 +226,27 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
             )}
             <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 rounded-full">
               <Gift className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-semibold text-primary">
-                Earn {Math.floor(finalTotal / 100)} pts on this sale
-              </span>
+              <span className="text-xs font-semibold text-primary">Earn {Math.floor(finalTotal / 100)} pts on this sale</span>
             </div>
           </div>
 
-          {/* Payment Method */}
+          {/* Payment Method — 3-column grid */}
           <div className="grid grid-cols-3 gap-2">
-            {paymentMethods.map(pm => (
+            {PAYMENT_METHODS.map(pm => (
               <button
                 key={pm.id}
                 onClick={() => setMethod(pm.id)}
                 className={cn(
-                  "flex flex-col items-center gap-2 py-3 rounded-xl border-2 transition-all",
+                  "flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all",
                   method === pm.id
                     ? "border-primary bg-primary/5 shadow-sm"
                     : "border-border hover:border-primary/30"
                 )}
               >
-                <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white", pm.color)}>
+                <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white", pm.color)}>
                   <pm.icon className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-medium">{pm.label}</span>
+                <span className="text-[11px] font-medium leading-tight text-center">{pm.label}</span>
               </button>
             ))}
           </div>
@@ -216,7 +283,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
 
           {method === 'mpesa' && (
             <div>
-              <Label className="text-xs">M-Pesa Transaction Code</Label>
+              <Label className="text-xs">M-Pesa Transaction Code *</Label>
               <Input
                 value={mpesaRef}
                 onChange={e => setMpesaRef(e.target.value.toUpperCase())}
@@ -228,8 +295,68 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
           )}
 
           {method === 'card' && (
-            <div className="bg-muted rounded-xl p-4 text-center text-sm text-muted-foreground">
-              Process card payment on terminal, then confirm below.
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center text-sm text-blue-700 dark:text-blue-300">
+              <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-70" />
+              Process card payment on your terminal, then confirm below.
+            </div>
+          )}
+
+          {method === 'bank_transfer' && (
+            <div>
+              <Label className="text-xs">Bank Transfer Reference / Transaction ID *</Label>
+              <Input
+                value={bankRef}
+                onChange={e => setBankRef(e.target.value.toUpperCase())}
+                placeholder="e.g. TXN20240619001"
+                className="mt-1 font-mono uppercase"
+                autoFocus
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Enter the bank reference number from the customer's transfer confirmation.</p>
+            </div>
+          )}
+
+          {method === 'cheque' && (
+            <div>
+              <Label className="text-xs">Cheque Number *</Label>
+              <Input
+                value={chequeNumber}
+                onChange={e => setChequeNumber(e.target.value)}
+                placeholder="e.g. 000123"
+                className="mt-1 font-mono"
+                autoFocus
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Record the cheque number printed on the face of the cheque.</p>
+            </div>
+          )}
+
+          {method === 'split' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Split Payment Breakdown</Label>
+                <div className={cn("text-xs font-semibold", Math.abs(splitRemaining) < 1 ? 'text-emerald-600' : 'text-destructive')}>
+                  {Math.abs(splitRemaining) < 1 ? '✓ Balanced' : `KES ${Math.round(splitRemaining).toLocaleString()} remaining`}
+                </div>
+              </div>
+              {splitEntries.map((entry, i) => (
+                <SplitPaymentRow
+                  key={i}
+                  entry={entry}
+                  index={i}
+                  onUpdate={updateSplitEntry}
+                  onRemove={removeSplitEntry}
+                  remaining={splitRemaining}
+                />
+              ))}
+              <button
+                onClick={addSplitEntry}
+                className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add another method
+              </button>
+              <div className="bg-muted/50 rounded-lg px-3 py-2 flex justify-between text-xs">
+                <span className="text-muted-foreground">Total entered</span>
+                <span className="font-semibold">KES {Math.round(splitTotal).toLocaleString()} / {finalTotal.toLocaleString()}</span>
+              </div>
             </div>
           )}
 
@@ -289,40 +416,16 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
                 </div>
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
-                  <span>✉️</span> Email
-                </Label>
-                <Input
-                  type="email"
-                  value={receiptFields.email}
-                  onChange={e => setReceiptFields(f => ({ ...f, email: e.target.value }))}
-                  placeholder="customer@email.com"
-                  className="h-8 text-xs"
-                />
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">✉️ Email</Label>
+                <Input type="email" value={receiptFields.email} onChange={e => setReceiptFields(f => ({ ...f, email: e.target.value }))} placeholder="customer@email.com" className="h-8 text-xs" />
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
-                  <span>💬</span> SMS
-                </Label>
-                <Input
-                  type="tel"
-                  value={receiptFields.sms}
-                  onChange={e => setReceiptFields(f => ({ ...f, sms: e.target.value }))}
-                  placeholder="0712 345 678"
-                  className="h-8 text-xs"
-                />
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">💬 SMS</Label>
+                <Input type="tel" value={receiptFields.sms} onChange={e => setReceiptFields(f => ({ ...f, sms: e.target.value }))} placeholder="0712 345 678" className="h-8 text-xs" />
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
-                  <span>📱</span> WhatsApp
-                </Label>
-                <Input
-                  type="tel"
-                  value={receiptFields.whatsapp}
-                  onChange={e => setReceiptFields(f => ({ ...f, whatsapp: e.target.value }))}
-                  placeholder="0712 345 678"
-                  className="h-8 text-xs"
-                />
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">📱 WhatsApp</Label>
+                <Input type="tel" value={receiptFields.whatsapp} onChange={e => setReceiptFields(f => ({ ...f, whatsapp: e.target.value }))} placeholder="0712 345 678" className="h-8 text-xs" />
               </div>
             </div>
           </div>
