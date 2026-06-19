@@ -275,10 +275,12 @@ export default function Settings() {
             Previous: Onboarding
           </Button>
         </Link>
-        <Button disabled className="gap-2">
-          Next
-          <ArrowRight className="w-4 h-4" />
-        </Button>
+        <Link to="/">
+          <Button className="gap-2">
+            Next: Dashboard
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
       </div>
     </div>
   );
