@@ -87,16 +87,16 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   ].filter((v, i, a) => a.indexOf(v) === i && v >= finalTotal).slice(0, 4);
 
   const canComplete = () => {
-    if (method === 'cash')  return cashAmount >= finalTotal;
     if (method === 'mpesa') return mpesaRef.trim().length > 0;
     return true;
   };
 
   const handleComplete = () => {
+    const effectiveCash = method === 'cash' ? (cashAmount || finalTotal) : undefined;
     onComplete({
       payment_method:  method,
-      cash_received:   method === 'cash'  ? cashAmount : undefined,
-      change_given:    method === 'cash'  ? Math.max(0, change) : undefined,
+      cash_received:   method === 'cash'  ? effectiveCash : undefined,
+      change_given:    method === 'cash'  ? Math.max(0, (effectiveCash - finalTotal)) : undefined,
       mpesa_reference: method === 'mpesa' ? mpesaRef : undefined,
       customer_phone:  customerPhone || undefined,
       customer_name:   selectedCustomer?.name || undefined,
