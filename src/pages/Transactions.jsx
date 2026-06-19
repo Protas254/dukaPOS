@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Receipt, Eye, Calendar, RotateCcw } from 'lucide-react';
+import { Search, Receipt, Eye, Calendar, RotateCcw, User } from 'lucide-react';
 import { format } from 'date-fns';
 import ReceiptView from '@/components/pos/ReceiptView';
 import ReturnDialog from '@/components/pos/ReturnDialog';
@@ -13,6 +13,7 @@ import ReturnDialog from '@/components/pos/ReturnDialog';
 export default function Transactions() {
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
+  const [cashierFilter, setCashierFilter] = useState('all');
   const [selectedSale, setSelectedSale] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
@@ -28,6 +29,8 @@ export default function Transactions() {
     queryFn: () => base44.entities.BusinessSettings.list(),
   });
 
+  const cashiers = [...new Set(sales.map(s => s.cashier_name).filter(Boolean))].sort();
+
   let filtered = sales.filter(s =>
     s.receipt_number?.toLowerCase().includes(search.toLowerCase()) ||
     s.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -35,6 +38,9 @@ export default function Transactions() {
   );
   if (paymentFilter !== 'all') {
     filtered = filtered.filter(s => s.payment_method === paymentFilter);
+  }
+  if (cashierFilter !== 'all') {
+    filtered = filtered.filter(s => s.cashier_name === cashierFilter);
   }
 
   const totalRevenue = filtered.reduce((sum, s) => sum + (s.total_amount || 0), 0);
@@ -83,6 +89,17 @@ export default function Transactions() {
             <SelectItem value="cash">Cash</SelectItem>
             <SelectItem value="mpesa">M-Pesa</SelectItem>
             <SelectItem value="card">Card</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={cashierFilter} onValueChange={setCashierFilter}>
+          <SelectTrigger className="w-[160px] rounded-xl">
+            <SelectValue placeholder="Cashier" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Cashiers</SelectItem>
+            {cashiers.map(c => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
