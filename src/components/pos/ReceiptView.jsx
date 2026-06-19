@@ -1,14 +1,97 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, X, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Printer, X, CheckCircle, MessageSquare, Mail, Send, Smartphone, Loader2, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { base44 } from '@/api/base44Client';
+import { cn } from '@/lib/utils';
+
+function buildReceiptText(sale, biz) {
+  const taxableAmt = (sale.total_amount || 0) - (sale.tax_total || 0);
+  const lines = [
+    `*** TAX INVOICE ***`,
+    `${biz.business_name || 'SoftPOS Store'}`,
+    biz.business_address || '',
+    biz.kra_pin ? `KRA PIN: ${biz.kra_pin}` : '',
+    ``,
+    `Invoice: ${sale.receipt_number}`,
+    `Date: ${format(new Date(sale.created_date), 'dd/MM/yyyy HH:mm')}`,
+    sale.customer_name ? `Customer: ${sale.customer_name}` : '',
+    ``,
+    `--- ITEMS ---`,
+    ...(sale.items || []).map(i => `${i.product_name} x${i.quantity}  KES ${(i.total || 0).toLocaleString()}`),
+    ``,
+    `Taxable: KES ${Math.round(taxableAmt).toLocaleString()}`,
+    `VAT 16%: KES ${Math.round(sale.tax_total || 0).toLocaleString()}`,
+    `TOTAL: KES ${(sale.total_amount || 0).toLocaleString()}`,
+    `Payment: ${sale.payment_method?.toUpperCase()}`,
+    sale.mpesa_reference ? `M-Pesa Ref: ${sale.mpesa_reference}` : '',
+    sale.cuin ? `CUIN: ${sale.cuin}` : '',
+    ``,
+    biz.receipt_footer || 'Thank you for shopping with us!',
+  ];
+  return lines.filter(l => l !== null && l !== undefined).join('\n');
+}
 
 export default function ReceiptView({ open, onClose, sale, businessSettings }) {
+  const [contact, setContact] = useState('');
+  const [sending, setSending] = useState(null);  // channel being sent
+  const [sent, setSent] = useState({});           // { channel: true }
+
   if (!sale) return null;
 
   const biz = businessSettings || {};
   const taxableAmt = (sale.total_amount || 0) - (sale.tax_total || 0);
+
+  // Pre-fill contact from sale if available
+  const defaultContact = sale.customer_phone || sale.customer_email || '';
+
+  const receiptText = buildReceiptText(sale, biz);
+
+  const handleSend = async (channel) => {
+    const dest = contact || defaultContact;
+
+    if (channel === 'print') {
+      window.print();
+      return;
+    }
+
+    if (channel === 'whatsapp') {
+      const encoded = encodeURIComponent(receiptText);
+      const phone = dest.replace(/\D/g, '');
+      window.open(`https://wa.me/${phone || ''}?text=${encoded}`, '_blank');
+      setSent(s => ({ ...s, whatsapp: true }));
+      return;
+    }
+
+    if (channel === 'receipters') {
+      // Receipters deep-link / share URL (replace with actual Receipters scheme when available)
+      const encoded = encodeURIComponent(receiptText);
+      window.open(`https://receipters.com/share?data=${encoded}`, '_blank');
+      setSent(s => ({ ...s, receipters: true }));
+      return;
+    }
+
+    if (!dest) return;
+
+    setSending(channel);
+    try {
+      if (channel === 'email') {
+        await base44.integrations.Core.SendEmail({
+          to: dest,
+          subject: `Your receipt — ${sale.receipt_number}`,
+          body: receiptText.replace(/\n/g, '<br/>'),
+        });
+      } else if (channel === 'sms') {
+        // SMS via WhatsApp fallback (no native SMS API) — opens SMS app via sms: URI
+        window.open(`sms:${dest}?body=${encodeURIComponent(receiptText)}`);
+      }
+      setSent(s => ({ ...s, [channel]: true }));
+    } finally {
+      setSending(null);
+    }
+  };
 
   const etimsStatusLabel = {
     submitted: { text: '✓ Submitted to KRA', cls: 'text-emerald-600' },
@@ -162,17 +245,67 @@ export default function ReceiptView({ open, onClose, sale, businessSettings }) {
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              <X className="w-4 h-4 mr-1" />
-              Close
-            </Button>
-            <Button onClick={() => window.print()} className="flex-1">
-              <Printer className="w-4 h-4 mr-1" />
-              Print
-            </Button>
+          {/* Delivery Options */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Send Receipt</p>
+
+            {/* Contact input */}
+            <Input
+              placeholder={defaultContact || 'Phone number or email address'}
+              value={contact}
+              onChange={e => setContact(e.target.value)}
+              className="text-sm"
+            />
+
+            {/* Channel buttons */}
+            <div className="grid grid-cols-5 gap-1.5">
+              {[
+                { id: 'receipters', label: 'Receipters', icon: '📊', desc: 'Analytics' },
+                { id: 'sms',        label: 'SMS',        icon: '💬', desc: 'Text' },
+                { id: 'whatsapp',   label: 'WhatsApp',   icon: '📱', desc: 'Chat' },
+                { id: 'email',      label: 'Email',      icon: '✉️',  desc: 'Mail' },
+                { id: 'print',      label: 'Print',      icon: '🖨️',  desc: 'Paper' },
+              ].map(ch => (
+                <button
+                  key={ch.id}
+                  onClick={() => handleSend(ch.id)}
+                  disabled={sending === ch.id}
+                  className={cn(
+                    "flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-center transition-all",
+                    sent[ch.id]
+                      ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
+                      : "border-border hover:border-primary hover:bg-primary/5",
+                    "disabled:opacity-50"
+                  )}
+                >
+                  {sending === ch.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  ) : sent[ch.id] ? (
+                    <Check className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <span className="text-lg leading-none">{ch.icon}</span>
+                  )}
+                  <span className={cn(
+                    "text-[9px] font-semibold leading-tight",
+                    sent[ch.id] ? "text-emerald-600" : "text-muted-foreground"
+                  )}>
+                    {sent[ch.id] ? 'Sent!' : ch.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Receipters note */}
+            <p className="text-[10px] text-muted-foreground text-center">
+              Receipters ingests your receipt into a consumer analytics engine
+            </p>
           </div>
+
+          {/* Close */}
+          <Button variant="outline" onClick={onClose} className="w-full">
+            <X className="w-4 h-4 mr-1" />
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
