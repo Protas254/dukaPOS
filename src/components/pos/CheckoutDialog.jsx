@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import DiscountPanel from './DiscountPanel';
+import ReceiptDelivery from './ReceiptDelivery';
 
 const paymentMethods = [
   { id: 'cash',  label: 'Cash',   icon: Banknote,     color: 'bg-emerald-500' },
@@ -25,6 +26,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedRedemption, setSelectedRedemption] = useState(null);
   const [manualDiscount, setManualDiscount] = useState(0);
+  const [receiptDelivery, setReceiptDelivery] = useState({});
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -58,6 +60,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       setSelectedCustomer(null);
       setSelectedRedemption(null);
       setManualDiscount(0);
+      setReceiptDelivery({});
       setMethod('cash');
     }
   }, [open]);
@@ -100,6 +103,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       customer_id:     selectedCustomer?.id   || undefined,
       loyalty_discount: (manualDiscount + redemptionValue) || undefined,
       points_redeemed:  pointsRedeemed || undefined,
+      receipt_delivery: Object.keys(receiptDelivery).length ? receiptDelivery : undefined,
     });
   };
 
@@ -242,6 +246,13 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
             customer={selectedCustomer}
             selectedRedemption={selectedRedemption}
             onRedemptionSelect={setSelectedRedemption}
+          />
+
+          {/* Receipt Delivery */}
+          <ReceiptDelivery
+            defaultPhone={customerPhone || undefined}
+            defaultEmail={undefined}
+            onChange={setReceiptDelivery}
           />
 
           {/* Complete */}

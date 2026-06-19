@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,10 +34,34 @@ function buildReceiptText(sale, biz) {
   return lines.filter(l => l !== null && l !== undefined).join('\n');
 }
 
-export default function ReceiptView({ open, onClose, sale, businessSettings }) {
+export default function ReceiptView({ open, onClose, sale, businessSettings, receiptDelivery }) {
   const [contact, setContact] = useState('');
   const [sending, setSending] = useState(null);  // channel being sent
   const [sent, setSent] = useState({});           // { channel: true }
+
+  // Auto-fire pre-selected delivery channels
+  useEffect(() => {
+    if (!open || !receiptDelivery || !sale) return;
+    const biz = businessSettings || {};
+    const text = buildReceiptText(sale, biz);
+    Object.entries(receiptDelivery).forEach(([channel, dest]) => {
+      if (channel === 'whatsapp') {
+        const phone = dest.replace(/\D/g, '');
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+      } else if (channel === 'sms') {
+        window.open(`sms:${dest}?body=${encodeURIComponent(text)}`);
+      } else if (channel === 'receipters') {
+        window.open(`https://receipters.com/share?data=${encodeURIComponent(text)}`, '_blank');
+      } else if (channel === 'email') {
+        base44.integrations.Core.SendEmail({
+          to: dest,
+          subject: `Your receipt — ${sale.receipt_number}`,
+          body: text.replace(/\n/g, '<br/>'),
+        }).catch(() => {});
+      }
+      setSent(s => ({ ...s, [channel]: true }));
+    });
+  }, [open, sale?.receipt_number]);
 
   if (!sale) return null;
 

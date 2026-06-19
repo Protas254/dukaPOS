@@ -171,7 +171,7 @@ export default function POS() {
     });
 
     const pointsEarned = Math.floor(subtotal / 100);
-    const { loyalty_discount = 0, points_redeemed = 0, ...salePayment } = paymentDetails;
+    const { loyalty_discount = 0, points_redeemed = 0, receipt_delivery, ...salePayment } = paymentDetails;
     const finalTotal = Math.max(0, total - loyalty_discount);
 
     const saleData = {
@@ -239,7 +239,7 @@ export default function POS() {
     queryClient.invalidateQueries({ queryKey: ['sales'] });
     queryClient.invalidateQueries({ queryKey: ['customers'] });
 
-    setCompletedSale({ ...saleData, id: sale.id, created_date: new Date().toISOString(), cuin, etims_status: etimsStatus });
+    setCompletedSale({ ...saleData, id: sale.id, created_date: new Date().toISOString(), cuin, etims_status: etimsStatus, receipt_delivery });
     setCheckoutOpen(false);
     setReceiptOpen(true);
     clearCart();
@@ -355,6 +355,7 @@ export default function POS() {
         onClose={() => setReceiptOpen(false)}
         sale={completedSale}
         businessSettings={businessSettings}
+        receiptDelivery={completedSale?.receipt_delivery}
       />
     </div>
   );

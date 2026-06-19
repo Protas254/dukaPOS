@@ -195,10 +195,8 @@ export default function DiscountPanel({
           onClick={() => setTab('loyalty')}
           className={cn(
             "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors",
-            tab === 'loyalty' ? "bg-background border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground",
-            !hasLoyalty && "opacity-50 cursor-not-allowed"
+            tab === 'loyalty' ? "bg-background border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"
           )}
-          disabled={!hasLoyalty}
         >
           <Gift className="w-3.5 h-3.5" />
           Loyalty {hasLoyalty && <span className="text-[10px] text-muted-foreground ml-0.5">({loyaltyPoints.toLocaleString()} pts)</span>}
@@ -221,7 +219,13 @@ export default function DiscountPanel({
                 selectedRedemption={selectedRedemption}
                 onSelect={onRedemptionSelect}
               />
-            : <p className="text-xs text-muted-foreground text-center py-3">Enter customer phone to enable loyalty</p>
+            : (
+              <div className="text-center py-5 space-y-2">
+                <Gift className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                <p className="text-sm font-medium text-muted-foreground">No customer linked</p>
+                <p className="text-xs text-muted-foreground">Enter the customer's phone number above to look up their loyalty points and apply a redemption.</p>
+              </div>
+            )
         )}
       </div>
 
