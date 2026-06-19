@@ -187,18 +187,10 @@ export default function POS() {
 
       const sale = await base44.entities.Sale.create(saleData);
 
-      // Submit to KRA eTIMS (non-blocking — eTIMS failure never cancels a completed sale)
-      let cuin = null;
-      let etimsStatus = 'not_submitted';
-      try {
-        const etimsRes = await base44.functions.invoke('submitEtimsInvoice', {
-          sale: { ...saleData, id: sale.id, created_date: new Date().toISOString() }
-        });
-        cuin = etimsRes.data?.cuin || null;
-        etimsStatus = etimsRes.data?.etims_status || 'not_submitted';
-      } catch {
-        etimsStatus = 'failed';
-      }
+      // Submit to KRA eTIMS — fire and forget, never block the receipt
+      base44.functions.invoke('submitEtimsInvoice', {
+        sale: { ...saleData, id: sale.id, created_date: new Date().toISOString() }
+      }).catch(() => {});
 
       // Update stock
       for (const item of cart) {
@@ -238,7 +230,7 @@ export default function POS() {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
 
-      setCompletedSale({ ...saleData, id: sale.id, created_date: new Date().toISOString(), cuin, etims_status: etimsStatus, receipt_delivery });
+      setCompletedSale({ ...saleData, id: sale.id, created_date: new Date().toISOString(), etims_status: 'not_submitted', receipt_delivery });
       setCheckoutOpen(false);
       setReceiptOpen(true);
       clearCart();
