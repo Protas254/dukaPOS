@@ -288,7 +288,7 @@ export default function ReceiptView({ open, onClose, sale, businessSettings, rec
             {/* Channel buttons */}
             <div className="grid grid-cols-5 gap-1.5">
               {[
-                { id: 'receipters', label: 'Receipters', icon: '📊', desc: 'Analytics' },
+                { id: 'receipters', label: 'Receipters', icon: null, desc: 'Analytics' },
                 { id: 'sms',        label: 'SMS',        icon: '💬', desc: 'Text' },
                 { id: 'whatsapp',   label: 'WhatsApp',   icon: '📱', desc: 'Chat' },
                 { id: 'email',      label: 'Email',      icon: '✉️',  desc: 'Mail' },
@@ -310,6 +310,8 @@ export default function ReceiptView({ open, onClose, sale, businessSettings, rec
                     <Loader2 className="w-4 h-4 animate-spin text-primary" />
                   ) : sent[ch.id] ? (
                     <Check className="w-4 h-4 text-emerald-600" />
+                  ) : ch.icon === null ? (
+                    <img src="https://media.base44.com/images/public/6a33d6d4855f7ebee919df0e/4f90efa3d_MAINLOGO2.png" alt="Receipters" className="h-4 w-auto object-contain" />
                   ) : (
                     <span className="text-lg leading-none">{ch.icon}</span>
                   )}

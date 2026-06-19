@@ -261,14 +261,18 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
-                  <span>📊</span> Receipters ID
+                  <img src="https://media.base44.com/images/public/6a33d6d4855f7ebee919df0e/4f90efa3d_MAINLOGO2.png" alt="Receipters" className="h-3.5 object-contain" />
+                  ID
                 </Label>
-                <Input
-                  value={receiptFields.receipters_id}
-                  onChange={e => setReceiptFields(f => ({ ...f, receipters_id: e.target.value }))}
-                  placeholder="RCPT-XXXXXXXX"
-                  className="h-8 text-xs"
-                />
+                <div className="flex h-8">
+                  <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-xs font-mono text-muted-foreground select-none">RCPT-</span>
+                  <Input
+                    value={receiptFields.receipters_id.replace(/^RCPT-/i, '')}
+                    onChange={e => setReceiptFields(f => ({ ...f, receipters_id: 'RCPT-' + e.target.value.replace(/^RCPT-/i, '') }))}
+                    placeholder="XXXXXXXX"
+                    className="h-8 text-xs rounded-l-none"
+                  />
+                </div>
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
