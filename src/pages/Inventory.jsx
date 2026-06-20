@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare, Barcode, Printer
+  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare, Barcode, Printer, ChevronDown, ChevronUp
 } from 'lucide-react';
 import ProductBarcodePrintDialog from '@/components/barcode/ProductBarcodePrintDialog';
 import BarcodeDisplay from '@/components/barcode/BarcodeDisplay';
