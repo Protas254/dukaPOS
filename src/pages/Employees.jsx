@@ -4,13 +4,15 @@ import { base44 } from '@/api/base44Client';
 import { format, formatDuration, intervalToDuration, subDays, startOfDay } from 'date-fns';
 import {
   Users, Clock, DollarSign, ShoppingCart, TrendingUp, ChevronDown, ChevronUp,
-  ArrowLeft, ArrowRight, Search, Award, Calendar, Download, Star
+  ArrowLeft, ArrowRight, Search, Award, Calendar, Download, Star, Pencil, Check, X
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 function StatBox({ label, value, sub, highlight }) {
   return (
@@ -31,16 +33,22 @@ function computeRating(emp, allEmployees) {
   return Math.max(1, Math.round(score * 5));
 }
 
-function StarRating({ rating, max = 5 }) {
+function StarRating({ rating, max = 5, onRate, size = 'sm' }) {
+  const [hovered, setHovered] = useState(null);
+  const sz = size === 'lg' ? 'w-6 h-6' : 'w-3.5 h-3.5';
+  const active = hovered ?? rating;
   return (
     <div className="flex items-center gap-0.5">
       {Array.from({ length: max }).map((_, i) => (
         <Star
           key={i}
-          className={`w-3.5 h-3.5 ${i < rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+          className={`${sz} transition-colors ${i < active ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'} ${onRate ? 'cursor-pointer hover:text-amber-400' : ''}`}
+          onMouseEnter={() => onRate && setHovered(i + 1)}
+          onMouseLeave={() => onRate && setHovered(null)}
+          onClick={() => onRate && onRate(i + 1)}
         />
       ))}
-      <span className="text-xs text-muted-foreground ml-1">{rating}/{max}</span>
+      {!onRate && <span className="text-xs text-muted-foreground ml-1">{rating}/{max}</span>}
     </div>
   );
 }
@@ -62,6 +70,9 @@ export default function Employees() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
+  const queryClient = useQueryClient();
+  const [editingRating, setEditingRating] = useState(null); // { name, rating, notes }
+
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
     queryFn: () => base44.entities.Sale.list('-created_date', 500),
@@ -70,6 +81,25 @@ export default function Employees() {
   const { data: shifts = [] } = useQuery({
     queryKey: ['shifts'],
     queryFn: () => base44.entities.Shift.list('-started_at', 200),
+  });
+
+  const { data: manualRatings = [] } = useQuery({
+    queryKey: ['employee-ratings'],
+    queryFn: () => base44.entities.EmployeeRating.list(),
+  });
+
+  const saveRatingMutation = useMutation({
+    mutationFn: async ({ name, rating, notes }) => {
+      const existing = manualRatings.find(r => r.cashier_name === name);
+      if (existing) {
+        return base44.entities.EmployeeRating.update(existing.id, { rating, notes });
+      }
+      return base44.entities.EmployeeRating.create({ cashier_name: name, rating, notes });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee-ratings'] });
+      setEditingRating(null);
+    },
   });
 
   // Build employee stats from shifts + sales
@@ -249,6 +279,8 @@ export default function Employees() {
           const isExpanded = expandedEmployee === emp.name;
           const avgTicket = emp.totalTransactions > 0 ? Math.round(emp.totalRevenue / emp.totalTransactions) : 0;
           const rating = computeRating(emp, employeesWithToday);
+          const manualRating = manualRatings.find(r => r.cashier_name === emp.name);
+          const isEditingThis = editingRating?.name === emp.name;
 
           return (
             <Card key={emp.name} className="overflow-hidden">
@@ -276,11 +308,52 @@ export default function Employees() {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <StarRating rating={rating} />
-                        <span className="text-[10px] text-muted-foreground">· {RATING_LABELS[rating]}</span>
+                      {/* Manual rating row */}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {isEditingThis ? (
+                          <div className="flex flex-col gap-2 w-full mt-1">
+                            <div className="flex items-center gap-2">
+                              <StarRating
+                                rating={editingRating.rating}
+                                size="lg"
+                                onRate={(r) => setEditingRating(prev => ({ ...prev, rating: r }))}
+                              />
+                              <span className="text-xs text-muted-foreground">{editingRating.rating}/5</span>
+                            </div>
+                            <Textarea
+                              placeholder="Add feedback notes (optional)..."
+                              value={editingRating.notes}
+                              onChange={e => setEditingRating(prev => ({ ...prev, notes: e.target.value }))}
+                              className="h-16 text-xs"
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" className="h-7 text-xs gap-1" onClick={() => saveRatingMutation.mutate(editingRating)} disabled={saveRatingMutation.isPending}>
+                                <Check className="w-3 h-3" /> Save
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingRating(null)}>
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <StarRating rating={manualRating?.rating ?? 0} />
+                            <span className="text-[10px] text-muted-foreground">
+                              {manualRating ? `Manual rating · ${RATING_LABELS[manualRating.rating] || ''}` : 'No rating yet'}
+                            </span>
+                            <button
+                              className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
+                              onClick={() => setEditingRating({ name: emp.name, rating: manualRating?.rating ?? 3, notes: manualRating?.notes ?? '' })}
+                            >
+                              <Pencil className="w-2.5 h-2.5" /> {manualRating ? 'Edit' : 'Rate'}
+                            </button>
+                          </>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{emp.shifts.length} shifts recorded</p>
+                      {!isEditingThis && manualRating?.notes && (
+                        <p className="text-[10px] text-muted-foreground italic mt-0.5 max-w-xs truncate">"{manualRating.notes}"</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-0.5">{emp.shifts.length} shifts recorded</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 sm:gap-6">

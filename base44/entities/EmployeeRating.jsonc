@@ -1,0 +1,22 @@
+{
+  "name": "EmployeeRating",
+  "type": "object",
+  "properties": {
+    "cashier_name": {
+      "type": "string",
+      "description": "Name of the employee (matches cashier_name in shifts/sales)"
+    },
+    "rating": {
+      "type": "number",
+      "description": "Manual star rating from 1 to 5"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional performance or feedback notes"
+    }
+  },
+  "required": [
+    "cashier_name",
+    "rating"
+  ]
+}
