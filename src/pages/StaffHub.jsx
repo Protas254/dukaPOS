@@ -452,7 +452,7 @@ export default function StaffHub() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
       <div>
-        <h1 className="text-2xl md:text-3xl font-display font-bold">Staff Hub</h1>
+        <h1 className="text-2xl md:text-3xl font-display font-bold">Team Management</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Employee management & shift performance</p>
       </div>
 

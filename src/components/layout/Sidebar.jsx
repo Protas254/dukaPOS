@@ -15,7 +15,7 @@ const navItems = [
   { icon: BarChart3, label: 'Reports', path: '/reports' },
   { icon: Users, label: 'Customers', path: '/customers' },
   {
-    icon: UserCog, label: 'Staff Hub', path: '/staff',
+    icon: UserCog, label: 'Team Management', path: '/staff',
     children: [
       { icon: Users, label: 'Employees', path: '/staff', tab: 'employees' },
       { icon: Clock, label: 'My Shifts', path: '/staff', tab: 'my-shifts' },
