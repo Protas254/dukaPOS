@@ -51,25 +51,27 @@ export default function Expenses() {
 
   const filteredExpenses = expenses.filter(exp => {
     const searchLower = searchTerm.toLowerCase();
-    let matchesSearch = searchTerm === '';
+    let matchesSearch = true;
     
-    if (searchField === 'all') {
-      matchesSearch = matchesSearch ||
+    if (searchTerm) {
+      if (searchField === 'all') {
+        matchesSearch = 
                      exp.description?.toLowerCase().includes(searchLower) ||
                      exp.reference_number?.toLowerCase().includes(searchLower) ||
                      exp.added_by_name?.toLowerCase().includes(searchLower) ||
                      exp.payment_method?.toLowerCase().includes(searchLower) ||
                      exp.category?.toLowerCase().includes(searchLower);
-    } else if (searchField === 'description') {
-      matchesSearch = exp.description?.toLowerCase().includes(searchLower);
-    } else if (searchField === 'reference_number') {
-      matchesSearch = exp.reference_number?.toLowerCase().includes(searchLower);
-    } else if (searchField === 'added_by_name') {
-      matchesSearch = exp.added_by_name?.toLowerCase().includes(searchLower);
-    } else if (searchField === 'payment_method') {
-      matchesSearch = exp.payment_method?.toLowerCase().includes(searchLower);
-    } else if (searchField === 'category') {
-      matchesSearch = exp.category?.toLowerCase().includes(searchLower);
+      } else if (searchField === 'description') {
+        matchesSearch = exp.description?.toLowerCase().includes(searchLower);
+      } else if (searchField === 'reference_number') {
+        matchesSearch = exp.reference_number?.toLowerCase().includes(searchLower);
+      } else if (searchField === 'added_by_name') {
+        matchesSearch = exp.added_by_name?.toLowerCase().includes(searchLower);
+      } else if (searchField === 'payment_method') {
+        matchesSearch = exp.payment_method?.toLowerCase().includes(searchLower);
+      } else if (searchField === 'category') {
+        matchesSearch = exp.category?.toLowerCase().includes(searchLower);
+      }
     }
     
     const matchesCategory = categoryFilter === 'all' || exp.category === categoryFilter;
