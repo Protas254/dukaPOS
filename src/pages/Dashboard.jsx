@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, ShoppingCart, TrendingUp, Package, 
-  AlertTriangle, ArrowRight, ArrowLeft, User, Award, Bell
+  AlertTriangle, ArrowRight, ArrowLeft, User, Award, Bell, Receipt
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfDay, subDays } from 'date-fns';
@@ -37,6 +37,15 @@ export default function Dashboard() {
     const d = new Date(s.created_date);
     return d >= subDays(today, 1) && d < today;
   });
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list('-date', 100),
+  });
+
+  const todayExpenses = expenses.filter(e => new Date(e.date) >= today);
+  const todayExpenseTotal = todayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const netProfit = todayRevenue - todayExpenseTotal;
 
   const todayRevenue = todaySales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const yesterdayRevenue = yesterdaySales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
@@ -167,13 +176,27 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Today's Revenue"
           value={`KES ${todayRevenue.toLocaleString()}`}
           icon={DollarSign}
           trend={revenueTrend}
           trendUp={todayRevenue >= yesterdayRevenue}
+        />
+        <StatCard
+          title="Today's Expenses"
+          value={`KES ${todayExpenseTotal.toLocaleString()}`}
+          icon={Receipt}
+          trend={`${Math.round((todayExpenseTotal / (todayRevenue || 1)) * 100)}% of revenue`}
+          trendUp={false}
+        />
+        <StatCard
+          title="Net Profit"
+          value={`KES ${netProfit.toLocaleString()}`}
+          icon={TrendingUp}
+          trend={netProfit >= 0 ? 'Positive' : 'Negative'}
+          trendUp={netProfit >= 0}
         />
         <StatCard
           title="Transactions"

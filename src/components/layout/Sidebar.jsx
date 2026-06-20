@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, ShoppingCart, Package, Receipt, 
+  LayoutDashboard, ShoppingCart, Package, Receipt as ReceiptIcon, 
   BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers, FileWarning
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -14,8 +14,9 @@ const navItems = [
     icon: Layers, label: 'Business Operations', path: '/operations',
     children: [
       { icon: Package, label: 'Inventory', path: '/inventory' },
-      { icon: Receipt, label: 'Transactions', path: '/transactions' },
+      { icon: ReceiptIcon, label: 'Transactions', path: '/transactions' },
       { icon: BarChart3, label: 'Reports', path: '/reports' },
+      { icon: ReceiptIcon, label: 'Expenses', path: '/expenses' },
     ]
   },
   { icon: Users, label: 'Customers', path: '/customers' },
