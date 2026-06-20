@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, ArrowLeft, ArrowRight, Barcode, Zap } from 'lucide-react';
+import { Search, ArrowLeft, ArrowRight, Barcode, Zap, PauseCircle, Tag, Calculator, Keyboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductGrid from '@/components/pos/ProductGrid';
 import Cart from '@/components/pos/Cart';
@@ -17,6 +17,10 @@ import POSTopBar from '@/components/pos/POSTopBar';
 import POSFilters from '@/components/pos/POSFilters';
 import CustomerSearchBar from '@/components/pos/CustomerSearchBar';
 import FavoritesBar, { useFavorites } from '@/components/pos/FavoritesBar';
+import HeldTransactions, { saveHeldTransactions, loadHeldTransactions } from '@/components/pos/HeldTransactions';
+import PriceCheckMode from '@/components/pos/PriceCheckMode';
+import EndOfDayReconciliation from '@/components/pos/EndOfDayReconciliation';
+import KeyboardShortcutsHelp from '@/components/pos/KeyboardShortcutsHelp';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -50,6 +54,11 @@ export default function POS() {
   const [scanMode, setScanMode] = useState(false);
   const [scanFlash, setScanFlash] = useState(false);
   const searchInputRef = useRef(null);
+  const [heldTransactions, setHeldTransactions] = useState(loadHeldTransactions);
+  const [heldOpen, setHeldOpen] = useState(false);
+  const [priceCheckOpen, setPriceCheckOpen] = useState(false);
+  const [eodOpen, setEodOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Resizable splitter state (desktop: cart width px, mobile: cart height %)
   const [cartWidth, setCartWidth] = useState(280);
@@ -126,6 +135,28 @@ export default function POS() {
     queryFn: () => base44.entities.BusinessSettings.list(),
   });
 
+  const { data: allSales = [] } = useQuery({
+    queryKey: ['sales'],
+    queryFn: () => base44.entities.Sale.list('-created_date', 200),
+  });
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handler = (e) => {
+      const tag = document.activeElement?.tagName;
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
+      if (e.key === 'F1') { e.preventDefault(); setCheckoutOpen(true); }
+      if (e.key === 'F6') { e.preventDefault(); holdTransaction(); }
+      if (e.key === 'F7') { e.preventDefault(); setHeldOpen(true); }
+      if (e.key === 'F8') { e.preventDefault(); setPriceCheckOpen(true); }
+      if (e.key === 'F9') { e.preventDefault(); setEodOpen(true); }
+      if (e.key === '?' && !isInput) { e.preventDefault(); setShortcutsOpen(true); }
+      if (e.key === 'Escape') { setSearch(''); searchInputRef.current?.focus(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [cart, heldTransactions]);
+
   const businessSettings = settings[0] || {};
   const taxRate = businessSettings.default_tax_rate || 16;
 
@@ -179,6 +210,44 @@ export default function POS() {
   const clearCart = () => {
     setCart([]);
     setDiscount(0);
+  };
+
+  // Hold & Recall
+  const holdTransaction = () => {
+    if (cart.length === 0) return;
+    const held = {
+      id: Date.now().toString(),
+      label: `Cart ${heldTransactions.length + 1}`,
+      items: cart,
+      discount,
+      total,
+      savedAt: new Date().toISOString(),
+    };
+    const updated = [...heldTransactions, held];
+    setHeldTransactions(updated);
+    saveHeldTransactions(updated);
+    clearCart();
+    toast({ title: `Transaction held — ${cart.length} item(s) parked` });
+  };
+
+  const recallTransaction = (held) => {
+    if (cart.length > 0) {
+      const ok = window.confirm('Replace current cart with held transaction?');
+      if (!ok) return;
+    }
+    setCart(held.items);
+    setDiscount(held.discount || 0);
+    const updated = heldTransactions.filter(h => h.id !== held.id);
+    setHeldTransactions(updated);
+    saveHeldTransactions(updated);
+    setHeldOpen(false);
+    toast({ title: `Transaction recalled — ${held.items.length} item(s) restored` });
+  };
+
+  const deleteHeld = (id) => {
+    const updated = heldTransactions.filter(h => h.id !== id);
+    setHeldTransactions(updated);
+    saveHeldTransactions(updated);
   };
 
   // Calculations
@@ -314,22 +383,33 @@ export default function POS() {
     <div className="h-screen flex flex-col bg-background">
       {/* Ultra Compact Top Bar */}
       <div className="h-8 border-b bg-card flex items-center justify-between px-2 text-xs">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="font-bold">POS</span>
-          <Badge variant="secondary" className="h-4 text-[9px] px-1">
-            {cart.length}
-          </Badge>
+          <Badge variant="secondary" className="h-4 text-[9px] px-1">{cart.length}</Badge>
+          {heldTransactions.length > 0 && (
+            <button onClick={() => setHeldOpen(true)} className="h-4 px-1.5 text-[9px] bg-amber-100 text-amber-700 rounded-full font-bold hover:bg-amber-200">
+              {heldTransactions.length} held
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-muted-foreground truncate max-w-[120px]">
-            {currentUser?.full_name || 'Cashier'}
-          </span>
+          <button onClick={() => setPriceCheckOpen(true)} title="Price Check (F8)" className="h-6 px-1.5 text-[10px] flex items-center gap-0.5 bg-background border rounded hover:border-primary hover:text-primary">
+            <Tag className="w-2.5 h-2.5" /><span className="hidden sm:inline">Price</span>
+          </button>
+          <button onClick={holdTransaction} disabled={cart.length === 0} title="Hold Transaction (F6)" className="h-6 px-1.5 text-[10px] flex items-center gap-0.5 bg-background border rounded hover:border-amber-500 hover:text-amber-600 disabled:opacity-40">
+            <PauseCircle className="w-2.5 h-2.5" /><span className="hidden sm:inline">Hold</span>
+          </button>
+          <button onClick={() => setEodOpen(true)} title="End of Day (F9)" className="h-6 px-1.5 text-[10px] flex items-center gap-0.5 bg-background border rounded hover:border-primary hover:text-primary">
+            <Calculator className="w-2.5 h-2.5" /><span className="hidden sm:inline">EOD</span>
+          </button>
+          <button onClick={() => setShortcutsOpen(true)} title="Keyboard shortcuts (?)" className="h-6 w-6 flex items-center justify-center bg-background border rounded hover:border-primary hover:text-primary">
+            <Keyboard className="w-2.5 h-2.5" />
+          </button>
+          <span className="text-muted-foreground truncate max-w-[80px] ml-1">{currentUser?.full_name || 'Cashier'}</span>
           {activeShift && (
             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">SHIFT OPEN</span>
           )}
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleCloseShiftAndLogout} title="Close shift & logout">
-            ✕
-          </Button>
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleCloseShiftAndLogout} title="Close shift & logout">✕</Button>
         </div>
       </div>
 
@@ -534,6 +614,33 @@ export default function POS() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Hold & Recall */}
+      <HeldTransactions
+        open={heldOpen}
+        onClose={() => setHeldOpen(false)}
+        heldTransactions={heldTransactions}
+        onRecall={recallTransaction}
+        onDelete={deleteHeld}
+      />
+
+      {/* Price Check */}
+      <PriceCheckMode
+        open={priceCheckOpen}
+        onClose={() => setPriceCheckOpen(false)}
+        products={allProducts}
+      />
+
+      {/* End of Day */}
+      <EndOfDayReconciliation
+        open={eodOpen}
+        onClose={() => setEodOpen(false)}
+        sales={allSales}
+        shift={activeShift}
+      />
+
+      {/* Keyboard Shortcuts */}
+      <KeyboardShortcutsHelp open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
       {/* Navigation Buttons */}
       <div className="flex justify-between p-4 border-t bg-card">

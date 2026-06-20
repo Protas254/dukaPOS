@@ -173,11 +173,77 @@ export default function Reports() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="cashiers">Cashier Performance</TabsTrigger>
+          <TabsTrigger value="products">Product Profitability</TabsTrigger>
         </TabsList>
 
         {/* ── Cashier Performance Tab ── */}
         <TabsContent value="cashiers" className="mt-6">
           <CashierReport periodSales={periodSales} />
+        </TabsContent>
+
+        {/* ── Product Profitability Tab ── */}
+        <TabsContent value="products" className="mt-6 space-y-4">
+          <div className="bg-card rounded-2xl border overflow-hidden">
+            <div className="px-5 py-4 border-b bg-muted/30">
+              <h3 className="font-display font-semibold text-sm">Profit per Product</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Based on cost price vs selling price for the selected period</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/20">
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Units Sold</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Revenue</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">COGS</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Gross Profit</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Margin %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const profitMap = {};
+                    periodSales.forEach(sale => {
+                      (sale.items || []).forEach(item => {
+                        const product = products.find(p => p.id === item.product_id);
+                        const costPrice = product?.cost_price || 0;
+                        if (!profitMap[item.product_name]) {
+                          profitMap[item.product_name] = { qty: 0, revenue: 0, cogs: 0 };
+                        }
+                        profitMap[item.product_name].qty += item.quantity;
+                        profitMap[item.product_name].revenue += item.total || 0;
+                        profitMap[item.product_name].cogs += costPrice * item.quantity;
+                      });
+                    });
+                    return Object.entries(profitMap)
+                      .map(([name, d]) => ({ name, ...d, profit: d.revenue - d.cogs, margin: d.revenue > 0 ? ((d.revenue - d.cogs) / d.revenue) * 100 : 0 }))
+                      .sort((a, b) => b.profit - a.profit)
+                      .map(p => (
+                        <tr key={p.name} className="border-b hover:bg-muted/20">
+                          <td className="px-4 py-3 font-medium">{p.name}</td>
+                          <td className="px-4 py-3 text-right text-muted-foreground">{p.qty}</td>
+                          <td className="px-4 py-3 text-right font-semibold">KES {Math.round(p.revenue).toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right text-muted-foreground">
+                            {p.cogs > 0 ? `KES ${Math.round(p.cogs).toLocaleString()}` : <span className="text-xs italic">No cost</span>}
+                          </td>
+                          <td className={`px-4 py-3 text-right font-bold ${p.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            KES {Math.round(p.profit).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {p.cogs > 0 ? (
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                p.margin >= 30 ? 'bg-emerald-100 text-emerald-700' :
+                                p.margin >= 15 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                              }`}>{p.margin.toFixed(1)}%</span>
+                            ) : <span className="text-xs text-muted-foreground">—</span>}
+                          </td>
+                        </tr>
+                      ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ── Overview Tab ── */}

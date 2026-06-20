@@ -326,6 +326,7 @@ export default function Inventory() {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Barcode</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Category</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Price</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Margin</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Stock</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Status</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
@@ -392,6 +393,22 @@ export default function Inventory() {
                     </td>
                     <td className="px-4 py-3 text-right font-semibold">
                       KES {product.price?.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right hidden md:table-cell">
+                      {product.cost_price > 0 && product.price > 0 ? (
+                        <span className={cn(
+                          "text-xs font-semibold px-2 py-0.5 rounded-full",
+                          ((product.price - product.cost_price) / product.price * 100) >= 30
+                            ? "bg-emerald-100 text-emerald-700"
+                            : ((product.price - product.cost_price) / product.price * 100) >= 15
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-red-100 text-red-700"
+                        )}>
+                          {((product.price - product.cost_price) / product.price * 100).toFixed(0)}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-col items-end gap-0.5">
