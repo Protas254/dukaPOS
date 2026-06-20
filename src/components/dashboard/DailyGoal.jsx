@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Pencil, Check, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { Target, Pencil, Check, X, TrendingUp, TrendingDown, Award } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import GoalSummaryDialog from './GoalSummaryDialog';
@@ -101,49 +101,65 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
           </div>
           {/* Dynamic Status Indicator */}
           {goal > 0 && (
-            <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${
+            <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
               pct >= 100 
                 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' 
                 : pct >= 70 
                   ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
                   : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
             }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-400' : 'bg-red-500'
-              }`} />
-              <span className={`text-xs font-bold ${
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-400' : 'bg-red-500'
+                }`} />
+                <span className={`text-xs font-bold ${
+                  pct >= 100 ? 'text-emerald-700 dark:text-emerald-400' : 
+                  pct >= 70 ? 'text-amber-700 dark:text-amber-400' : 
+                  'text-red-700 dark:text-red-400'
+                }`}>
+                  {pct >= 100 ? '🎉 Goal achieved! Great job today!' : 
+                   pct >= 70 ? '💪 Almost there - keep pushing!' : 
+                   '⚠️ Behind target - focus on sales!'}
+                </span>
+              </div>
+              <div className={`flex items-center gap-1 text-xs font-bold ${
                 pct >= 100 ? 'text-emerald-700 dark:text-emerald-400' : 
                 pct >= 70 ? 'text-amber-700 dark:text-amber-400' : 
                 'text-red-700 dark:text-red-400'
               }`}>
-                {pct >= 100 ? '🎉 Goal achieved! Great job today!' : 
-                 pct >= 70 ? '💪 Almost there - keep pushing!' : 
-                 '⚠️ Behind target - focus on sales!'}
-              </span>
+                {pct >= 100 ? <Award className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
+                {pct}%
+              </div>
             </div>
           )}
-          {/* 3 Color Status Buttons */}
+          {/* 3 Color Status Buttons - active one has checkmark */}
           <div className="flex gap-1.5">
             {STATUS_BUTTONS.map(btn => {
               const isActive = activeKey === btn.key;
               return (
-                <button
-                  key={btn.key}
-                  onClick={() => {
-                    if (isActive && btn.key === 'met') {
-                      setSummaryOpen(true);
-                    } else {
-                      setManualStatus(btn.key);
-                    }
-                  }}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border text-[10px] font-bold transition-all
-                    ${isActive ? btn.active + ' cursor-pointer hover:opacity-90' : btn.inactive + ' cursor-default'}
-                  `}
-                  title={manualStatus ? 'Click another button to change status' : 'Click to set this status manually'}
-                >
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
-                  {btn.label}
-                </button>
+                <div key={btn.key} className="relative flex-1">
+                  <button
+                    onClick={() => {
+                      if (isActive && btn.key === 'met') {
+                        setSummaryOpen(true);
+                      } else {
+                        setManualStatus(btn.key);
+                      }
+                    }}
+                    className={`w-full flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border text-[10px] font-bold transition-all
+                      ${isActive ? btn.active + ' cursor-pointer hover:opacity-90' : btn.inactive + ' cursor-default'}
+                    `}
+                    title={manualStatus ? 'Click another button to change status' : 'Click to set this status manually'}
+                  >
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
+                    {btn.label}
+                  </button>
+                  {isActive && (
+                    <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm">
+                      <Check className="w-2.5 h-2.5" />
+                    </div>
+                  )}
+                </div>
               );
             })}
             {manualStatus && (
