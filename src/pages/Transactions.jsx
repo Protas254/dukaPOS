@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Receipt, Eye, Calendar, RotateCcw, SlidersHorizontal, X, ArrowLeft, ArrowRight, FileText } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, Receipt, Eye, Calendar, RotateCcw, SlidersHorizontal, X, ArrowLeft, ArrowRight, FileText, Clock } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 import ReceiptView from '@/components/pos/ReceiptView';
 import ReturnDialog from '@/components/pos/ReturnDialog';
 import ReceiptPDFDialog from '@/components/transactions/ReceiptPDFDialog';
@@ -283,69 +283,91 @@ export default function Transactions() {
             <p className="text-xs mt-1">Try adjusting your search or filters</p>
           </div>
         ) : (
-          filtered.map(sale => (
-            <div
-              key={sale.id}
-              className="bg-card rounded-xl border p-4 hover:shadow-md transition-all cursor-pointer group"
-              onClick={() => { setSelectedSale(sale); setReceiptOpen(true); }}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                    <Receipt className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold font-mono">{sale.receipt_number}</p>
-                      <Badge variant="secondary" className={`text-[10px] ${paymentMethodColor(sale.payment_method)}`}>
-                        {paymentMethodLabel(sale.payment_method)}
-                      </Badge>
-                      {sale.status === 'refunded' && (
-                        <Badge variant="destructive" className="text-[10px]">Refunded</Badge>
+          filtered.map(sale => {
+            const daysSinceSale = differenceInDays(new Date(), new Date(sale.created_date));
+            const daysLeft = 30 - daysSinceSale;
+            const canReturn = sale.status === 'completed' && daysLeft > 0;
+            const returnExpired = sale.status === 'completed' && daysLeft <= 0;
+
+            return (
+              <div
+                key={sale.id}
+                className="bg-card rounded-xl border p-4 hover:shadow-md transition-all cursor-pointer group"
+                onClick={() => { setSelectedSale(sale); setReceiptOpen(true); }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <Receipt className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold font-mono">{sale.receipt_number}</p>
+                        <Badge variant="secondary" className={`text-[10px] ${paymentMethodColor(sale.payment_method)}`}>
+                          {paymentMethodLabel(sale.payment_method)}
+                        </Badge>
+                        {sale.status === 'refunded' && <Badge variant="destructive" className="text-[10px]">Refunded</Badge>}
+                        {sale.status === 'voided' && <Badge variant="secondary" className="text-[10px]">Voided</Badge>}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {format(new Date(sale.created_date), 'MMM d, yyyy • h:mm a')}
+                        </span>
+                        <span>{sale.items?.length || 0} item{sale.items?.length !== 1 ? 's' : ''}</span>
+                        {sale.cashier_name && <span>· {sale.cashier_name}</span>}
+                        {sale.customer_name && <span>· {sale.customer_name}</span>}
+                      </div>
+                      {sale.items?.length > 0 && (
+                        <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate max-w-sm">
+                          {sale.items.map(i => i.product_name).join(', ')}
+                        </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {format(new Date(sale.created_date), 'MMM d, yyyy • h:mm a')}
-                      </span>
-                      <span>{sale.items?.length || 0} item{sale.items?.length !== 1 ? 's' : ''}</span>
-                      {sale.cashier_name && <span>· {sale.cashier_name}</span>}
-                      {sale.customer_name && <span>· {sale.customer_name}</span>}
-                    </div>
-                    {/* Product names preview */}
-                    {sale.items?.length > 0 && (
-                      <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate max-w-sm">
-                        {sale.items.map(i => i.product_name).join(', ')}
-                      </p>
-                    )}
                   </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <p className="text-base font-display font-bold">KES {sale.total_amount?.toLocaleString()}</p>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Eye className="w-4 h-4 text-muted-foreground" />
+
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                    <p className="text-base font-display font-bold">KES {sale.total_amount?.toLocaleString()}</p>
+
+                    {/* PDF button */}
                     <button
                       onClick={e => { e.stopPropagation(); setPdfSale(sale); setPdfOpen(true); }}
-                      className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground"
                       title="View / Download PDF"
                     >
                       <FileText className="w-4 h-4" />
                     </button>
-                    {sale.status === 'completed' && (
+
+                    {/* Return/Refund button */}
+                    {canReturn && (
                       <button
                         onClick={e => { e.stopPropagation(); setReturnSale(sale); setReturnOpen(true); }}
-                        className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
-                        title="Process Return"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-semibold transition-colors"
                       >
-                        <RotateCcw className="w-4 h-4" />
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Return/Refund
+                        <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-destructive/10 text-[10px] font-bold flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          {daysLeft}d left
+                        </span>
                       </button>
+                    )}
+                    {returnExpired && (
+                      <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium cursor-not-allowed">
+                        <Clock className="w-3.5 h-3.5" />
+                        Return expired
+                      </span>
+                    )}
+                    {sale.status === 'refunded' && (
+                      <span className="px-2.5 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium">
+                        Already refunded
+                      </span>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
