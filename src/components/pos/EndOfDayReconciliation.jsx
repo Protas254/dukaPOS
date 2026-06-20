@@ -3,12 +3,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calculator, CheckCircle, AlertTriangle, Printer } from 'lucide-react';
+import { Calculator, CheckCircle, AlertTriangle, Printer, FileWarning } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { base44 } from '@/api/base44Client';
+import ShiftAuditDialog from '@/components/shifts/ShiftAuditDialog';
+import { toast } from 'sonner';
 
 export default function EndOfDayReconciliation({ open, onClose, sales = [], shift }) {
   const [actualCash, setActualCash] = useState('');
   const [notes, setNotes] = useState('');
+  const [auditOpen, setAuditOpen] = useState(false);
 
   const today = new Date().toDateString();
   const todaySales = sales.filter(s => new Date(s.created_date).toDateString() === today);
@@ -55,6 +59,15 @@ export default function EndOfDayReconciliation({ open, onClose, sales = [], shif
       </body></html>
     `);
     win.document.close();
+  };
+
+  const handleAuditSubmit = async (auditData) => {
+    try {
+      await base44.entities.ShiftAudit.create(auditData);
+      toast.success('Discrepancy recorded successfully');
+    } catch (error) {
+      toast.error('Failed to record discrepancy');
+    }
   };
 
   return (
@@ -120,6 +133,17 @@ export default function EndOfDayReconciliation({ open, onClose, sales = [], shif
             </div>
           )}
 
+          {actualCash !== '' && !isBalanced && (
+            <Button
+              variant="outline"
+              className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 gap-2"
+              onClick={() => setAuditOpen(true)}
+            >
+              <FileWarning className="w-4 h-4" />
+              Record Discrepancy
+            </Button>
+          )}
+
           <div>
             <Label className="text-xs">Notes (optional)</Label>
             <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any discrepancy explanation..." className="mt-1 text-sm" />
@@ -132,6 +156,15 @@ export default function EndOfDayReconciliation({ open, onClose, sales = [], shif
           </Button>
         </DialogFooter>
       </DialogContent>
+      <ShiftAuditDialog
+        open={auditOpen}
+        onClose={() => setAuditOpen(false)}
+        shift={shift}
+        expectedCash={expectedCash}
+        actualCash={actual}
+        variance={variance}
+        onSubmit={handleAuditSubmit}
+      />
     </Dialog>
   );
 }

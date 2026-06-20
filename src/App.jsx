@@ -29,6 +29,7 @@ import Employees from '@/pages/Employees';
 import MyShifts from '@/pages/MyShifts';
 import EmployeeProfile from '@/pages/EmployeeProfile';
 import Onboarding from '@/pages/Onboarding';
+import ShiftAudits from '@/pages/ShiftAudits';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -74,6 +75,7 @@ const AuthenticatedApp = () => {
           <Route path="/etims" element={<EtimsCompliance />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/shift-audits" element={<ShiftAudits />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

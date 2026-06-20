@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, Receipt, 
-  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers
+  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers, FileWarning
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ const navItems = [
     children: [
       { icon: Users, label: 'Employees', path: '/employees' },
       { icon: Clock, label: 'My Shifts', path: '/my-shifts' },
+      { icon: FileWarning, label: 'Shift Audits', path: '/shift-audits' },
     ]
   },
   { icon: ShieldCheck, label: 'eTIMS', path: '/etims' },
