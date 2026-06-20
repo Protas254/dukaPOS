@@ -28,7 +28,7 @@ const navItems = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
-  const [staffOpen, setStaffOpen] = useState(location.pathname === '/staff');
+  const [staffOpen, setStaffOpen] = useState(false);
 
   return (
     <aside className={cn(
