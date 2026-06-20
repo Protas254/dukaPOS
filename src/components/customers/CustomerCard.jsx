@@ -12,14 +12,22 @@ const tierColors = {
 };
 const tierIcons = { bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '💎' };
 
-export default function CustomerCard({ customer, onView, onEdit, onDelete }) {
+export default function CustomerCard({ customer, onView, onEdit, onDelete, index = 0 }) {
   const tier = customer.tier || 'bronze';
   const points = customer.loyalty_points || 0;
   const spending = customer.total_spending || 0;
   const txCount = customer.total_transactions || 0;
+  const isEven = index % 2 === 0;
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={onView}>
+    <div
+      className={cn(
+        "flex items-center gap-4 px-4 py-3 border-b last:border-0 transition-colors cursor-pointer",
+        isEven ? "bg-white dark:bg-card" : "bg-slate-50 dark:bg-muted/20",
+        "hover:bg-primary/5 dark:hover:bg-primary/10"
+      )}
+      onClick={onView}
+    >
       {/* Avatar */}
       <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
         <User className="w-4 h-4 text-primary" />

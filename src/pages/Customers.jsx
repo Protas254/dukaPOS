@@ -216,10 +216,11 @@ export default function Customers() {
             <span />
           </div>
         )}
-        {filteredCustomers.map((customer) => (
+        {filteredCustomers.map((customer, index) => (
           <CustomerCard
             key={customer.id}
             customer={customer}
+            index={index}
             onView={() => setProfileCustomer(customer)}
             onEdit={() => handleEdit(customer)}
             onDelete={() => { if (confirm(`Delete ${customer.name}?`)) deleteMutation.mutate(customer.id); }}
