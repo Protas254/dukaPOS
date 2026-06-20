@@ -43,6 +43,9 @@ export default function Inventory() {
   const [bulkStockOpen, setBulkStockOpen] = useState(false);
   const [bulkStockValues, setBulkStockValues] = useState({});
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [restockProduct, setRestockProduct] = useState(null);
+  const [restockQty, setRestockQty] = useState('');
+  const [restocking, setRestocking] = useState(false);
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery({
@@ -145,6 +148,18 @@ export default function Inventory() {
     });
     setBulkStockValues(initial);
     setBulkStockOpen(true);
+  };
+
+  const handleQuickRestock = async () => {
+    const qty = parseInt(restockQty);
+    if (isNaN(qty) || qty < 0) return;
+    setRestocking(true);
+    await base44.entities.Product.update(restockProduct.id, { stock_quantity: qty });
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    toast({ title: `Stock updated for ${restockProduct.name}` });
+    setRestocking(false);
+    setRestockProduct(null);
+    setRestockQty('');
   };
 
   const handleBulkStockSave = async () => {
@@ -268,9 +283,19 @@ export default function Inventory() {
             </thead>
             <tbody>
               {filtered.map(product => {
-                const isLow = product.stock_quantity <= (product.low_stock_threshold || 10);
+                const threshold = product.low_stock_threshold || 10;
+                const isLow = product.stock_quantity <= threshold;
+                const isOutOfStock = product.stock_quantity <= 0;
+                const isCritical = product.stock_quantity <= Math.floor(threshold * 0.5);
                 return (
-                  <tr key={product.id} className={cn("border-b hover:bg-muted/30 transition-colors", selectedIds.has(product.id) && "bg-primary/5")}>
+                  <tr key={product.id} className={cn(
+                    "border-b transition-colors",
+                    selectedIds.has(product.id) ? "bg-primary/5" :
+                    isOutOfStock ? "bg-red-50 dark:bg-red-900/10 hover:bg-red-100/80 dark:hover:bg-red-900/20" :
+                    isCritical ? "bg-red-50/60 dark:bg-red-900/10 hover:bg-red-100/60 dark:hover:bg-red-900/20" :
+                    isLow ? "bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100/60 dark:hover:bg-amber-900/20" :
+                    "hover:bg-muted/30"
+                  )}>
                     <td className="px-4 py-3 w-10">
                       <input
                         type="checkbox"
@@ -294,13 +319,29 @@ export default function Inventory() {
                       KES {product.price?.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={cn(
-                        "font-semibold",
-                        isLow ? "text-amber-600" : "text-emerald-600"
-                      )}>
-                        {product.stock_quantity}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-1">{product.unit}</span>
+                      <div className="flex flex-col items-end gap-0.5">
+                        <div>
+                          <span className={cn(
+                            "font-semibold",
+                            isOutOfStock ? "text-red-600" :
+                            isCritical ? "text-red-500" :
+                            isLow ? "text-amber-600" : "text-emerald-600"
+                          )}>
+                            {product.stock_quantity}
+                          </span>
+                          <span className="text-xs text-muted-foreground ml-1">{product.unit}</span>
+                        </div>
+                        {isLow && (
+                          <span className={cn(
+                            "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                            isOutOfStock ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                            isCritical ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                            "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          )}>
+                            {isOutOfStock ? 'Out of stock' : isCritical ? 'Critical' : `Low ≤ ${threshold}`}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-center hidden md:table-cell">
                       <Badge variant={product.is_active !== false ? 'default' : 'secondary'} className="text-[10px]">
@@ -309,6 +350,16 @@ export default function Inventory() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {isLow && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs gap-1 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400"
+                            onClick={() => { setRestockProduct(product); setRestockQty(String(product.stock_quantity)); }}
+                          >
+                            <Package className="w-3 h-3" /> Restock
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(product)}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -600,6 +651,45 @@ export default function Inventory() {
             <Button onClick={handleBulkStockSave} disabled={bulkUpdating}>
               {bulkUpdating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Save All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Restock Dialog */}
+      <Dialog open={!!restockProduct} onOpenChange={(open) => { if (!open) { setRestockProduct(null); setRestockQty(''); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Package className="w-4 h-4 text-amber-600" /> Quick Restock
+            </DialogTitle>
+          </DialogHeader>
+          {restockProduct && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <p className="font-medium text-sm">{restockProduct.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Current stock: <span className="font-semibold text-amber-700">{restockProduct.stock_quantity}</span> {restockProduct.unit} · Threshold: {restockProduct.low_stock_threshold || 10}
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs">New Stock Quantity ({restockProduct.unit})</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={restockQty}
+                  onChange={e => setRestockQty(e.target.value)}
+                  className="mt-1"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRestockProduct(null); setRestockQty(''); }}>Cancel</Button>
+            <Button onClick={handleQuickRestock} disabled={restocking || restockQty === ''}>
+              {restocking && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Update Stock
             </Button>
           </DialogFooter>
         </DialogContent>
