@@ -1,12 +1,48 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { base44 } from '@/api/base44Client';
 import { 
   BookOpen, ExternalLink, Download, Phone, Mail, Clock,
-  CheckCircle, FileText, Server, Key, AlertCircle
+  CheckCircle, FileText, Server, Key, AlertCircle, Plug
 } from 'lucide-react';
 
 export default function EtimsRoadmap() {
+  const { toast } = useToast();
+
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await base44.functions.invoke('generateDukaPOSPDF', {
+        type: 'etims_roadmap'
+      });
+      
+      if (response.data?.pdf_url) {
+        const link = document.createElement('a');
+        link.href = response.data.pdf_url;
+        link.download = 'etims-integration-roadmap.pdf';
+        link.click();
+        toast({
+          title: 'PDF Downloaded',
+          description: 'eTIMS integration roadmap has been downloaded.'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Download Failed',
+        description: 'Could not generate PDF. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleStartIntegration = () => {
+    toast({
+      title: 'Integration Started',
+      description: 'Contact support to begin your eTIMS integration journey.'
+    });
+  };
+
   return (
     <Card className="border-dashed">
       <CardHeader>
@@ -136,7 +172,7 @@ export default function EtimsRoadmap() {
           </div>
         </div>
 
-        {/* Resources */}
+        {/* Resources & Actions */}
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" size="sm" className="gap-2" asChild>
             <a href="https://etims.kra.go.ke" target="_blank" rel="noopener noreferrer">
@@ -150,11 +186,13 @@ export default function EtimsRoadmap() {
               iTax Portal
             </a>
           </Button>
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <a href="https://www.kra.go.ke/en/" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4" />
-              KRA Website
-            </a>
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPDF}>
+            <Download className="w-4 h-4" />
+            Download PDF Guide
+          </Button>
+          <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={handleStartIntegration}>
+            <Plug className="w-4 h-4" />
+            Start Integration
           </Button>
         </div>
 
