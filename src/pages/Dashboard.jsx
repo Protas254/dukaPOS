@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { format, startOfDay, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import StatCard from '@/components/dashboard/StatCard';
+import DailyGoal from '@/components/dashboard/DailyGoal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -171,6 +172,9 @@ export default function Dashboard() {
           icon={lowStockProducts.length > 0 ? AlertTriangle : Package}
         />
       </div>
+
+      {/* Daily Goal */}
+      <DailyGoal todayRevenue={todayRevenue} />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
