@@ -33,6 +33,7 @@ export default function Expenses() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchField, setSearchField] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -50,12 +51,26 @@ export default function Expenses() {
 
   const filteredExpenses = expenses.filter(exp => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = searchTerm === '' ||
-                         exp.description?.toLowerCase().includes(searchLower) ||
-                         exp.reference_number?.toLowerCase().includes(searchLower) ||
-                         exp.added_by_name?.toLowerCase().includes(searchLower) ||
-                         exp.payment_method?.toLowerCase().includes(searchLower) ||
-                         exp.category?.toLowerCase().includes(searchLower);
+    let matchesSearch = searchTerm === '';
+    
+    if (searchField === 'all') {
+      matchesSearch = matchesSearch ||
+                     exp.description?.toLowerCase().includes(searchLower) ||
+                     exp.reference_number?.toLowerCase().includes(searchLower) ||
+                     exp.added_by_name?.toLowerCase().includes(searchLower) ||
+                     exp.payment_method?.toLowerCase().includes(searchLower) ||
+                     exp.category?.toLowerCase().includes(searchLower);
+    } else if (searchField === 'description') {
+      matchesSearch = exp.description?.toLowerCase().includes(searchLower);
+    } else if (searchField === 'reference_number') {
+      matchesSearch = exp.reference_number?.toLowerCase().includes(searchLower);
+    } else if (searchField === 'added_by_name') {
+      matchesSearch = exp.added_by_name?.toLowerCase().includes(searchLower);
+    } else if (searchField === 'payment_method') {
+      matchesSearch = exp.payment_method?.toLowerCase().includes(searchLower);
+    } else if (searchField === 'category') {
+      matchesSearch = exp.category?.toLowerCase().includes(searchLower);
+    }
     
     const matchesCategory = categoryFilter === 'all' || exp.category === categoryFilter;
     
@@ -210,14 +225,29 @@ export default function Expenses() {
 
       {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by description, reference, or added by..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex items-center gap-2 flex-1">
+          <Select value={searchField} onValueChange={setSearchField}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Search by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Fields</SelectItem>
+              <SelectItem value="description">Description</SelectItem>
+              <SelectItem value="reference_number">Reference</SelectItem>
+              <SelectItem value="added_by_name">Added By</SelectItem>
+              <SelectItem value="payment_method">Payment Method</SelectItem>
+              <SelectItem value="category">Category</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={`Search ${searchField === 'all' ? 'all fields' : searchField.replace('_', ' ')}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full lg:w-[180px]">
