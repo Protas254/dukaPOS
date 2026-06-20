@@ -21,11 +21,11 @@ const tierColors = {
 const tierIcons = { all: '👥', bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '💎' };
 
 const SEARCH_FIELDS = [
-  { value: 'all',    label: 'All fields',     placeholder: 'Search by name, phone, email or loyalty points…' },
-  { value: 'name',   label: 'Name',           placeholder: 'Search by customer name…' },
-  { value: 'phone',  label: 'Phone',          placeholder: 'Search by phone number…' },
-  { value: 'email',  label: 'Email',          placeholder: 'Search by email address…' },
-  { value: 'points', label: 'Loyalty Points', placeholder: 'Search by loyalty points (e.g. 500)…' },
+  { value: 'all',    label: 'All fields',      placeholder: 'Search by name, phone, email or loyalty number…' },
+  { value: 'name',   label: 'Name',            placeholder: 'Search by customer name…' },
+  { value: 'phone',  label: 'Phone',           placeholder: 'Search by phone number…' },
+  { value: 'email',  label: 'Email',           placeholder: 'Search by email address…' },
+  { value: 'points', label: 'Loyalty Number',  placeholder: 'Search by loyalty number (e.g. 500)…' },
 ];
 
 export default function CustomerFilters({ search, onSearch, tier, onTier, sort, onSort, searchField, onSearchField }) {
@@ -38,19 +38,19 @@ export default function CustomerFilters({ search, onSearch, tier, onTier, sort, 
         <select
           value={searchField}
           onChange={(e) => onSearchField(e.target.value)}
-          className="h-9 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring flex-shrink-0"
+          className="h-9 rounded-md border border-green-400 bg-green-50 text-green-800 px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500 flex-shrink-0"
         >
           {SEARCH_FIELDS.map(f => (
             <option key={f.value} value={f.value}>{f.label}</option>
           ))}
         </select>
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
           <Input
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder={currentField.placeholder}
-            className="pl-10"
+            className="pl-10 border-green-400 bg-green-50 placeholder:text-green-400 focus-visible:ring-green-500 text-green-900"
             type={searchField === 'points' ? 'number' : 'text'}
           />
         </div>
