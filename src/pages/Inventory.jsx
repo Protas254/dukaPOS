@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare
+  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare, Barcode
 } from 'lucide-react';
+import ProductBarcodePrintDialog from '@/components/barcode/ProductBarcodePrintDialog';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ export default function Inventory() {
   const [restockProduct, setRestockProduct] = useState(null);
   const [restockQty, setRestockQty] = useState('');
   const [restocking, setRestocking] = useState(false);
+  const [barcodePrintOpen, setBarcodePrintOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery({
@@ -245,6 +247,9 @@ export default function Inventory() {
           </Button>
           <Button size="sm" onClick={openBulkStock} className="text-xs h-8 gap-1.5">
             <Layers className="w-3.5 h-3.5" /> Update Stock Levels
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setBarcodePrintOpen(true)} className="text-xs h-8 gap-1.5">
+            <Barcode className="w-3.5 h-3.5" /> Print Barcodes
           </Button>
         </div>
       )}
@@ -694,6 +699,13 @@ export default function Inventory() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Barcode Print Dialog */}
+      <ProductBarcodePrintDialog
+        open={barcodePrintOpen}
+        onClose={() => setBarcodePrintOpen(false)}
+        products={filtered.filter(p => selectedIds.has(p.id))}
+      />
 
       {/* Navigation Buttons */}
       <div className="flex justify-between pt-4 border-t">

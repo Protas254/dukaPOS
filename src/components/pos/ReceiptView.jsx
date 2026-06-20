@@ -6,6 +6,7 @@ import { Printer, X, CheckCircle, MessageSquare, Mail, Send, Smartphone, Loader2
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import BarcodeDisplay from '@/components/barcode/BarcodeDisplay';
 
 function buildReceiptText(sale, biz) {
   const taxableAmt = (sale.total_amount || 0) - (sale.tax_total || 0);
@@ -265,6 +266,13 @@ export default function ReceiptView({ open, onClose, sale, businessSettings, rec
               <p className={etimsLabel.cls + ' text-[10px]'}>{etimsLabel.text}</p>
               <p className="text-muted-foreground text-[10px]">Verify: etims.kra.go.ke</p>
             </div>
+
+            {/* Receipt Barcode */}
+            {sale.receipt_number && (
+              <div className="flex justify-center pt-1">
+                <BarcodeDisplay value={sale.receipt_number} width={1.2} height={35} fontSize={9} />
+              </div>
+            )}
 
             {/* Footer */}
             <p className="text-center text-muted-foreground pt-1">
