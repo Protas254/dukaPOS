@@ -21,25 +21,28 @@ const STATUS_BUTTONS = [
     key: 'not_met',
     label: 'Not Met',
     dot: 'bg-red-500',
-    active: 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-400',
-    inactive: 'bg-muted border-border text-muted-foreground opacity-30',
-    match: (pct) => pct < 70,
+    activeDot: 'bg-red-500',
+    inactiveDot: 'bg-red-300',
+    active: 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-400 shadow-sm',
+    inactive: 'bg-red-50 border-red-200 text-red-400 dark:bg-red-950/20 dark:border-red-900 dark:text-red-700',
   },
   {
     key: 'almost',
     label: 'Almost',
     dot: 'bg-amber-400',
-    active: 'bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-900/30 dark:border-amber-600 dark:text-amber-400',
-    inactive: 'bg-muted border-border text-muted-foreground opacity-30',
-    match: (pct) => pct >= 70 && pct < 100,
+    activeDot: 'bg-amber-400',
+    inactiveDot: 'bg-amber-200',
+    active: 'bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-900/30 dark:border-amber-600 dark:text-amber-400 shadow-sm',
+    inactive: 'bg-amber-50 border-amber-200 text-amber-400 dark:bg-amber-950/20 dark:border-amber-900 dark:text-amber-700',
   },
   {
     key: 'met',
     label: 'Goal Met',
     dot: 'bg-emerald-500',
-    active: 'bg-emerald-100 border-emerald-400 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-600 dark:text-emerald-400',
-    inactive: 'bg-muted border-border text-muted-foreground opacity-30',
-    match: (pct) => pct >= 100,
+    activeDot: 'bg-emerald-500',
+    inactiveDot: 'bg-emerald-200',
+    active: 'bg-emerald-100 border-emerald-400 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-600 dark:text-emerald-400 shadow-sm',
+    inactive: 'bg-emerald-50 border-emerald-200 text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-700',
   },
 ];
 
@@ -129,20 +132,19 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
               </div>
             </div>
 
-            {/* Status buttons — only the active one is highlighted; click any to open summary */}
+            {/* Status buttons — active one is fully highlighted, others shown dimmed */}
             <div className="flex gap-2">
               {STATUS_BUTTONS.map(btn => {
                 const isActive = activeKey === btn.key;
                 return (
                   <button
                     key={btn.key}
-                    onClick={() => setSummaryOpen(true)}
+                    onClick={isActive ? () => setSummaryOpen(true) : undefined}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border text-xs font-semibold transition-all
-                      ${isActive ? btn.active : btn.inactive}
-                      ${isActive ? 'cursor-pointer hover:opacity-80 shadow-sm' : 'cursor-default pointer-events-none'}
+                      ${isActive ? btn.active + ' cursor-pointer hover:opacity-90' : btn.inactive + ' cursor-default'}
                     `}
                   >
-                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isActive ? btn.dot : 'bg-muted-foreground/30'}`} />
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
                     {btn.label}
                   </button>
                 );
