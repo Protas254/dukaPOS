@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
             const lines = doc.splitTextToSize(text, pageWidth - margin * 2 - 15);
             lines.forEach(line => {
                 doc.text(line, margin + 15, y);
-                y += size + 2;
+                y += 12;
             });
         };
 
