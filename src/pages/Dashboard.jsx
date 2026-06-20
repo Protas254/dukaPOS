@@ -174,7 +174,7 @@ export default function Dashboard() {
       </div>
 
       {/* Daily Goal */}
-      <DailyGoal todayRevenue={todayRevenue} />
+      <DailyGoal todayRevenue={todayRevenue} todaySales={todaySales} />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
