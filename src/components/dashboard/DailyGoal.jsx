@@ -132,34 +132,33 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
               </div>
             </div>
           )}
-          {/* 3 Color Status Buttons - active one has checkmark */}
+          {/* 3 Color Status Buttons - click to manually change status */}
           <div className="flex gap-1.5">
             {STATUS_BUTTONS.map(btn => {
               const isActive = activeKey === btn.key;
               return (
-                <div key={btn.key} className="relative flex-1">
-                  <button
-                    onClick={() => {
-                      if (isActive && btn.key === 'met') {
-                        setSummaryOpen(true);
-                      } else {
-                        setManualStatus(btn.key);
-                      }
-                    }}
-                    className={`w-full flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border text-[10px] font-bold transition-all
-                      ${isActive ? btn.active + ' cursor-pointer hover:opacity-90' : btn.inactive + ' cursor-default'}
-                    `}
-                    title={manualStatus ? 'Click another button to change status' : 'Click to set this status manually'}
-                  >
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
-                    {btn.label}
-                  </button>
+                <button
+                  key={btn.key}
+                  onClick={() => {
+                    if (isActive && btn.key === 'met') {
+                      setSummaryOpen(true);
+                    } else {
+                      setManualStatus(btn.key);
+                    }
+                  }}
+                  className={`relative flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border text-[10px] font-bold transition-all cursor-pointer hover:opacity-90
+                    ${isActive ? btn.active : btn.inactive}
+                  `}
+                  title="Click to set this status manually"
+                >
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
+                  {btn.label}
                   {isActive && (
-                    <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm">
+                    <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm cursor-pointer">
                       <Check className="w-2.5 h-2.5" />
                     </div>
                   )}
-                </div>
+                </button>
               );
             })}
             {manualStatus && (
