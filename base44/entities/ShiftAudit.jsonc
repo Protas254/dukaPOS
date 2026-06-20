@@ -84,6 +84,26 @@
       "type": "string",
       "format": "date-time",
       "description": "Timestamp when audit was created"
+    },
+    "sale_id": {
+      "type": "string",
+      "description": "Linked sale/transaction ID (for refunds, voids, discounts)"
+    },
+    "sale_receipt_number": {
+      "type": "string",
+      "description": "Receipt number for reference"
+    },
+    "sale_amount": {
+      "type": "number",
+      "description": "Original transaction amount (for refunds/voids/discounts)"
+    },
+    "original_amount": {
+      "type": "number",
+      "description": "Original transaction amount (for refunds/voids)"
+    },
+    "discount_amount": {
+      "type": "number",
+      "description": "Discount amount applied (for discount overrides)"
     }
   },
   "required": [

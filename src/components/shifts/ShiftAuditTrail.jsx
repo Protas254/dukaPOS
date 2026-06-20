@@ -1,9 +1,10 @@
 import React from 'react';
-import { FileText, AlertCircle, CheckCircle, XCircle, Clock, DollarSign, User } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle, XCircle, Clock, DollarSign, User, Receipt, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Link } from 'react-router-dom';
 
 const AUDIT_TYPE_LABELS = {
   cash_discrepancy: { label: 'Cash Discrepancy', icon: '💰' },
@@ -149,6 +150,23 @@ export default function ShiftAuditTrail({ audits = [], onApprove, onReject, show
                             {(audit.actual_amount - audit.expected_amount) >= 0 ? '+' : ''}KES {(audit.actual_amount - audit.expected_amount).toLocaleString()}
                           </p>
                         </div>
+                      </div>
+                    )}
+                    {/* Receipt/Transaction Link */}
+                    {audit.sale_id && (
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-[10px] text-muted-foreground mb-1">Related Transaction:</p>
+                        <Link
+                          to={`/transactions?receipt=${audit.sale_receipt_number}`}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                        >
+                          <Receipt className="w-3 h-3" />
+                          Receipt #{audit.sale_receipt_number}
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                        {audit.sale_amount && (
+                          <span className="ml-3 text-xs font-semibold">KES {audit.sale_amount.toLocaleString()}</span>
+                        )}
                       </div>
                     )}
                   </div>
