@@ -22,6 +22,7 @@
         "personal_care",
         "electronics",
         "stationery",
+        "clothing",
         "other"
       ],
       "description": "Product category"
