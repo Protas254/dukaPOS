@@ -17,17 +17,21 @@ export default function EtimsRoadmap() {
         type: 'etims_roadmap'
       });
       
-      if (response.data?.pdf_url) {
-        const link = document.createElement('a');
-        link.href = response.data.pdf_url;
-        link.download = 'etims-integration-roadmap.pdf';
-        link.click();
-        toast({
-          title: 'PDF Downloaded',
-          description: 'eTIMS integration roadmap has been downloaded.'
-        });
-      }
+      // Create blob from response data and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'eTIMS_Integration_Roadmap.pdf';
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'PDF Downloaded',
+        description: 'eTIMS integration roadmap has been downloaded.'
+      });
     } catch (error) {
+      console.error('PDF download error:', error);
       toast({
         title: 'Download Failed',
         description: 'Could not generate PDF. Please try again.',
