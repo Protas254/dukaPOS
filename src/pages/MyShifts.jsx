@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ShiftPerformanceSummary from '@/components/shifts/ShiftPerformanceSummary';
 
 export default function MyShifts() {
   const { data: sales = [] } = useQuery({
@@ -327,6 +328,15 @@ export default function MyShifts() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Performance Coaching Summary */}
+      <ShiftPerformanceSummary
+        mySales={mySales}
+        todaySales={todaySales}
+        weekSales={weekSales}
+        dailyData={dailyData}
+        cashierName={cashierName}
+      />
 
       {/* Navigation Buttons */}
       <div className="flex justify-between pt-4 border-t">
