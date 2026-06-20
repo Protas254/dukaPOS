@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Receipt, Eye, Calendar, RotateCcw, SlidersHorizontal, X, ArrowLeft, ArrowRight, FileText, Clock } from 'lucide-react';
+import { Search, Receipt, Eye, Calendar, RotateCcw, SlidersHorizontal, X, ArrowLeft, ArrowRight, FileText, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import ReceiptView from '@/components/pos/ReceiptView';
 import ReturnDialog from '@/components/pos/ReturnDialog';
@@ -50,6 +50,7 @@ export default function Transactions() {
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
 
   const [selectedSale, setSelectedSale] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -273,7 +274,24 @@ export default function Transactions() {
       )}
 
       {/* Transaction List */}
-      <div className="space-y-2">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Transaction History ({filtered.length})</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={() => setShowHistory(!showHistory)}
+          >
+            {showHistory ? (
+              <><ChevronUp className="w-4 h-4" /> Hide</>
+            ) : (
+              <><ChevronDown className="w-4 h-4" /> Show</>
+            )}
+          </Button>
+        </div>
+        {showHistory && (
+        <div className="space-y-2">
         {isLoading ? (
           <div className="text-center py-16 text-muted-foreground text-sm">Loading transactions...</div>
         ) : filtered.length === 0 ? (
@@ -368,6 +386,8 @@ export default function Transactions() {
               </div>
             );
           })
+        )}
+        </div>
         )}
       </div>
 
