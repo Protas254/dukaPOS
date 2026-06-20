@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import DiscountPanel from './DiscountPanel';
+import { toast } from 'sonner';
 
 const PAYMENT_METHODS = [
   { id: 'cash',          label: 'Cash',          subtitle: 'Physical notes/coins', icon: Banknote,   activeColor: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20', iconBg: 'bg-emerald-500', textColor: 'text-emerald-700 dark:text-emerald-300' },
@@ -65,6 +66,8 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   const [method, setMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
   const [mpesaRef, setMpesaRef] = useState('');
+  const [mpesaPhone, setMpesaPhone] = useState('');
+  const [mpesaStkPending, setMpesaStkPending] = useState(false);
   const [bankRef, setBankRef] = useState('');
   const [chequeNumber, setChequeNumber] = useState('');
   const [splitEntries, setSplitEntries] = useState([
@@ -295,15 +298,68 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
           )}
 
           {method === 'mpesa' && (
-            <div>
-              <Label className="text-xs">M-Pesa Transaction Code *</Label>
-              <Input
-                value={mpesaRef}
-                onChange={e => setMpesaRef(e.target.value.toUpperCase())}
-                placeholder="e.g. SHK7YJ89GH"
-                className="mt-1 font-mono uppercase"
-                autoFocus
-              />
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">M-Pesa Phone Number</Label>
+                <Input
+                  type="tel"
+                  value={mpesaPhone}
+                  onChange={e => setMpesaPhone(e.target.value)}
+                  placeholder="0712 345 678"
+                  className="mt-1"
+                  autoFocus
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Enter customer's M-Pesa number to send payment prompt.</p>
+              </div>
+              
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (!mpesaPhone || mpesaPhone.length < 10) {
+                    toast({ title: 'Invalid phone', description: 'Please enter a valid phone number', variant: 'destructive' });
+                    return;
+                  }
+                  setMpesaStkPending(true);
+                  try {
+                    const response = await base44.functions.invoke('mpesaStkPush', {
+                      phone: mpesaPhone,
+                      amount: finalTotal,
+                      account_reference: 'DukaPOS'
+                    });
+                    if (response.data.success) {
+                      toast({ 
+                        title: 'M-Pesa prompt sent', 
+                        description: 'Customer should receive payment prompt on their phone' 
+                      });
+                      setMpesaRef(response.data.checkout_request_id);
+                    } else {
+                      throw new Error(response.data.error || 'STK Push failed');
+                    }
+                  } catch (err) {
+                    toast({ 
+                      title: 'M-Pesa error', 
+                      description: err.message || 'Failed to send payment prompt', 
+                      variant: 'destructive' 
+                    });
+                  } finally {
+                    setMpesaStkPending(false);
+                  }
+                }}
+                disabled={mpesaStkPending || !mpesaPhone}
+                className="w-full"
+              >
+                {mpesaStkPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending prompt...</> : <><Smartphone className="w-4 h-4 mr-2" /> Send M-Pesa Prompt</>}
+              </Button>
+
+              <div>
+                <Label className="text-xs">OR Enter Transaction Code *</Label>
+                <Input
+                  value={mpesaRef}
+                  onChange={e => setMpesaRef(e.target.value.toUpperCase())}
+                  placeholder="e.g. SHK7YJ89GH"
+                  className="mt-1 font-mono uppercase"
+                />
+              </div>
             </div>
           )}
 

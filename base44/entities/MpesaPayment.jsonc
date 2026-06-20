@@ -1,0 +1,66 @@
+{
+  "name": "MpesaPayment",
+  "type": "object",
+  "properties": {
+    "merchant_request_id": {
+      "type": "string",
+      "description": "M-Pesa merchant request ID"
+    },
+    "checkout_request_id": {
+      "type": "string",
+      "description": "M-Pesa checkout request ID"
+    },
+    "result_code": {
+      "type": "number",
+      "description": "M-Pesa result code (0 = success)"
+    },
+    "result_description": {
+      "type": "string",
+      "description": "M-Pesa result description"
+    },
+    "mpesa_receipt_number": {
+      "type": "string",
+      "description": "M-Pesa transaction receipt number"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Transaction amount"
+    },
+    "phone_number": {
+      "type": "string",
+      "description": "Customer phone number"
+    },
+    "transaction_date": {
+      "type": "string",
+      "description": "Transaction date from M-Pesa"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Payment status"
+    },
+    "is_success": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether payment was successful"
+    },
+    "sale_id": {
+      "type": "string",
+      "description": "Linked sale ID (if applicable)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "checkout_request_id",
+    "result_code"
+  ]
+}
