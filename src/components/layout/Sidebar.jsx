@@ -46,6 +46,7 @@ const navItems = [
       { icon: Clock, label: 'My Shifts', path: '/my-shifts' },
       { icon: Calendar, label: 'Scheduling', path: '/employee-scheduling' },
       { icon: FileWarning, label: 'Shift Audits', path: '/shift-audits' },
+      { icon: BarChart3, label: 'Performance', path: '/staff-performance' },
     ]
   },
   { icon: ShieldCheck, label: 'eTIMS', path: '/etims' },
