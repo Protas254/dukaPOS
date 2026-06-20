@@ -193,6 +193,99 @@ export default function FeaturesShowcase() {
         </div>
       </div>
 
+      {/* Documentation Section */}
+      <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-display font-bold mb-2">Downloadable Documentation</h2>
+          <p className="text-muted-foreground">Get comprehensive PDF reports of your DukaPOS system</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <Card className="border-2 hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">System Documentation</CardTitle>
+                  <p className="text-sm text-muted-foreground">Complete feature list & metrics</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm space-y-2 mb-4">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  Executive summary
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  Key metrics dashboard
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  Product catalog summary
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  Sales performance analysis
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  Customer management
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  All 50+ features documented
+                </li>
+              </ul>
+              <Button onClick={handleDownloadPDF} className="w-full gap-2">
+                <Download className="w-4 h-4" />
+                Download PDF
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:shadow-lg transition-shadow bg-muted/50">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-muted">
+                  <FileText className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">More Reports Coming Soon</CardTitle>
+                  <p className="text-sm text-muted-foreground">Additional documents in development</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm space-y-2 mb-4 text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Sales report (by date range)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Inventory valuation report
+                </li>
+                <li className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Tax compliance report
+                </li>
+                <li className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Employee performance report
+                </li>
+              </ul>
+              <Button disabled className="w-full gap-2" variant="outline">
+                <Clock className="w-4 h-4" />
+                Coming Soon
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="bg-primary text-primary-foreground py-16">
         <div className="max-w-7xl mx-auto px-6 text-center space-y-4">
@@ -209,10 +302,6 @@ export default function FeaturesShowcase() {
                 Start Selling Now <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="gap-2 bg-white" onClick={handleDownloadPDF}>
-              <Download className="w-4 h-4" />
-              Download Full Documentation PDF
-            </Button>
           </div>
         </div>
       </div>
