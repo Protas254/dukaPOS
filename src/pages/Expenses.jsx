@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, Filter, DollarSign, Trash2, Edit2, Upload, Receipt, X, Table as TableIcon, LayoutGrid, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, DollarSign, Trash2, Edit2, Upload, Receipt, X, Table as TableIcon, LayoutGrid, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -32,9 +32,9 @@ const PAYMENT_METHODS = ['cash', 'mpesa', 'card', 'bank_transfer', 'cheque'];
 export default function Expenses() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchField, setSearchField] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
+  const [addedByFilter, setAddedByFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [receiptFile, setReceiptFile] = useState(null);
@@ -50,31 +50,9 @@ export default function Expenses() {
   });
 
   const filteredExpenses = expenses.filter(exp => {
-    const searchLower = searchTerm.toLowerCase();
-    let matchesSearch = true;
-    
-    if (searchTerm) {
-      if (searchField === 'all') {
-        matchesSearch = 
-                     exp.description?.toLowerCase().includes(searchLower) ||
-                     exp.reference_number?.toLowerCase().includes(searchLower) ||
-                     exp.added_by_name?.toLowerCase().includes(searchLower) ||
-                     exp.payment_method?.toLowerCase().includes(searchLower) ||
-                     exp.category?.toLowerCase().includes(searchLower);
-      } else if (searchField === 'description') {
-        matchesSearch = exp.description?.toLowerCase().includes(searchLower);
-      } else if (searchField === 'reference_number') {
-        matchesSearch = exp.reference_number?.toLowerCase().includes(searchLower);
-      } else if (searchField === 'added_by_name') {
-        matchesSearch = exp.added_by_name?.toLowerCase().includes(searchLower);
-      } else if (searchField === 'payment_method') {
-        matchesSearch = exp.payment_method?.toLowerCase().includes(searchLower);
-      } else if (searchField === 'category') {
-        matchesSearch = exp.category?.toLowerCase().includes(searchLower);
-      }
-    }
-    
     const matchesCategory = categoryFilter === 'all' || exp.category === categoryFilter;
+    const matchesPaymentMethod = paymentMethodFilter === 'all' || exp.payment_method === paymentMethodFilter;
+    const matchesAddedBy = addedByFilter === 'all' || exp.added_by_name === addedByFilter;
     
     let matchesDateFrom = true;
     let matchesDateTo = true;
@@ -86,7 +64,7 @@ export default function Expenses() {
       matchesDateTo = new Date(exp.date) <= new Date(dateTo);
     }
     
-    return matchesSearch && matchesCategory && matchesDateFrom && matchesDateTo;
+    return matchesCategory && matchesPaymentMethod && matchesAddedBy && matchesDateFrom && matchesDateTo;
   });
 
   const sortedExpenses = [...filteredExpenses].sort((a, b) => {
@@ -167,6 +145,7 @@ export default function Expenses() {
   };
 
   const categoryColors = Object.fromEntries(CATEGORIES.map(c => [c.value, c.color]));
+  const uniqueAddedBy = [...new Set(expenses.map(e => e.added_by_name).filter(Boolean))];
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -227,30 +206,6 @@ export default function Expenses() {
 
       {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-3">
-        <div className="flex items-center gap-2 flex-1">
-          <Select value={searchField} onValueChange={setSearchField}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Search by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Fields</SelectItem>
-              <SelectItem value="description">Description</SelectItem>
-              <SelectItem value="reference_number">Reference</SelectItem>
-              <SelectItem value="added_by_name">Added By</SelectItem>
-              <SelectItem value="payment_method">Payment Method</SelectItem>
-              <SelectItem value="category">Category</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={`Search ${searchField === 'all' ? 'all fields' : searchField.replace('_', ' ')}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full lg:w-[180px]">
             <SelectValue placeholder="Category" />
@@ -262,12 +217,35 @@ export default function Expenses() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+          <SelectTrigger className="w-full lg:w-[180px]">
+            <SelectValue placeholder="Payment Method" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Payment Methods</SelectItem>
+            {PAYMENT_METHODS.map(method => (
+              <SelectItem key={method} value={method} className="capitalize">
+                {method.replace('_', ' ')}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={addedByFilter} onValueChange={setAddedByFilter}>
+          <SelectTrigger className="w-full lg:w-[180px]">
+            <SelectValue placeholder="Added By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Users</SelectItem>
+            {uniqueAddedBy.map(user => (
+              <SelectItem key={user} value={user}>{user}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex items-center gap-2">
           <Input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            placeholder="From"
             className="w-[150px]"
           />
           <span className="text-muted-foreground">to</span>
@@ -275,7 +253,6 @@ export default function Expenses() {
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            placeholder="To"
             className="w-[150px]"
           />
         </div>
@@ -300,19 +277,23 @@ export default function Expenses() {
           </Button>
         </div>
       </div>
-      {(dateFrom || dateTo || searchTerm) && (
-        <div className="flex items-center gap-2 text-sm">
+      {(categoryFilter !== 'all' || paymentMethodFilter !== 'all' || addedByFilter !== 'all' || dateFrom || dateTo) && (
+        <div className="flex items-center gap-2 text-sm flex-wrap">
           <span className="text-muted-foreground">Active filters:</span>
+          {categoryFilter !== 'all' && <Badge variant="outline">{CATEGORIES.find(c => c.value === categoryFilter)?.label}</Badge>}
+          {paymentMethodFilter !== 'all' && <Badge variant="outline">{paymentMethodFilter.replace('_', ' ')}</Badge>}
+          {addedByFilter !== 'all' && <Badge variant="outline">{addedByFilter}</Badge>}
           {dateFrom && <Badge variant="outline">From: {dateFrom}</Badge>}
           {dateTo && <Badge variant="outline">To: {dateTo}</Badge>}
-          {searchTerm && <Badge variant="outline">Search: "{searchTerm}"</Badge>}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
+              setCategoryFilter('all');
+              setPaymentMethodFilter('all');
+              setAddedByFilter('all');
               setDateFrom('');
               setDateTo('');
-              setSearchTerm('');
             }}
             className="h-6 px-2 text-muted-foreground hover:text-destructive"
           >
