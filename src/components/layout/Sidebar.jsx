@@ -17,8 +17,8 @@ const navItems = [
   {
     icon: UserCog, label: 'Team Management', path: '/staff',
     children: [
-      { icon: Users, label: 'Employees', path: '/staff', tab: 'employees' },
-      { icon: Clock, label: 'My Shifts', path: '/staff', tab: 'my-shifts' },
+      { icon: Users, label: 'Employees', path: '/employees' },
+      { icon: Clock, label: 'My Shifts', path: '/my-shifts' },
     ]
   },
   { icon: ShieldCheck, label: 'eTIMS', path: '/etims' },
@@ -94,10 +94,12 @@ export default function Sidebar({ collapsed, onToggle }) {
                     {children.map(child => (
                       <Link
                         key={child.label}
-                        to={`${child.path}?tab=${child.tab}`}
+                        to={child.path}
                         className={cn(
                           "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                          "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          location.pathname === child.path
+                            ? "bg-sidebar-primary/20 text-sidebar-primary font-semibold"
+                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                         )}
                       >
                         <child.icon className="w-4 h-4 flex-shrink-0" />
