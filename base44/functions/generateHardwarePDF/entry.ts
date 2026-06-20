@@ -21,51 +21,52 @@ Deno.serve(async (req) => {
         // Helper functions
         const addHeader = (title, subtitle) => {
             doc.setFillColor(...primaryColor);
-            doc.rect(0, 0, 210, 40, 'F');
+            doc.rect(0, 0, 210, 35, 'F');
             
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(24);
+            doc.setFontSize(20);
             doc.setFont('helvetica', 'bold');
-            doc.text(title, 20, 20);
+            doc.text(title, 20, 18);
             
-            doc.setFontSize(12);
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            doc.text(subtitle, 20, 30);
+            doc.text(subtitle, 20, 26);
             
             doc.setTextColor(...darkGray);
         };
 
         const addSectionHeader = (title, icon, y) => {
             doc.setFillColor(...primaryColor);
-            doc.rect(20, y - 8, 170, 8, 'F');
+            doc.rect(20, y - 6, 170, 6, 'F');
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(14);
+            doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.text(title, 25, y - 2);
+            doc.text(title, 25, y - 1.5);
             doc.setTextColor(...darkGray);
-            return y + 10;
+            return y + 7;
         };
 
         const addTable = (headers, rows, startY) => {
-            const colWidths = [50, 80, 50];
-            const rowHeight = 10;
+            const colWidths = [48, 82, 50];
+            const rowHeight = 7;
             
             // Header row
             doc.setFillColor(240, 240, 240);
             doc.rect(20, startY, 170, rowHeight, 'F');
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             
             headers.forEach((header, idx) => {
-                doc.text(header, 25 + colWidths.slice(0, idx).reduce((a, b) => a + b, 0), startY + 6.5);
+                doc.text(header, 23 + colWidths.slice(0, idx).reduce((a, b) => a + b, 0), startY + 5);
             });
             
             // Data rows
             doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
             let y = startY + rowHeight;
             
             rows.forEach((row, idx) => {
-                if (y > 250) {
+                if (y > 270) {
                     doc.addPage();
                     y = 20;
                 }
@@ -74,7 +75,8 @@ Deno.serve(async (req) => {
                 doc.rect(20, y, 170, rowHeight, 'F');
                 
                 row.forEach((cell, cellIdx) => {
-                    doc.text(String(cell), 25 + colWidths.slice(0, cellIdx).reduce((a, b) => a + b, 0), y + 6.5);
+                    const text = String(cell).length > 35 ? String(cell).substring(0, 33) + '..' : String(cell);
+                    doc.text(text, 23 + colWidths.slice(0, cellIdx).reduce((a, b) => a + b, 0), y + 5);
                 });
                 
                 y += rowHeight;
@@ -87,21 +89,21 @@ Deno.serve(async (req) => {
         addHeader('DukaPOS Hardware Guide', 'Technical Specifications & Setup Procedures');
         
         doc.setTextColor(...darkGray);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Complete Hardware Requirements for POS Implementation', 20, 60);
-        
         doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Complete Hardware Requirements for POS Implementation', 20, 52);
+        
+        doc.setFontSize(9);
         doc.setTextColor(...lightGray);
-        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 70);
-        doc.text(`Prepared for: ${user.full_name}`, 20, 76);
+        doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 60);
+        doc.text(`Prepared for: ${user.full_name}`, 20, 65);
         
         // Table of Contents
-        let y = 90;
-        doc.setFontSize(14);
+        let y = 75;
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text('Table of Contents', 20, y);
-        y += 15;
+        y += 10;
         
         const tocItems = [
             '1. Essential Hardware Components',
@@ -114,9 +116,9 @@ Deno.serve(async (req) => {
         ];
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
+        doc.setFontSize(9);
         tocItems.forEach((item, idx) => {
-            doc.text(item, 25, y + (idx * 8));
+            doc.text(item, 25, y + (idx * 5));
         });
 
         // Page 2: Essential Hardware
@@ -143,12 +145,13 @@ Deno.serve(async (req) => {
         ];
         
         y = addTable(terminalSpecs[0], terminalSpecs.slice(1), y);
-        y += 10;
+        y += 5;
         
         // Barcode Scanner Table
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
         doc.text('1.2 Barcode Scanner', 20, y);
-        y += 8;
+        y += 6;
         
         const scannerSpecs = [
             ['Type', 'Specifications', 'Price Range'],
@@ -159,12 +162,13 @@ Deno.serve(async (req) => {
         ];
         
         y = addTable(scannerSpecs[0], scannerSpecs.slice(1), y);
-        y += 10;
+        y += 5;
         
         // Receipt Printer Table
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
         doc.text('1.3 Receipt Printer', 20, y);
-        y += 8;
+        y += 6;
         
         const printerSpecs = [
             ['Type', 'Specifications', 'Price Range'],
@@ -177,12 +181,14 @@ Deno.serve(async (req) => {
         y = addTable(printerSpecs[0], printerSpecs.slice(1), y);
 
         // Page 3: Payment Hardware
+        doc.addPage();
         y = addSectionHeader('2. Payment Processing Hardware', '💳', y);
         
         // Card Reader Table
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
         doc.text('2.1 Card Reader / PIN Pad', 20, y);
-        y += 8;
+        y += 6;
         
         const cardReaderSpecs = [
             ['Type', 'Specifications', 'Price Range'],
@@ -193,12 +199,13 @@ Deno.serve(async (req) => {
         ];
         
         y = addTable(cardReaderSpecs[0], cardReaderSpecs.slice(1), y);
-        y += 10;
+        y += 5;
         
         // Cash Drawer Table
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
         doc.text('2.2 Cash Drawer', 20, y);
-        y += 8;
+        y += 6;
         
         const drawerSpecs = [
             ['Type', 'Specifications', 'Price Range'],
@@ -211,63 +218,65 @@ Deno.serve(async (req) => {
         y = addTable(drawerSpecs[0], drawerSpecs.slice(1), y);
 
         // Page 4: Optional Hardware
+        doc.addPage();
         y = addSectionHeader('3. Optional Hardware (Enhanced Functionality)', '🔌', y);
         
         const optionalSpecs = [
             ['Equipment', 'Specifications', 'Price Range'],
-            ['Customer Display', '15" LCD, HDMI/VGA, shows transaction to customer', '$150 - $300'],
-            ['Label Printer', 'Thermal 4"x6", USB, prints barcode labels', '$120 - $350'],
-            ['Barcode Scale', 'Digital, 15kg capacity, prints weight labels', '$200 - $500'],
-            ['Security Tags', 'EAS system, detacher, 500 tags included', '$150 - $400'],
-            ['UPS Battery Backup', '1000VA, 60min runtime, auto-shutdown', '$120 - $250']
+            ['Customer Display', '15" LCD, HDMI/VGA, shows transaction', '$150 - $300'],
+            ['Label Printer', 'Thermal 4x6, USB, barcode labels', '$120 - $350'],
+            ['Barcode Scale', 'Digital, 15kg, prints weight labels', '$200 - $500'],
+            ['Security Tags', 'EAS system, detacher, 500 tags', '$150 - $400'],
+            ['UPS Battery Backup', '1000VA, 60min runtime', '$120 - $250']
         ];
         
         y = addTable(optionalSpecs[0], optionalSpecs.slice(1), y);
-        y += 10;
+        y += 5;
         
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         doc.setTextColor(...lightGray);
-        doc.text('Note: Optional hardware enhances functionality but is not required for basic operations.', 20, y);
+        doc.text('Note: Optional hardware enhances functionality but not required.', 20, y);
 
         // Page 5: Network Requirements
         doc.addPage();
         y = 20;
         y = addSectionHeader('4. Network & Infrastructure Requirements', '📡', y);
         
-        doc.setFontSize(11);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.text('Reliable internet connectivity is critical for cloud-based POS operations.', 20, y);
-        y += 15;
+        y += 8;
         
         const networkSpecs = [
-            ['Component', 'Minimum Requirement', 'Recommended'],
-            ['Internet Speed', '5 Mbps download / 1 Mbps upload', '25 Mbps download / 5 Mbps upload'],
-            ['Connection Type', '4G LTE / Basic broadband', 'Fiber optic / Business cable'],
-            ['Router', 'WiFi 5 (802.11ac)', 'WiFi 6 (802.11ax) with QoS'],
-            ['Backup', 'Mobile hotspot capability', 'Dual WAN with 4G/5G failover'],
-            ['Ethernet', 'Cat5e cables (up to 100m)', 'Cat6 cables (gigabit speeds)']
+            ['Component', 'Minimum', 'Recommended'],
+            ['Internet Speed', '5 Mbps down / 1 Mbps up', '25 Mbps down / 5 Mbps up'],
+            ['Connection Type', '4G LTE / Basic broadband', 'Fiber / Business cable'],
+            ['Router', 'WiFi 5 (802.11ac)', 'WiFi 6 (802.11ax)'],
+            ['Backup', 'Mobile hotspot', 'Dual WAN 4G/5G'],
+            ['Ethernet', 'Cat5e (100m)', 'Cat6 (gigabit)']
         ];
         
         y = addTable(networkSpecs[0], networkSpecs.slice(1), y);
-        y += 10;
+        y += 5;
         
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
         doc.text('Network Setup Checklist:', 20, y);
-        y += 8;
+        y += 6;
         
         const networkChecklist = [
-            '✓ Router with at least 4 LAN ports',
-            '✓ Ethernet cables (Cat5e or Cat6) for wired connections',
-            '✓ WiFi network with WPA2/WPA3 security',
-            '✓ Static IP address (optional but recommended)',
-            '✓ UPS battery backup for router/modem',
-            '✓ Mobile hotspot as backup internet source'
+            '✓ Router with 4+ LAN ports',
+            '✓ Ethernet cables (Cat5e/Cat6)',
+            '✓ WiFi with WPA2/WPA3 security',
+            '✓ Static IP (optional)',
+            '✓ UPS for router/modem',
+            '✓ Mobile hotspot backup'
         ];
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         networkChecklist.forEach((item, idx) => {
-            doc.text(item, 25, y + (idx * 6));
+            doc.text(item, 25, y + (idx * 4));
         });
 
         // Page 6-7: Step-by-Step Setup Procedure
@@ -275,143 +284,93 @@ Deno.serve(async (req) => {
         y = 20;
         y = addSectionHeader('5. Step-by-Step Setup Procedure', '📋', y);
         
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('Phase 1: Unboxing & Inspection (Day 1)', 20, y);
-        y += 10;
+        y += 6;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         const phase1Steps = [
-            '1.1 Carefully unbox all hardware components',
-            '1.2 Verify all items against packing list/invoice',
-            '1.3 Inspect for physical damage during shipping',
-            '1.4 Check power cables and adapters match your region',
-            '1.5 Organize components by category (terminals, printers, scanners, etc.)',
-            '1.6 Keep all packaging materials for 30 days (return window)'
+            '1.1 Unbox all hardware components',
+            '1.2 Verify items against packing list',
+            '1.3 Inspect for shipping damage',
+            '1.4 Check power cables match region',
+            '1.5 Organize by category',
+            '1.6 Keep packaging 30 days'
         ];
         
         phase1Steps.forEach((step, idx) => {
-            doc.text(step, 25, y + (idx * 6));
+            doc.text(step, 25, y + (idx * 4));
         });
-        y += phase1Steps.length * 6 + 5;
+        y += phase1Steps.length * 4 + 4;
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.text('Phase 2: Hardware Assembly (Day 1-2)', 20, y);
-        y += 10;
+        y += 6;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         const phase2Steps = [
-            '2.1 POS Terminal Setup:',
-            '   - Connect monitor (if separate) via HDMI/VGA',
-            '   - Connect keyboard and mouse (USB or Bluetooth)',
-            '   - Plug in power adapter and turn on',
-            '   - Complete initial OS setup (Windows/Android/iOS)',
-            '',
-            '2.2 Receipt Printer Installation:',
-            '   - Load thermal paper roll (ensure correct orientation)',
-            '   - Connect to power and turn on',
-            '   - Connect via USB/Ethernet/WiFi to POS terminal',
-            '   - Install printer drivers (if required)',
-            '   - Print test page to verify connection',
-            '',
-            '2.3 Barcode Scanner Setup:',
-            '   - USB scanner: Plug into POS terminal USB port',
-            '   - Bluetooth scanner: Charge fully, pair via Bluetooth settings',
-            '   - Test by scanning a known barcode',
-            '   - Configure scanner settings (prefix/suffix if needed)',
-            '',
-            '2.4 Cash Drawer Connection:',
-            '   - Connect RJ11 cable to receipt printer (not directly to POS)',
-            '   - Plug in power adapter if required',
-            '   - Test by triggering from POS software',
-            '   - Organize coin compartments and bill slots',
-            '',
-            '2.5 Card Reader/PIN Pad:',
-            '   - Connect via USB/Bluetooth/Ethernet',
-            '   - Follow payment provider activation instructions',
-            '   - Test with small transaction',
-            '   - Ensure PCI compliance signage is visible'
+            '2.1 POS Terminal: Connect monitor, keyboard, mouse, power on',
+            '   Complete OS setup (Windows/Android/iOS)',
+            '2.2 Receipt Printer: Load paper, connect power/USB',
+            '   Install drivers, print test page',
+            '2.3 Barcode Scanner: USB plug-in or Bluetooth pair',
+            '   Test scanning, configure if needed',
+            '2.4 Cash Drawer: Connect RJ11 to printer',
+            '   Test trigger from POS',
+            '2.5 Card Reader: Connect USB/Bluetooth',
+            '   Activate with payment provider, test transaction'
         ];
         
         phase2Steps.forEach((step, idx) => {
-            doc.text(step, 25, y + (idx * 6));
+            doc.text(step, 25, y + (idx * 4));
         });
-        y += phase2Steps.length * 6 + 5;
+        y += phase2Steps.length * 4 + 4;
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.text('Phase 3: Network Configuration (Day 2)', 20, y);
-        y += 10;
+        y += 6;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         const phase3Steps = [
-            '3.1 Router/Modem Setup:',
-            '   - Connect modem to internet source (fiber/cable/DSL)',
-            '   - Power on router and wait for stable connection',
-            '   - Configure WiFi network name (SSID) and password',
-            '   - Enable WPA2/WPA3 security',
-            '   - Set up guest network (optional, for customer WiFi)',
-            '',
-            '3.2 POS Terminal Network Connection:',
-            '   - Wired: Connect Ethernet cable from router to POS terminal',
-            '   - Wireless: Connect to WiFi network via settings',
-            '   - Test internet connectivity (open browser, visit website)',
-            '   - Note IP address for troubleshooting reference',
-            '',
-            '3.3 Backup Internet Setup:',
-            '   - Configure mobile hotspot device',
-            '   - Test failover by disconnecting primary internet',
-            '   - Ensure POS terminal automatically switches to backup'
+            '3.1 Router: Connect modem, power on, configure WiFi',
+            '   Enable WPA2/WPA3 security',
+            '3.2 POS Network: Ethernet or WiFi connection',
+            '   Test internet, note IP address',
+            '3.3 Backup: Configure mobile hotspot',
+            '   Test failover'
         ];
         
         phase3Steps.forEach((step, idx) => {
-            doc.text(step, 25, y + (idx * 6));
+            doc.text(step, 25, y + (idx * 4));
         });
-
-        // Page 8: Software & Testing
-        y += phase3Steps.length * 6 + 10;
+        y += phase3Steps.length * 4 + 4;
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.text('Phase 4: Software Installation & Configuration (Day 3)', 20, y);
-        y += 10;
+        doc.setFontSize(10);
+        doc.text('Phase 4: Software Setup (Day 3)', 20, y);
+        y += 6;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         const phase4Steps = [
-            '4.1 DukaPOS Software Setup:',
-            '   - Open web browser (Chrome/Firefox/Edge recommended)',
-            '   - Navigate to DukaPOS application URL',
-            '   - Log in with admin credentials',
-            '   - Complete business profile setup',
-            '   - Configure tax rates and currency settings',
-            '',
-            '4.2 Peripheral Configuration in DukaPOS:',
-            '   - Go to Settings > Hardware',
-            '   - Select and configure receipt printer model',
-            '   - Configure barcode scanner (if settings available)',
-            '   - Set up cash drawer trigger settings',
-            '   - Connect payment processor integration',
-            '',
-            '4.3 Product Catalog Setup:',
-            '   - Import products via CSV or add manually',
-            '   - Ensure all products have barcodes/SKUs',
-            '   - Set prices, tax rates, and stock levels',
-            '   - Test barcode scanning for random products',
-            '',
-            '4.4 User Accounts & Permissions:',
-            '   - Create user accounts for cashiers/staff',
-            '   - Assign appropriate roles and permissions',
-            '   - Set up PIN codes or login credentials',
-            '   - Test login for each user type'
+            '4.1 DukaPOS: Open browser, login admin',
+            '   Configure business, tax, currency',
+            '4.2 Hardware: Settings > Hardware',
+            '   Configure printer, scanner, drawer',
+            '4.3 Products: Import CSV or add manual',
+            '   Set prices, test barcodes',
+            '4.4 Users: Create cashier accounts',
+            '   Assign roles, test login'
         ];
         
         phase4Steps.forEach((step, idx) => {
-            doc.text(step, 25, y + (idx * 6));
+            doc.text(step, 25, y + (idx * 4));
         });
 
         // Page 9: Testing & Training
@@ -420,80 +379,46 @@ Deno.serve(async (req) => {
         y = addSectionHeader('5. Step-by-Step Setup Procedure (continued)', '📋', y);
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.text('Phase 5: Testing & Validation (Day 3-4)', 20, y);
-        y += 10;
+        doc.setFontSize(10);
+        doc.text('Phase 5: Testing (Day 3-4)', 20, y);
+        y += 6;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         const phase5Steps = [
-            '5.1 Hardware Testing Checklist:',
-            '   ✓ Print test receipt (verify clarity and alignment)',
-            '   ✓ Scan 10+ different barcodes (test speed and accuracy)',
-            '   ✓ Open cash drawer 5+ times (test reliability)',
-            '   ✓ Process test card payment (small amount)',
-            '   ✓ Process test cash payment and give change',
-            '   ✓ Test refund/void transaction',
-            '   ✓ Verify all hardware works after restart',
-            '',
-            '5.2 Software Testing Checklist:',
-            '   ✓ Create test sale with multiple items',
-            '   ✓ Apply discount and verify calculation',
-            '   ✓ Process split payment (cash + card)',
-            '   ✓ Generate and email receipt',
-            '   ✓ Check inventory deduction accuracy',
-            '   ✓ Verify sales appear in reports',
-            '   ✓ Test offline mode (if available)',
-            '   ✓ Sync data after reconnecting to internet',
-            '',
-            '5.3 Integration Testing:',
-            '   ✓ Verify payment processor settlement',
-            '   ✓ Test email/SMS receipt delivery',
-            '   ✓ Check cloud backup and sync',
-            '   ✓ Test mobile app (if applicable)',
-            '   ✓ Verify multi-device synchronization'
+            'Hardware: Print receipt, scan 10+ barcodes',
+            '   Test drawer, card payment, cash/change',
+            '   Test refund/void, restart verify',
+            'Software: Create sale, apply discount',
+            '   Split payment, email receipt',
+            '   Check inventory, reports, offline mode',
+            'Integration: Payment settlement',
+            '   Email/SMS receipts, cloud sync'
         ];
         
         phase5Steps.forEach((step, idx) => {
-            doc.text(step, 25, y + (idx * 6));
+            doc.text(step, 25, y + (idx * 4));
         });
-        y += phase5Steps.length * 6 + 5;
+        y += phase5Steps.length * 4 + 4;
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.text('Phase 6: Staff Training (Day 4-5)', 20, y);
-        y += 10;
+        y += 6;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         const phase6Steps = [
-            '6.1 Basic Operations Training:',
-            '   - Logging in and out of POS system',
-            '   - Processing cash sales',
-            '   - Processing card payments',
-            '   - Handling split payments',
-            '   - Applying discounts and promotions',
-            '   - Printing/emailing receipts',
-            '',
-            '6.2 Advanced Operations Training:',
-            '   - Processing returns and refunds',
-            '   - Voiding transactions',
-            '   - Opening/closing shifts',
-            '   - Cash drawer reconciliation',
-            '   - Handling price overrides',
-            '   - Manager approval workflows',
-            '',
-            '6.3 Troubleshooting Training:',
-            '   - What to do when internet goes down',
-            '   - How to restart frozen terminal',
-            '   - Replacing receipt paper roll',
-            '   - Reconnecting Bluetooth devices',
-            '   - Who to contact for technical support',
-            '   - Emergency manual receipt procedures'
+            '6.1 Basic: Login, cash/card sales',
+            '   Discounts, receipts, split payments',
+            '6.2 Advanced: Returns, voids, shifts',
+            '   Reconciliation, price overrides',
+            '6.3 Troubleshooting: Internet down',
+            '   Restart, paper, Bluetooth, support'
         ];
         
         phase6Steps.forEach((step, idx) => {
-            doc.text(step, 25, y + (idx * 6));
+            doc.text(step, 25, y + (idx * 4));
         });
 
         // Page 10: Troubleshooting
@@ -502,115 +427,115 @@ Deno.serve(async (req) => {
         y = addSectionHeader('6. Troubleshooting Guide', '🔧', y);
         
         const troubleshootingTable = [
-            ['Issue', 'Possible Cause', 'Solution'],
-            ['Receipt printer not printing', 'No paper / Wrong orientation', 'Reload paper, ensure thermal side faces up'],
-            ['', 'Loose cable connection', 'Check USB/Ethernet/power cables'],
-            ['', 'Wrong printer selected', 'Select correct printer in POS settings'],
-            ['', 'Driver not installed', 'Install/update printer drivers'],
-            ['Barcode scanner not working', 'USB port not recognized', 'Try different USB port'],
-            ['', 'Bluetooth not paired', 'Re-pair scanner in Bluetooth settings'],
-            ['', 'Barcode damaged/dirty', 'Clean barcode or enter SKU manually'],
-            ['Cash drawer not opening', 'RJ11 cable unplugged', 'Connect to receipt printer'],
-            ['', 'No power to drawer', 'Check power adapter connection'],
-            ['', 'Software trigger failed', 'Test drawer from POS settings'],
-            ['Card reader not responding', 'No power/connection', 'Check USB/power cables'],
-            ['', 'Not activated', 'Contact payment provider for activation'],
-            ['', 'Transaction declined', 'Try different card or payment method'],
-            ['WiFi connection drops', 'Weak signal strength', 'Move router closer or add extender'],
-            ['', 'Network congestion', 'Reduce connected devices or upgrade plan'],
-            ['', 'Router malfunction', 'Restart router (unplug 30 seconds)'],
-            ['POS terminal slow/freezes', 'Too many apps running', 'Close unnecessary applications'],
-            ['', 'Low storage space', 'Delete unnecessary files/apps'],
-            ['', 'Outdated software', 'Update OS and browser to latest version']
+            ['Issue', 'Cause', 'Solution'],
+            ['Printer not printing', 'No paper/wrong orientation', 'Reload paper correctly'],
+            ['', 'Loose cables', 'Check USB/power connections'],
+            ['', 'Wrong printer', 'Select in POS settings'],
+            ['', 'No driver', 'Install drivers'],
+            ['Scanner not working', 'USB not recognized', 'Try different port'],
+            ['', 'Bluetooth unpaired', 'Re-pair in settings'],
+            ['', 'Barcode dirty', 'Clean or enter SKU'],
+            ['Drawer not opening', 'Cable unplugged', 'Connect to printer'],
+            ['', 'No power', 'Check adapter'],
+            ['', 'Trigger failed', 'Test in settings'],
+            ['Card reader dead', 'No power', 'Check cables'],
+            ['', 'Not activated', 'Contact provider'],
+            ['', 'Declined', 'Try different card'],
+            ['WiFi drops', 'Weak signal', 'Move router/add extender'],
+            ['', 'Congestion', 'Reduce devices'],
+            ['', 'Router issue', 'Restart router'],
+            ['Terminal slow', 'Too many apps', 'Close apps'],
+            ['', 'Low storage', 'Delete files'],
+            ['', 'Outdated', 'Update software']
         ];
         
         y = addTable(troubleshootingTable[0], troubleshootingTable.slice(1), y);
-        y += 10;
+        y += 6;
         
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         doc.setTextColor(...lightGray);
-        doc.text('For issues not resolved by troubleshooting steps, contact DukaPOS support.', 20, y);
+        doc.text('Contact support for unresolved issues.', 20, y);
 
         // Page 11: Maintenance
         y = addSectionHeader('7. Maintenance & Support', '🛠️', y);
         
-        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('Daily Maintenance:', 20, y);
-        y += 8;
-        
-        const dailyTasks = [
-            '• Clean touchscreen with microfiber cloth',
-            '• Wipe down barcode scanner lens',
-            '• Check receipt paper level and replace if low',
-            '• Verify cash drawer closes properly',
-            '• Run end-of-day reports and backups',
-            '• Restart POS terminal (clears memory)'
-        ];
+        doc.setFontSize(10);
+        doc.text('Daily: Clean screen, scanner, check paper', 20, y);
+        y += 5;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
+        const dailyTasks = [
+            '• Clean touchscreen',
+            '• Wipe scanner lens',
+            '• Check paper level',
+            '• Test cash drawer',
+            '• Run reports',
+            '• Restart terminal'
+        ];
+        
         dailyTasks.forEach((task, idx) => {
-            doc.text(task, 25, y + (idx * 6));
+            doc.text(task, 25, y + (idx * 4));
         });
-        y += dailyTasks.length * 6 + 5;
+        y += dailyTasks.length * 4 + 4;
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text('Weekly Maintenance:', 20, y);
-        y += 8;
+        doc.setFontSize(10);
+        doc.text('Weekly: Deep clean, check cables', 20, y);
+        y += 5;
         
         const weeklyTasks = [
-            '• Deep clean all hardware surfaces',
-            '• Check all cable connections (tighten if loose)',
-            '• Test backup internet connection',
-            '• Verify payment processor settlement',
-            '• Review system logs for errors',
-            '• Update software if updates available'
+            '• Deep clean hardware',
+            '• Check cables',
+            '• Test backup internet',
+            '• Verify settlement',
+            '• Review logs',
+            '• Update software'
         ];
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         weeklyTasks.forEach((task, idx) => {
-            doc.text(task, 25, y + (idx * 6));
+            doc.text(task, 25, y + (idx * 4));
         });
-        y += weeklyTasks.length * 6 + 5;
+        y += weeklyTasks.length * 4 + 4;
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text('Monthly Maintenance:', 20, y);
-        y += 8;
+        doc.setFontSize(10);
+        doc.text('Monthly: Replace paper, clean', 20, y);
+        y += 5;
         
         const monthlyTasks = [
-            '• Replace receipt paper rolls (preventive)',
-            '• Clean internal components (compressed air)',
-            '• Test UPS battery backup',
-            '• Review and archive old transaction data',
-            '• Check warranty status on all hardware',
-            '• Inventory all hardware assets'
+            '• Replace paper rolls',
+            '• Clean internals',
+            '• Test UPS',
+            '• Archive data',
+            '• Check warranty',
+            '• Inventory assets'
         ];
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         monthlyTasks.forEach((task, idx) => {
-            doc.text(task, 25, y + (idx * 6));
+            doc.text(task, 25, y + (idx * 4));
         });
-        y += monthlyTasks.length * 6 + 10;
+        y += monthlyTasks.length * 4 + 4;
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text('Support Contact Information:', 20, y);
-        y += 8;
+        doc.setFontSize(10);
+        doc.text('Support:', 20, y);
+        y += 5;
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         doc.text('Email: support@dukapos.com', 25, y);
-        y += 6;
+        y += 4;
         doc.text('Phone: +254 XXX XXX XXX', 25, y);
-        y += 6;
-        doc.text('Website: www.dukapos.com/support', 25, y);
-        y += 6;
-        doc.text('Hours: Monday - Saturday, 8:00 AM - 6:00 PM EAT', 25, y);
+        y += 4;
+        doc.text('Web: www.dukapos.com/support', 25, y);
+        y += 4;
+        doc.text('Hours: Mon-Sat 8AM-6PM EAT', 25, y);
 
         // Footer on all pages
         const pageCount = doc.internal.getNumberOfPages();
