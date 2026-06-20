@@ -31,6 +31,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Product.list(),
   });
 
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list('-date', 100),
+  });
+
   const today = startOfDay(new Date());
   const todaySales = sales.filter(s => new Date(s.created_date) >= today);
   const yesterdaySales = sales.filter(s => {
@@ -38,20 +43,15 @@ export default function Dashboard() {
     return d >= subDays(today, 1) && d < today;
   });
 
-  const { data: expenses = [] } = useQuery({
-    queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list('-date', 100),
-  });
-
-  const todayExpenses = expenses.filter(e => new Date(e.date) >= today);
-  const todayExpenseTotal = todayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const netProfit = todayRevenue - todayExpenseTotal;
-
   const todayRevenue = todaySales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const yesterdayRevenue = yesterdaySales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const revenueTrend = yesterdayRevenue > 0 
     ? `${((todayRevenue - yesterdayRevenue) / yesterdayRevenue * 100).toFixed(0)}%` 
     : 'N/A';
+
+  const todayExpenses = expenses.filter(e => new Date(e.date) >= today);
+  const todayExpenseTotal = todayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const netProfit = todayRevenue - todayExpenseTotal;
 
   const lowStockProducts = products.filter(p => p.stock_quantity <= (p.low_stock_threshold || 10));
   const criticalStockProducts = products.filter(p => p.stock_quantity <= Math.floor((p.low_stock_threshold || 10) * 0.5));
