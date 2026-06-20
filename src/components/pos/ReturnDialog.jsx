@@ -51,7 +51,7 @@ export default function ReturnDialog({ open, onClose, sale }) {
         notes: `Return: ${finalReason}`,
       });
 
-      // 2. Restore stock for each returned item (fire and forget individually but await all)
+      // 2. Restore stock for each returned item
       await Promise.all(
         returnItems.map(async (item) => {
           const qty = returnQtys[item.product_id] || 0;
@@ -64,11 +64,37 @@ export default function ReturnDialog({ open, onClose, sale }) {
           } catch (_) { /* product may have been deleted */ }
         })
       );
+
+      // 3. Email confirmation to customer if email is available
+      let customerEmail = null;
+      if (sale.customer_id) {
+        try {
+          const customer = await base44.entities.Customer.get(sale.customer_id);
+          customerEmail = customer?.email || null;
+        } catch (_) { /* customer may have been deleted */ }
+      }
+
+      if (customerEmail) {
+        const itemLines = returnItems.map(i =>
+          `  - ${i.product_name} × ${returnQtys[i.product_id]} — KES ${(i.unit_price * returnQtys[i.product_id]).toLocaleString()}`
+        ).join('\n');
+
+        await base44.integrations.Core.SendEmail({
+          to: customerEmail,
+          subject: `Refund Confirmation – Receipt ${sale.receipt_number}`,
+          body: `Dear ${sale.customer_name || 'Customer'},\n\nYour return/refund has been successfully processed.\n\nReceipt: ${sale.receipt_number}\nReason: ${finalReason}\n\nReturned Items:\n${itemLines}\n\nRefund Total: KES ${Math.round(refundTotal).toLocaleString()}\n\nThe refund amount will be processed through your original payment method. If you have any questions, please contact us.\n\nThank you,\nThe Store Team`,
+        });
+      }
+
+      return { emailSent: !!customerEmail };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({ title: 'Return processed', description: `Refund of KES ${Math.round(refundTotal).toLocaleString()} recorded and inventory updated.` });
+      toast({
+        title: 'Return processed',
+        description: `Refund of KES ${Math.round(refundTotal).toLocaleString()} recorded and inventory updated.${result.emailSent ? ' Confirmation email sent to customer.' : ''}`,
+      });
       handleClose();
     },
     onError: (err) => {
