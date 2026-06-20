@@ -99,15 +99,15 @@ export default function FeaturesShowcase() {
 
   const handleDownloadPDF = async () => {
     try {
-      const response = await base44.functions.invoke('generateDukaPOSPDF', {});
+      const response = await base44.functions.invoke('generateUserManualPDF', {});
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `DukaPOS_Documentation_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.download = `DukaPOS_User_Manual_${new Date().toISOString().split('T')[0]}.pdf`;
       link.click();
       window.URL.revokeObjectURL(url);
-      toast({ title: 'Success', description: 'PDF downloaded successfully' });
+      toast({ title: 'Success', description: 'User manual downloaded successfully' });
     } catch (err) {
       toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
     }
@@ -207,8 +207,8 @@ export default function FeaturesShowcase() {
                   <FileText className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">System Documentation</CardTitle>
-                  <p className="text-sm text-muted-foreground">Complete feature list & metrics</p>
+                  <CardTitle className="text-lg">User Manual & Documentation</CardTitle>
+                  <p className="text-sm text-muted-foreground">How every feature works</p>
                 </div>
               </div>
             </CardHeader>
@@ -216,27 +216,35 @@ export default function FeaturesShowcase() {
               <ul className="text-sm space-y-2 mb-4">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Executive summary
+                  Complete user manual (12 sections)
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Key metrics dashboard
+                  How to use POS system
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Product catalog summary
+                  Manager controls & approvals
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Sales performance analysis
+                  Inventory management guide
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Customer management
+                  Shift management & audits
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  All 50+ features documented
+                  Keyboard shortcuts & tips
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  Troubleshooting guide
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  KRA eTIMS compliance
                 </li>
               </ul>
               <Button onClick={handleDownloadPDF} className="w-full gap-2">
