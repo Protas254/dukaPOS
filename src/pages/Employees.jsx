@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function StatBox({ label, value, sub, highlight }) {
   return (
@@ -53,6 +53,7 @@ const STATUS_COLORS = {
 };
 
 export default function Employees() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [expandedEmployee, setExpandedEmployee] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -287,6 +288,14 @@ export default function Employees() {
                       <p className="text-lg font-display font-bold text-primary">KES {Math.round(emp.totalRevenue).toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">all-time revenue</p>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5"
+                      onClick={() => navigate(`/employees/profile?name=${encodeURIComponent(emp.name)}`)}
+                    >
+                      <Award className="w-3.5 h-3.5" /> View Profile
+                    </Button>
                     <button
                       onClick={() => setExpandedEmployee(isExpanded ? null : emp.name)}
                       className="p-2 hover:bg-muted rounded-lg transition-colors"
