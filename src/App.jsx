@@ -22,7 +22,7 @@ import Inventory from '@/pages/Inventory';
 import Transactions from '@/pages/Transactions';
 import Reports from '@/pages/Reports';
 import Customers from '@/pages/Customers';
-import MyShifts from '@/pages/MyShifts';
+import StaffHub from '@/pages/StaffHub';
 import Settings from '@/pages/Settings';
 import EtimsCompliance from '@/pages/EtimsCompliance';
 import Employees from '@/pages/Employees';
@@ -66,7 +66,7 @@ const AuthenticatedApp = () => {
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/customers" element={<Customers />} />
-          <Route path="/my-shifts" element={<MyShifts />} />
+          <Route path="/staff" element={<StaffHub />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/employees/profile" element={<EmployeeProfile />} />
           <Route path="/etims" element={<EtimsCompliance />} />
