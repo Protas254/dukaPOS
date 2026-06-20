@@ -46,6 +46,29 @@ Deno.serve(async (req) => {
             return y + 7;
         };
 
+        const addCostSummary = (smallShop, mediumShop, largeShop, y) => {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Estimated Total Cost by Shop Size:', 20, y);
+            y += 6;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.text('Small Shop (1-2 staff, <500 sq ft):', 25, y);
+            doc.text(smallShop, 100, y);
+            y += 5;
+            
+            doc.text('Medium Shop (3-5 staff, 500-1500 sq ft):', 25, y);
+            doc.text(mediumShop, 100, y);
+            y += 5;
+            
+            doc.text('Large Shop (6+ staff, 1500+ sq ft):', 25, y);
+            doc.text(largeShop, 100, y);
+            y += 5;
+            
+            return y;
+        };
+
         const addTable = (headers, rows, startY) => {
             const colWidths = [48, 82, 50];
             const rowHeight = 7;
@@ -124,7 +147,7 @@ Deno.serve(async (req) => {
         // Page 2: Essential Hardware
         doc.addPage();
         y = 20;
-        y = addSectionHeader('1. Essential Hardware Components', '📦', y);
+        y = addSectionHeader('1. Essential Hardware Components', y);
         
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
@@ -179,10 +202,14 @@ Deno.serve(async (req) => {
         ];
         
         y = addTable(printerSpecs[0], printerSpecs.slice(1), y);
+        y += 8;
+        
+        // Cost summary for essential hardware
+        y = addCostSummary('$530 - $950 (Basic setup)', '$780 - $1,400 (Recommended)', '$1,200 - $2,100 (Complete)', y);
 
         // Page 3: Payment Hardware
         doc.addPage();
-        y = addSectionHeader('2. Payment Processing Hardware', '💳', y);
+        y = addSectionHeader('2. Payment Processing Hardware', y);
         
         // Card Reader Table
         doc.setFont('helvetica', 'bold');
@@ -216,10 +243,14 @@ Deno.serve(async (req) => {
         ];
         
         y = addTable(drawerSpecs[0], drawerSpecs.slice(1), y);
+        y += 8;
+        
+        // Cost summary for payment hardware
+        y = addCostSummary('$130 - $230 (Basic)', '$300 - $550 (Recommended)', '$450 - $850 (Complete)', y);
 
         // Page 4: Optional Hardware
         doc.addPage();
-        y = addSectionHeader('3. Optional Hardware (Enhanced Functionality)', '🔌', y);
+        y = addSectionHeader('3. Optional Hardware', y);
         
         const optionalSpecs = [
             ['Equipment', 'Specifications', 'Price Range'],
@@ -231,16 +262,28 @@ Deno.serve(async (req) => {
         ];
         
         y = addTable(optionalSpecs[0], optionalSpecs.slice(1), y);
+        y += 8;
+        
+        doc.setFontSize(9);
+        doc.setTextColor(...darkGray);
+        doc.text('Recommendation by Shop Size:', 20, y);
         y += 5;
         
         doc.setFontSize(8);
+        doc.text('Small Shop: Skip optional items, focus on essentials only', 25, y);
+        y += 4;
+        doc.text('Medium Shop: Add customer display + label printer ($270-650)', 25, y);
+        y += 4;
+        doc.text('Large Shop: All optional items recommended ($740-1,800)', 25, y);
+        y += 4;
+        
         doc.setTextColor(...lightGray);
         doc.text('Note: Optional hardware enhances functionality but not required.', 20, y);
 
         // Page 5: Network Requirements
         doc.addPage();
         y = 20;
-        y = addSectionHeader('4. Network & Infrastructure Requirements', '📡', y);
+        y = addSectionHeader('4. Network & Infrastructure Requirements', y);
         
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
@@ -278,11 +321,24 @@ Deno.serve(async (req) => {
         networkChecklist.forEach((item, idx) => {
             doc.text(item, 25, y + (idx * 4));
         });
+        y += networkChecklist.length * 4 + 8;
+        
+        // Network cost summary
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Network Equipment Costs:', 20, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.text('Small Shop: Basic router + cables ($80-150)', 25, y);
+        y += 4;
+        doc.text('Medium Shop: Business router + UPS ($200-350)', 25, y);
+        y += 4;
+        doc.text('Large Shop: Dual WAN + backup 4G/5G ($400-700)', 25, y);
 
         // Page 6-7: Step-by-Step Setup Procedure
         doc.addPage();
         y = 20;
-        y = addSectionHeader('5. Step-by-Step Setup Procedure', '📋', y);
+        y = addSectionHeader('5. Step-by-Step Setup Procedure', y);
         
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -376,7 +432,7 @@ Deno.serve(async (req) => {
         // Page 9: Testing & Training
         doc.addPage();
         y = 20;
-        y = addSectionHeader('5. Step-by-Step Setup Procedure (continued)', '📋', y);
+        y = addSectionHeader('5. Step-by-Step Setup Procedure (continued)', y);
         
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
@@ -424,7 +480,7 @@ Deno.serve(async (req) => {
         // Page 10: Troubleshooting
         doc.addPage();
         y = 20;
-        y = addSectionHeader('6. Troubleshooting Guide', '🔧', y);
+        y = addSectionHeader('6. Troubleshooting Guide', y);
         
         const troubleshootingTable = [
             ['Issue', 'Cause', 'Solution'],
@@ -457,7 +513,9 @@ Deno.serve(async (req) => {
         doc.text('Contact support for unresolved issues.', 20, y);
 
         // Page 11: Maintenance
-        y = addSectionHeader('7. Maintenance & Support', '🛠️', y);
+        doc.addPage();
+        y = 20;
+        y = addSectionHeader('7. Maintenance & Support', y);
         
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
@@ -536,6 +594,31 @@ Deno.serve(async (req) => {
         doc.text('Web: www.dukapos.com/support', 25, y);
         y += 4;
         doc.text('Hours: Mon-Sat 8AM-6PM EAT', 25, y);
+        y += 8;
+        
+        // Total Investment Summary
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('TOTAL INVESTMENT SUMMARY:', 20, y);
+        y += 6;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text('Small Shop (Essentials + Network):', 25, y);
+        doc.text('$740 - $1,330', 140, y);
+        y += 5;
+        
+        doc.text('Medium Shop (Recommended + Network):', 25, y);
+        doc.text('$1,280 - $2,300', 140, y);
+        y += 5;
+        
+        doc.text('Large Shop (Complete + Premium):', 25, y);
+        doc.text('$2,090 - $3,650', 140, y);
+        y += 5;
+        
+        doc.setFontSize(8);
+        doc.setTextColor(...lightGray);
+        doc.text('Note: Costs approximate, vary by brand/region.', 20, y);
 
         // Footer on all pages
         const pageCount = doc.internal.getNumberOfPages();
