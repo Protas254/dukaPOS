@@ -1,8 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Store, Package, Users, Receipt, BarChart3, Settings } from 'lucide-react';
+import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Store, Package, Users, Receipt, BarChart3, Settings, Download, Server, FileText } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
 const onboardingSteps = [
   {
@@ -50,6 +52,24 @@ const onboardingSteps = [
 ];
 
 export default function Onboarding() {
+  const handleDownloadHardwareGuide = async () => {
+    try {
+      const response = await base44.functions.invoke('generateHardwarePDF', {});
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'DukaPOS_Hardware_Guide.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Hardware guide downloaded!');
+    } catch (error) {
+      toast.error('Failed to download hardware guide. Please try again.');
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8">
@@ -58,6 +78,54 @@ export default function Onboarding() {
           Follow these steps to get your business up and running
         </p>
       </div>
+
+      {/* Hardware Guide Download Card */}
+      <Card className="mb-8 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
+                <Server className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle>Hardware Requirements Guide</CardTitle>
+                <CardDescription>
+                  Complete technical specifications and step-by-step setup procedures
+                </CardDescription>
+              </div>
+            </div>
+            <Button onClick={handleDownloadHardwareGuide} className="gap-2">
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="flex items-start gap-2">
+              <FileText className="w-4 h-4 text-primary mt-0.5" />
+              <div className="text-sm">
+                <p className="font-semibold">Technical Specifications</p>
+                <p className="text-muted-foreground">Detailed hardware specs for all components</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 text-primary mt-0.5" />
+              <div className="text-sm">
+                <p className="font-semibold">Step-by-Step Setup</p>
+                <p className="text-muted-foreground">Complete installation procedures</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <BookOpen className="w-4 h-4 text-primary mt-0.5" />
+              <div className="text-sm">
+                <p className="font-semibold">Maintenance Guide</p>
+                <p className="text-muted-foreground">Troubleshooting and support info</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {onboardingSteps.map((step, index) => (

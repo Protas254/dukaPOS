@@ -39,6 +39,7 @@ import CashFlow from '@/pages/CashFlow';
 import Suppliers from '@/pages/Suppliers';
 import AdvancedReports from '@/pages/AdvancedReports';
 import StaffPerformance from '@/pages/StaffPerformance';
+import HardwareRequirements from '@/pages/HardwareRequirements';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -94,6 +95,7 @@ const AuthenticatedApp = () => {
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/advanced-reports" element={<AdvancedReports />} />
           <Route path="/staff-performance" element={<StaffPerformance />} />
+          <Route path="/hardware-requirements" element={<HardwareRequirements />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
