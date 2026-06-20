@@ -29,7 +29,7 @@ const APPROVAL_STATUS_CONFIG = {
   rejected: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100', label: 'Rejected' },
 };
 
-export default function ShiftAuditTrail({ audits = [], onApprove, onReject, showActions = false }) {
+export default function ShiftAuditTrail({ audits = [], onApprove, onReject, onViewReceipt, showActions = false }) {
   if (audits.length === 0) {
     return (
       <Card className="border-dashed">
@@ -156,17 +156,14 @@ export default function ShiftAuditTrail({ audits = [], onApprove, onReject, show
                     {audit.sale_id && (
                       <div className="mt-3 pt-3 border-t">
                         <p className="text-[10px] text-muted-foreground mb-1">Related Transaction:</p>
-                        <Link
-                          to={`/transactions?receipt=${audit.sale_receipt_number}`}
+                        <button
+                          onClick={() => onViewReceipt(audit.sale_id)}
                           className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
                         >
                           <Receipt className="w-3 h-3" />
                           Receipt #{audit.sale_receipt_number}
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
-                        {audit.sale_amount && (
-                          <span className="ml-3 text-xs font-semibold">KES {audit.sale_amount.toLocaleString()}</span>
-                        )}
+                          <span className="ml-2 text-xs font-semibold">KES {audit.sale_amount?.toLocaleString()}</span>
+                        </button>
                       </div>
                     )}
                   </div>

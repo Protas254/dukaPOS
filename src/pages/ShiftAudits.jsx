@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Filter, Search, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, Filter, Search, AlertCircle, CheckCircle, XCircle, Receipt, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ShiftAuditTrail from '@/components/shifts/ShiftAuditTrail';
 import { toast } from 'sonner';
 
@@ -14,6 +15,8 @@ export default function ShiftAudits() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: audits, isLoading } = useQuery({
@@ -49,6 +52,16 @@ export default function ShiftAudits() {
 
   const handleReject = (auditId) => {
     rejectMutation.mutate(auditId);
+  };
+
+  const handleViewReceipt = async (saleId) => {
+    try {
+      const sale = await base44.entities.Sale.get(saleId);
+      setSelectedReceipt(sale);
+      setReceiptDialogOpen(true);
+    } catch (error) {
+      toast.error('Failed to load receipt');
+    }
   };
 
   const filteredAudits = audits?.filter(audit => {
@@ -191,9 +204,93 @@ export default function ShiftAudits() {
           audits={filteredAudits}
           onApprove={handleApprove}
           onReject={handleReject}
+          onViewReceipt={handleViewReceipt}
           showActions={true}
         />
       )}
+
+      {/* Receipt Preview Dialog */}
+      <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Receipt #{selectedReceipt?.receipt_number}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedReceipt && (
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="text-center pb-4 border-b">
+                <h3 className="font-display font-bold text-lg">SoftPOS Kenya</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date(selectedReceipt.created_date).toLocaleString()}
+                </p>
+                <Badge className="mt-2" variant={selectedReceipt.status === 'completed' ? 'default' : 'destructive'}>
+                  {selectedReceipt.status?.toUpperCase()}
+                </Badge>
+              </div>
+
+              {/* Cashier & Shift Info */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Cashier</p>
+                  <p className="font-semibold">{selectedReceipt.cashier_name || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Payment Method</p>
+                  <p className="font-semibold capitalize">{selectedReceipt.payment_method || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div>
+                <h4 className="font-semibold text-sm mb-2">Items</h4>
+                <div className="space-y-1">
+                  {selectedReceipt.items?.map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span>
+                        {item.product_name} × {item.quantity}
+                      </span>
+                      <span className="font-medium">KES {item.total?.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="border-t pt-3 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <span>KES {selectedReceipt.subtotal?.toLocaleString()}</span>
+                </div>
+                {selectedReceipt.discount_amount > 0 && (
+                  <div className="flex justify-between text-sm text-red-600">
+                    <span>Discount</span>
+                    <span>-KES {selectedReceipt.discount_amount?.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span>Tax</span>
+                  <span>KES {selectedReceipt.tax_total?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold text-base border-t pt-2">
+                  <span>Total</span>
+                  <span>KES {selectedReceipt.total_amount?.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* eTIMS Info */}
+              {selectedReceipt.cuin && (
+                <div className="text-xs text-muted-foreground border-t pt-2">
+                  <p>CUIN: {selectedReceipt.cuin}</p>
+                  <p>eTIMS: {selectedReceipt.etims_status}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
