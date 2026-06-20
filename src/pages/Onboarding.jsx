@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Store, Package, Users, Receipt, BarChart3, Settings, Download, Server, FileText } from 'lucide-react';
+import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Store, Package, Users, Receipt, BarChart3, Settings, Download, Server, FileText, Palette } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -70,62 +70,127 @@ export default function Onboarding() {
     }
   };
 
+  const handleDownloadBrandGuide = async () => {
+    try {
+      const response = await base44.functions.invoke('generateBrandingPDF', {});
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'DukaPOS_Brand_Guide.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Brand guide downloaded!');
+    } catch (error) {
+      toast.error('Failed to download brand guide. Please try again.');
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold mb-2">Welcome to SoftPOS Kenya</h1>
+        <h1 className="text-3xl font-display font-bold mb-2">Welcome to DukaPOS</h1>
         <p className="text-muted-foreground">
           Follow these steps to get your business up and running
         </p>
       </div>
 
-      {/* Hardware Guide Download Card */}
-      <Card className="mb-8 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      {/* Resource Guides */}
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        {/* Hardware Guide Download Card */}
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
               <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
                 <Server className="w-6 h-6 text-white" />
               </div>
               <div>
-                <CardTitle>Hardware Requirements Guide</CardTitle>
+                <CardTitle>Hardware Guide</CardTitle>
                 <CardDescription>
-                  Complete technical specifications and step-by-step setup procedures
+                  Technical specs and setup procedures
                 </CardDescription>
               </div>
             </div>
-            <Button onClick={handleDownloadHardwareGuide} className="gap-2">
+            <Button onClick={handleDownloadHardwareGuide} className="w-full gap-2">
               <Download className="w-4 h-4" />
               Download PDF
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="flex items-start gap-2">
-              <FileText className="w-4 h-4 text-primary mt-0.5" />
-              <div className="text-sm">
-                <p className="font-semibold">Technical Specifications</p>
-                <p className="text-muted-foreground">Detailed hardware specs for all components</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2">
+              <div className="flex items-start gap-2">
+                <FileText className="w-4 h-4 text-primary mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-semibold">Technical Specifications</p>
+                  <p className="text-muted-foreground">Hardware specs for all components</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-primary mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-semibold">Step-by-Step Setup</p>
+                  <p className="text-muted-foreground">Installation procedures</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <BookOpen className="w-4 h-4 text-primary mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-semibold">Maintenance Guide</p>
+                  <p className="text-muted-foreground">Troubleshooting and support</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 text-primary mt-0.5" />
-              <div className="text-sm">
-                <p className="font-semibold">Step-by-Step Setup</p>
-                <p className="text-muted-foreground">Complete installation procedures</p>
+          </CardContent>
+        </Card>
+
+        {/* Brand Guide Download Card */}
+        <Card className="bg-gradient-to-r from-accent/10 to-primary/10 border-accent/20">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center">
+                <Palette className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle>Brand Guide</CardTitle>
+                <CardDescription>
+                  Logo, colors, and marketing materials
+                </CardDescription>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <BookOpen className="w-4 h-4 text-primary mt-0.5" />
-              <div className="text-sm">
-                <p className="font-semibold">Maintenance Guide</p>
-                <p className="text-muted-foreground">Troubleshooting and support info</p>
+            <Button onClick={handleDownloadBrandGuide} className="w-full gap-2" variant="secondary">
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2">
+              <div className="flex items-start gap-2">
+                <Palette className="w-4 h-4 text-accent mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-semibold">Logo Concepts</p>
+                  <p className="text-muted-foreground">3 professional logo designs</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-accent mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-semibold">Color Palette</p>
+                  <p className="text-muted-foreground">Brand colors and usage</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <FileText className="w-4 h-4 text-accent mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-semibold">Marketing Copy</p>
+                  <p className="text-muted-foreground">Taglines and messaging</p>
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {onboardingSteps.map((step, index) => (
