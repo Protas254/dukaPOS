@@ -1,16 +1,16 @@
 import React from 'react';
-import { TrendingUp, Gift, ShoppingBag, Users } from 'lucide-react';
+import { Users, TrendingUp, Gift, ShoppingBag } from 'lucide-react';
 
-function SummaryCard({ icon: Icon, label, value, sub, color }) {
+function Stat({ icon: Icon, label, value, sub }) {
   return (
-    <div className="bg-card border rounded-xl p-4 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-        <Icon className="w-5 h-5 text-white" />
+    <div className="flex items-center gap-3 p-4 bg-card border rounded-xl">
+      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-primary" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-muted-foreground font-medium">{label}</p>
-        <p className="text-xl font-display font-bold truncate">{value}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+        <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
+        <p className="text-base font-display font-bold truncate leading-tight">{value}</p>
+        {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
       </div>
     </div>
   );
@@ -24,34 +24,10 @@ export default function CustomerSummaryDashboard({ customers }) {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <SummaryCard
-        icon={Users}
-        label="Active Customers"
-        value={activeCount.toLocaleString()}
-        sub={`${customers.length} total`}
-        color="bg-primary"
-      />
-      <SummaryCard
-        icon={TrendingUp}
-        label="Total Revenue"
-        value={`KES ${totalSpending.toLocaleString()}`}
-        sub={totalTx > 0 ? `avg KES ${Math.round(totalSpending / totalTx).toLocaleString()} / visit` : 'No transactions'}
-        color="bg-emerald-500"
-      />
-      <SummaryCard
-        icon={Gift}
-        label="Points in Circulation"
-        value={totalPoints.toLocaleString()}
-        sub="across all customers"
-        color="bg-accent"
-      />
-      <SummaryCard
-        icon={ShoppingBag}
-        label="Total Transactions"
-        value={totalTx.toLocaleString()}
-        sub={activeCount > 0 ? `avg ${(totalTx / activeCount).toFixed(1)} / customer` : ''}
-        color="bg-blue-500"
-      />
+      <Stat icon={Users} label="Active Customers" value={activeCount.toLocaleString()} sub={`${customers.length} total`} />
+      <Stat icon={TrendingUp} label="Total Revenue" value={`KES ${totalSpending.toLocaleString()}`} sub={totalTx > 0 ? `avg KES ${Math.round(totalSpending / totalTx).toLocaleString()} / visit` : undefined} />
+      <Stat icon={Gift} label="Points in Circulation" value={totalPoints.toLocaleString()} sub="across all customers" />
+      <Stat icon={ShoppingBag} label="Total Transactions" value={totalTx.toLocaleString()} sub={activeCount > 0 ? `avg ${(totalTx / activeCount).toFixed(1)} / customer` : undefined} />
     </div>
   );
 }

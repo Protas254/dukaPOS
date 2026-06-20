@@ -194,8 +194,18 @@ export default function Customers() {
         Showing {filteredCustomers.length} of {customers.length} customers
       </p>
 
-      {/* Customers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Customers List */}
+      <div className="bg-card border rounded-2xl overflow-hidden">
+        {filteredCustomers.length > 0 && (
+          <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] px-4 py-2 border-b bg-muted/50 text-xs font-medium text-muted-foreground">
+            <span>Customer</span>
+            <span>Tier</span>
+            <span className="text-right">Spent</span>
+            <span className="text-right">Points</span>
+            <span className="text-right">Visits</span>
+            <span />
+          </div>
+        )}
         {filteredCustomers.map((customer) => (
           <CustomerCard
             key={customer.id}
