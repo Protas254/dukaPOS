@@ -148,14 +148,15 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
   ].filter((v, i, a) => a.indexOf(v) === i && v >= finalTotal).slice(0, 4);
 
   const canComplete = () => {
-    if (method === 'mpesa') return mpesaRef.trim().length > 0;
+    if (method === 'mpesa') return mpesaRef.trim().length >= 6;
     if (method === 'bank_transfer') return bankRef.trim().length > 0;
     if (method === 'cheque') return chequeNumber.trim().length > 0;
     if (method === 'split') {
-      return splitEntries.length >= 2 &&
+      return splitEntries.length >= 1 &&
         Math.abs(splitRemaining) < 1 &&
         splitEntries.every(e => parseFloat(e.amount) > 0);
     }
+    if (method === 'cash') return cashAmount >= finalTotal || cashAmount === finalTotal;
     return true;
   };
 
@@ -454,6 +455,12 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
               <><CheckCircle className="w-5 h-5 mr-2" /> Complete Sale — KES {finalTotal.toLocaleString()}</>
             )}
           </Button>
+          {method === 'mpesa' && mpesaRef.trim().length > 0 && mpesaRef.trim().length < 6 && (
+            <p className="text-xs text-destructive mt-2">Please enter a valid M-Pesa transaction code (e.g., SHK7YJ89GH)</p>
+          )}
+          {method === 'cash' && cashAmount > 0 && cashAmount < finalTotal && (
+            <p className="text-xs text-destructive mt-2">Insufficient cash received. Need KES {finalTotal.toLocaleString()}</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
