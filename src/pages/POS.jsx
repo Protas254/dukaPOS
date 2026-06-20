@@ -38,6 +38,7 @@ const categories = [
   { id: 'household', label: 'Household' },
   { id: 'personal_care', label: 'Personal Care' },
   { id: 'electronics', label: 'Electronics' },
+  { id: 'clothing', label: 'Clothing' },
 ];
 
 export default function POS() {
