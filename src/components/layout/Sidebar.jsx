@@ -59,7 +59,7 @@ export default function Sidebar({ collapsed, onToggle }) {
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-40 transition-all duration-300 flex flex-col",
+      "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-20 transition-all duration-300 flex flex-col",
       collapsed ? "w-[84px]" : "w-[320px]"
     )}>
       {/* Logo */}

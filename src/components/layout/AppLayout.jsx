@@ -33,7 +33,7 @@ export default function AppLayout() {
         collapsed ? "lg:ml-[84px]" : "lg:ml-[270px]"
       )}>
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center gap-3 px-4 h-14 border-b bg-card sticky top-0 z-20">
+        <div className="lg:hidden flex items-center gap-3 px-4 h-14 border-b bg-card sticky top-0 z-30">
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </Button>
