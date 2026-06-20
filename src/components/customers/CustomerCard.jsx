@@ -23,8 +23,8 @@ export default function CustomerCard({ customer, onView, onEdit, onDelete, index
     <div
       className={cn(
         "flex items-center gap-4 px-4 py-3 border-b last:border-0 transition-colors cursor-pointer",
-        isEven ? "bg-white dark:bg-card" : "bg-emerald-50 dark:bg-emerald-950/20",
-        "hover:bg-primary/8 dark:hover:bg-primary/10"
+        isEven ? "bg-white dark:bg-card" : "bg-emerald-100 dark:bg-emerald-900/30",
+        "hover:bg-primary/10"
       )}
       onClick={onView}
     >
