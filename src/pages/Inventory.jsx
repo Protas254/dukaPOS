@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,9 @@ export default function Inventory() {
   const [restockQty, setRestockQty] = useState('');
   const [restocking, setRestocking] = useState(false);
   const [barcodePrintOpen, setBarcodePrintOpen] = useState(false);
+  const [scanRestockMode, setScanRestockMode] = useState(false);
+  const [scanRestockQuery, setScanRestockQuery] = useState('');
+  const scanRestockRef = useRef(null);
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery({
@@ -191,7 +194,13 @@ export default function Inventory() {
             {products.length} products • Stock value KES {totalValue.toLocaleString()}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => { setScanRestockMode(true); setTimeout(() => scanRestockRef.current?.focus(), 50); }} className="rounded-xl gap-2 border-amber-300 text-amber-700 hover:bg-amber-50">
+            <Package className="w-4 h-4" /> Scan to Restock
+          </Button>
+          <Button variant="outline" onClick={() => { setBarcodePrintOpen(true); setSelectedIds(new Set(products.filter(p => p.sku && p.is_active !== false).map(p => p.id))); }} className="rounded-xl gap-2">
+            <Barcode className="w-4 h-4" /> Print All Barcodes
+          </Button>
           <Button variant="outline" onClick={() => setUploadDialogOpen(true)} className="rounded-xl">
             <Upload className="w-4 h-4 mr-2" /> Bulk Upload
           </Button>
@@ -200,6 +209,40 @@ export default function Inventory() {
           </Button>
         </div>
       </div>
+
+      {/* Scan to Restock Bar */}
+      {scanRestockMode && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl">
+          <Barcode className="w-4 h-4 text-amber-600 animate-pulse flex-shrink-0" />
+          <Input
+            ref={scanRestockRef}
+            value={scanRestockQuery}
+            onChange={e => setScanRestockQuery(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && scanRestockQuery.trim()) {
+                const q = scanRestockQuery.trim().toLowerCase();
+                const match = products.find(p => p.sku?.toLowerCase() === q)
+                  || products.find(p => p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
+                if (match) {
+                  setRestockProduct(match);
+                  setRestockQty(String(match.stock_quantity));
+                  setScanRestockQuery('');
+                  setScanRestockMode(false);
+                } else {
+                  toast({ title: 'Product not found', description: `No match for "${scanRestockQuery}"`, variant: 'destructive' });
+                }
+              }
+              if (e.key === 'Escape') { setScanRestockMode(false); setScanRestockQuery(''); }
+            }}
+            placeholder="Scan barcode or type SKU/name → Enter to open restock..."
+            className="flex-1 h-8 text-sm border-amber-300 focus:border-amber-500 bg-white"
+            autoFocus
+          />
+          <Button size="sm" variant="ghost" className="h-8 text-xs text-amber-700" onClick={() => { setScanRestockMode(false); setScanRestockQuery(''); }}>
+            Cancel
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -402,7 +445,22 @@ export default function Inventory() {
             </div>
             <div>
               <Label className="text-xs">SKU / Barcode</Label>
-              <Input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} className="mt-1" />
+              <div className="flex gap-2 mt-1">
+                <Input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} className="flex-1" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 text-xs px-2"
+                  onClick={() => {
+                    const prefix = form.name ? form.name.slice(0, 3).toUpperCase().replace(/\s/g, '') : 'SKU';
+                    const rand = Math.floor(Math.random() * 900000 + 100000);
+                    setForm(f => ({ ...f, sku: `${prefix}${rand}` }));
+                  }}
+                >
+                  Auto-generate
+                </Button>
+              </div>
             </div>
             <div>
               <Label className="text-xs">Category *</Label>

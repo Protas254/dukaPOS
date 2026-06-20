@@ -4,6 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Search, ArrowLeft, ArrowRight, Barcode, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductGrid from '@/components/pos/ProductGrid';
@@ -132,21 +135,33 @@ export default function POS() {
     : allProducts.filter(p => p.category === selectedCategory);
 
   // Cart operations
-  const addToCart = useCallback((product) => {
+  const [qtyPrompt, setQtyPrompt] = useState(null); // { product, qty }
+  const qtyInputRef = useRef(null);
+
+  const addToCart = useCallback((product, qty = null) => {
+    const needsQtyPrompt = qty === null && ['kg', 'litre', 'bag'].includes(product.unit);
+    if (needsQtyPrompt) {
+      setQtyPrompt({ product, qty: 1 });
+      setTimeout(() => qtyInputRef.current?.focus(), 50);
+      return;
+    }
+    const addQty = qty || 1;
     setCart(prev => {
       const existing = prev.find(i => i.id === product.id);
       if (existing) {
-        if (existing.quantity >= product.stock_quantity) {
+        const newQty = existing.quantity + addQty;
+        if (newQty > product.stock_quantity) {
           toast({ title: 'Stock limit reached', description: `Only ${product.stock_quantity} available`, variant: 'destructive' });
           return prev;
         }
-        return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => i.id === product.id ? { ...i, quantity: newQty } : i);
       }
       return [...prev, { 
         id: product.id, 
         name: product.name, 
         price: product.price, 
-        quantity: 1, 
+        quantity: addQty, 
+        unit: product.unit,
         tax_rate: product.tax_rate || taxRate,
         stock_quantity: product.stock_quantity 
       }];
@@ -338,13 +353,32 @@ export default function POS() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && search.trim()) {
                       const q = search.trim().toLowerCase();
-                      const match = products.find(p => p.sku?.toLowerCase() === q)
-                        || products.find(p => p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
+                      const match = allProducts.find(p => p.sku?.toLowerCase() === q)
+                        || allProducts.find(p => p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
                       if (match && match.stock_quantity > 0) {
                         addToCart(match);
                         setSearch('');
                         setScanFlash(true);
+                        // Beep on success
+                        try {
+                          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                          const o = ctx.createOscillator(); const g = ctx.createGain();
+                          o.connect(g); g.connect(ctx.destination);
+                          o.frequency.value = 880; g.gain.setValueAtTime(0.3, ctx.currentTime);
+                          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                          o.start(); o.stop(ctx.currentTime + 0.15);
+                        } catch (_) {}
                         setTimeout(() => setScanFlash(false), 400);
+                      } else if (search.trim()) {
+                        // Error beep
+                        try {
+                          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                          const o = ctx.createOscillator(); const g = ctx.createGain();
+                          o.connect(g); g.connect(ctx.destination);
+                          o.frequency.value = 220; g.gain.setValueAtTime(0.3, ctx.currentTime);
+                          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                          o.start(); o.stop(ctx.currentTime + 0.3);
+                        } catch (_) {}
                       }
                     }
                   }}
@@ -462,6 +496,44 @@ export default function POS() {
         businessSettings={businessSettings}
         receiptDelivery={completedSale?.receipt_delivery}
       />
+
+      {/* Quantity Prompt Dialog */}
+      {qtyPrompt && (
+        <Dialog open={!!qtyPrompt} onOpenChange={() => setQtyPrompt(null)}>
+          <DialogContent className="sm:max-w-xs">
+            <DialogHeader>
+              <DialogTitle className="font-display text-base">Enter Quantity</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">{qtyPrompt.product.name} <span className="font-semibold">({qtyPrompt.product.unit})</span></p>
+              <div>
+                <Label className="text-xs">Quantity ({qtyPrompt.product.unit})</Label>
+                <Input
+                  ref={qtyInputRef}
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={qtyPrompt.qty}
+                  onChange={e => setQtyPrompt(q => ({ ...q, qty: parseFloat(e.target.value) || 1 }))}
+                  className="mt-1"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      addToCart(qtyPrompt.product, qtyPrompt.qty);
+                      setQtyPrompt(null);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setQtyPrompt(null)}>Cancel</Button>
+              <Button size="sm" onClick={() => { addToCart(qtyPrompt.product, qtyPrompt.qty); setQtyPrompt(null); }}>
+                Add to Cart
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Navigation Buttons */}
       <div className="flex justify-between p-4 border-t bg-card">
