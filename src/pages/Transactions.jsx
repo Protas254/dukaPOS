@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Receipt, Eye, Calendar, RotateCcw, SlidersHorizontal, X, ArrowLeft, ArrowRight, FileText, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Receipt, Eye, Calendar, RotateCcw, SlidersHorizontal, X, ArrowLeft, ArrowRight, FileText, Clock, ChevronDown, ChevronUp, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import ReceiptView from '@/components/pos/ReceiptView';
 import ReturnDialog from '@/components/pos/ReturnDialog';
@@ -51,6 +51,8 @@ export default function Transactions() {
   const [maxAmount, setMaxAmount] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedSale, setSelectedSale] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -107,6 +109,15 @@ export default function Transactions() {
       return true;
     });
   }, [sales, search, paymentFilter, cashierFilter, dateFrom, dateTo, minAmount, maxAmount]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSales = filtered.slice(startIndex, endIndex);
+
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages);
+  }
 
   const totalRevenue = filtered.reduce((sum, s) => sum + (s.total_amount || 0), 0);
 
@@ -291,6 +302,7 @@ export default function Transactions() {
           </Button>
         </div>
         {showHistory && (
+        <>
         <div className="space-y-2">
         {isLoading ? (
           <div className="text-center py-16 text-muted-foreground text-sm">Loading transactions...</div>
@@ -301,7 +313,7 @@ export default function Transactions() {
             <p className="text-xs mt-1">Try adjusting your search or filters</p>
           </div>
         ) : (
-          filtered.map(sale => {
+          paginatedSales.map(sale => {
             const daysSinceSale = differenceInDays(new Date(), new Date(sale.created_date));
             const daysLeft = 30 - daysSinceSale;
             const canReturn = sale.status === 'completed' && daysLeft > 0;
@@ -388,6 +400,42 @@ export default function Transactions() {
           })
         )}
         </div>
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 mt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Show:</span>
+              <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                <SelectTrigger className="w-[90px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 items</SelectItem>
+                  <SelectItem value="50">50 items</SelectItem>
+                  <SelectItem value="100">100 items</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, filtered.length)} of {filtered.length} transactions
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+                <ChevronsLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                Previous
+              </Button>
+              <span className="text-xs font-medium px-2">Page {currentPage} of {totalPages}</span>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next
+              </Button>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
+                <ChevronsRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
         )}
       </div>
 
