@@ -49,9 +49,14 @@ export default function Expenses() {
   });
 
   const filteredExpenses = expenses.filter(exp => {
-    const matchesSearch = exp.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         exp.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (exp.added_by_name && exp.added_by_name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = searchTerm === '' ||
+                         exp.description?.toLowerCase().includes(searchLower) ||
+                         exp.reference_number?.toLowerCase().includes(searchLower) ||
+                         exp.added_by_name?.toLowerCase().includes(searchLower) ||
+                         exp.payment_method?.toLowerCase().includes(searchLower) ||
+                         exp.category?.toLowerCase().includes(searchLower);
+    
     const matchesCategory = categoryFilter === 'all' || exp.category === categoryFilter;
     
     let matchesDateFrom = true;
