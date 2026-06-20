@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, Receipt, 
-  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog
+  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -10,9 +10,14 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: ShoppingCart, label: 'POS Terminal', path: '/pos' },
-  { icon: Package, label: 'Inventory', path: '/inventory' },
-  { icon: Receipt, label: 'Transactions', path: '/transactions' },
-  { icon: BarChart3, label: 'Reports', path: '/reports' },
+  {
+    icon: Layers, label: 'Store Operations', path: '/store-ops',
+    children: [
+      { icon: Package, label: 'Inventory', path: '/inventory' },
+      { icon: Receipt, label: 'Transactions', path: '/transactions' },
+      { icon: BarChart3, label: 'Reports', path: '/reports' },
+    ]
+  },
   { icon: Users, label: 'Customers', path: '/customers' },
   {
     icon: UserCog, label: 'Team Management', path: '/staff',
@@ -28,7 +33,14 @@ const navItems = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
-  const [staffOpen, setStaffOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState({});
+
+  const toggleGroup = (path) => {
+    setOpenGroups(prev => ({ ...prev, [path]: !prev[path] }));
+  };
+
+  const isGroupActive = (children) =>
+    children.some(c => location.pathname === c.path);
 
   return (
     <aside className={cn(
@@ -64,22 +76,24 @@ export default function Sidebar({ collapsed, onToggle }) {
           const isActive = location.pathname === path;
 
           if (children) {
+            const groupOpen = openGroups[path] ?? isGroupActive(children);
+            const childActive = isGroupActive(children);
+
             return (
               <div key={path}>
-                {/* Parent toggle button */}
                 <button
-                  onClick={() => setStaffOpen(o => !o)}
+                  onClick={() => toggleGroup(path)}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group relative shadow-sm",
-                    isActive
+                    childActive
                       ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
                       : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
                   )}
                 >
-                  <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-sidebar-primary-foreground")} />
+                  <Icon className={cn("w-5 h-5 flex-shrink-0", childActive && "text-sidebar-primary-foreground")} />
                   {!collapsed && <span className="text-sm font-semibold truncate flex-1 text-left">{label}</span>}
                   {!collapsed && (
-                    <ChevronRight className={cn("w-4 h-4 transition-transform", staffOpen && "rotate-90")} />
+                    <ChevronRight className={cn("w-4 h-4 transition-transform", groupOpen && "rotate-90")} />
                   )}
                   {collapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
@@ -88,8 +102,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                   )}
                 </button>
 
-                {/* Children */}
-                {staffOpen && !collapsed && (
+                {groupOpen && !collapsed && (
                   <div className="mt-1.5 ml-4 space-y-1.5 border-l-2 border-sidebar-border pl-3">
                     {children.map(child => (
                       <Link
