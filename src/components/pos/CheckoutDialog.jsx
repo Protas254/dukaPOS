@@ -156,7 +156,7 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
         Math.abs(splitRemaining) < 1 &&
         splitEntries.every(e => parseFloat(e.amount) > 0);
     }
-    if (method === 'cash') return cashAmount >= finalTotal || cashAmount === finalTotal;
+    if (method === 'cash') return cashAmount >= finalTotal;
     return true;
   };
 
