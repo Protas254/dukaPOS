@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight
+  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
@@ -39,6 +39,10 @@ export default function Inventory() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkStockOpen, setBulkStockOpen] = useState(false);
+  const [bulkStockValues, setBulkStockValues] = useState({});
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery({
@@ -118,6 +122,48 @@ export default function Inventory() {
   const totalValue = products.reduce((sum, p) => sum + (p.price || 0) * (p.stock_quantity || 0), 0);
   const lowStockCount = products.filter(p => p.stock_quantity <= (p.low_stock_threshold || 10)).length;
 
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(p => p.id)));
+    }
+  };
+
+  const openBulkStock = () => {
+    const initial = {};
+    filtered.filter(p => selectedIds.has(p.id)).forEach(p => {
+      initial[p.id] = String(p.stock_quantity ?? '');
+    });
+    setBulkStockValues(initial);
+    setBulkStockOpen(true);
+  };
+
+  const handleBulkStockSave = async () => {
+    setBulkUpdating(true);
+    let count = 0;
+    for (const [id, qty] of Object.entries(bulkStockValues)) {
+      const parsed = parseInt(qty);
+      if (!isNaN(parsed)) {
+        await base44.entities.Product.update(id, { stock_quantity: parsed });
+        count++;
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    setBulkStockOpen(false);
+    setSelectedIds(new Set());
+    setBulkUpdating(false);
+    toast({ title: `Stock updated for ${count} product(s)` });
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
       {/* Header */}
@@ -173,6 +219,21 @@ export default function Inventory() {
         </Select>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-xl">
+          <CheckSquare className="w-4 h-4 text-primary flex-shrink-0" />
+          <span className="text-sm font-medium text-primary">{selectedIds.size} product{selectedIds.size > 1 ? 's' : ''} selected</span>
+          <div className="flex-1" />
+          <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className="text-xs h-8">
+            Clear
+          </Button>
+          <Button size="sm" onClick={openBulkStock} className="text-xs h-8 gap-1.5">
+            <Layers className="w-3.5 h-3.5" /> Update Stock Levels
+          </Button>
+        </div>
+      )}
+
       {/* Stats bar */}
       {lowStockCount > 0 && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm">
@@ -189,6 +250,14 @@ export default function Inventory() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                    onChange={toggleSelectAll}
+                    className="rounded border-input cursor-pointer"
+                  />
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Category</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Price</th>
@@ -201,7 +270,15 @@ export default function Inventory() {
               {filtered.map(product => {
                 const isLow = product.stock_quantity <= (product.low_stock_threshold || 10);
                 return (
-                  <tr key={product.id} className="border-b hover:bg-muted/30 transition-colors">
+                  <tr key={product.id} className={cn("border-b hover:bg-muted/30 transition-colors", selectedIds.has(product.id) && "bg-primary/5")}>
+                    <td className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(product.id)}
+                        onChange={() => toggleSelect(product.id)}
+                        className="rounded border-input cursor-pointer"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium">{product.name}</p>
@@ -485,6 +562,44 @@ export default function Inventory() {
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
             <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteConfirm.id)}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Stock Update Dialog */}
+      <Dialog open={bulkStockOpen} onOpenChange={setBulkStockOpen}>
+        <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="font-display">Update Stock Levels</DialogTitle>
+            <p className="text-sm text-muted-foreground">{Object.keys(bulkStockValues).length} products selected</p>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 space-y-2 pr-1">
+            {filtered.filter(p => selectedIds.has(p.id)).map(p => (
+              <div key={p.id} className="flex items-center gap-3 py-2 border-b last:border-0">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">Current: {p.stock_quantity} {p.unit}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={bulkStockValues[p.id] ?? ''}
+                    onChange={e => setBulkStockValues(prev => ({ ...prev, [p.id]: e.target.value }))}
+                    className="w-24 h-8 text-sm text-right"
+                    placeholder="Qty"
+                  />
+                  <span className="text-xs text-muted-foreground w-8">{p.unit}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="pt-4 border-t">
+            <Button variant="outline" onClick={() => setBulkStockOpen(false)}>Cancel</Button>
+            <Button onClick={handleBulkStockSave} disabled={bulkUpdating}>
+              {bulkUpdating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Save All
             </Button>
           </DialogFooter>
         </DialogContent>
