@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, Filter, DollarSign, Trash2, Edit2, Upload, Receipt, X, Table as TableIcon, LayoutGrid } from 'lucide-react';
+import { Plus, Search, Filter, DollarSign, Trash2, Edit2, Upload, Receipt, X, Table as TableIcon, LayoutGrid, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +37,9 @@ export default function Expenses() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [receiptFile, setReceiptFile] = useState(null);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
+  const [viewMode, setViewMode] = useState('table');
+  const [sortField, setSortField] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ['expenses'],
@@ -51,7 +53,27 @@ export default function Expenses() {
     return matchesSearch && matchesCategory;
   });
 
-  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const sortedExpenses = [...filteredExpenses].sort((a, b) => {
+    let aVal = a[sortField];
+    let bVal = b[sortField];
+    
+    if (sortField === 'date') {
+      aVal = new Date(aVal || 0);
+      bVal = new Date(bVal || 0);
+    } else if (sortField === 'amount') {
+      aVal = aVal || 0;
+      bVal = bVal || 0;
+    } else {
+      aVal = (aVal || '').toString().toLowerCase();
+      bVal = (bVal || '').toString().toLowerCase();
+    }
+
+    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const totalExpenses = sortedExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
   const createExpense = useMutation({
     mutationFn: async (expenseData) => {
@@ -109,6 +131,20 @@ export default function Expenses() {
   };
 
   const categoryColors = Object.fromEntries(CATEGORIES.map(c => [c.value, c.color]));
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-30" />;
+    return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
@@ -200,7 +236,7 @@ export default function Expenses() {
       {/* Expenses List */}
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Loading expenses...</div>
-      ) : filteredExpenses.length > 0 ? (
+      ) : sortedExpenses.length > 0 ? (
         viewMode === 'table' ? (
           <Card>
             <CardContent className="p-0">
@@ -209,18 +245,32 @@ export default function Expenses() {
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-[50px]"></TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Payment Method</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Added By</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('date')}>
+                        <div className="flex items-center">Date<SortIcon field="date" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('description')}>
+                        <div className="flex items-center">Description<SortIcon field="description" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('category')}>
+                        <div className="flex items-center">Category<SortIcon field="category" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('payment_method')}>
+                        <div className="flex items-center">Payment<SortIcon field="payment_method" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('reference_number')}>
+                        <div className="flex items-center">Reference<SortIcon field="reference_number" /></div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('added_by_name')}>
+                        <div className="flex items-center">Added By<SortIcon field="added_by_name" /></div>
+                      </TableHead>
+                      <TableHead className="text-right cursor-pointer hover:bg-muted/70" onClick={() => handleSort('amount')}>
+                        <div className="flex items-center justify-end">Amount<SortIcon field="amount" /></div>
+                      </TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredExpenses.map((expense) => (
+                    {sortedExpenses.map((expense) => (
                       <TableRow key={expense.id} className="hover:bg-muted/30">
                         <TableCell>
                           {expense.receipt_url && (
