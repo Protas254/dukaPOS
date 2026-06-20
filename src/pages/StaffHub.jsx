@@ -432,6 +432,8 @@ function MyShiftsTab({ sales, currentUser }) {
 
 export default function StaffHub() {
   const [currentUser, setCurrentUser] = useState(null);
+  const tabParam = new URLSearchParams(window.location.search).get('tab');
+  const defaultTab = tabParam === 'my-shifts' ? 'my-shifts' : 'employees';
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -454,7 +456,7 @@ export default function StaffHub() {
         <p className="text-muted-foreground text-sm mt-0.5">Employee management & shift performance</p>
       </div>
 
-      <Tabs defaultValue="employees">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
           <TabsTrigger value="employees" className="gap-2"><Users className="w-4 h-4" /> Employees</TabsTrigger>
           <TabsTrigger value="my-shifts" className="gap-2"><Clock className="w-4 h-4" /> My Shifts</TabsTrigger>
