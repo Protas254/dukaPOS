@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, ArrowLeft, ArrowRight, Barcode, Zap, PauseCircle, Tag, Calculator, Keyboard } from 'lucide-react';
+import { Search, ArrowLeft, ArrowRight, Barcode, Zap, PauseCircle, Tag, Calculator, Keyboard, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductGrid from '@/components/pos/ProductGrid';
 import Cart from '@/components/pos/Cart';
@@ -21,6 +21,11 @@ import HeldTransactions, { saveHeldTransactions, loadHeldTransactions } from '@/
 import PriceCheckMode from '@/components/pos/PriceCheckMode';
 import EndOfDayReconciliation from '@/components/pos/EndOfDayReconciliation';
 import KeyboardShortcutsHelp from '@/components/pos/KeyboardShortcutsHelp';
+import QuickKeysPanel from '@/components/pos/QuickKeysPanel';
+import ManagerApprovalDialog from '@/components/pos/ManagerApprovalDialog';
+import CustomerPurchaseHistory from '@/components/pos/CustomerPurchaseHistory';
+import StockAlert from '@/components/pos/StockAlert';
+import SalesAnalytics from '@/components/pos/SalesAnalytics';
 import { playSuccessBeep, playErrorBeep } from '@/utils/audio';
 
 const categories = [
@@ -60,6 +65,11 @@ export default function POS() {
   const [priceCheckOpen, setPriceCheckOpen] = useState(false);
   const [eodOpen, setEodOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [approvalAction, setApprovalAction] = useState(null);
+  const [customerHistoryOpen, setCustomerHistoryOpen] = useState(false);
+  const [pendingDiscount, setPendingDiscount] = useState(0);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   // Resizable splitter state (desktop: cart width px, mobile: cart height %)
   const [cartWidth, setCartWidth] = useState(280);
@@ -380,6 +390,31 @@ export default function POS() {
     base44.auth.logout('/login');
   };
 
+  // Manager approval wrapper
+  const requestApproval = (actionType, amount) => {
+    setApprovalAction({ type: actionType, amount, cart });
+    setApprovalOpen(true);
+  };
+
+  const handleApprovalApproved = async ({ reason, approvedBy }) => {
+    if (approvalAction?.type === 'discount') {
+      setDiscount(pendingDiscount);
+      toast({ title: 'Discount approved', description: `By ${approvedBy.full_name}` });
+    }
+    setApprovalAction(null);
+    setPendingDiscount(0);
+  };
+
+  // Enhanced discount handler with approval
+  const handleDiscountChange = (newDiscount) => {
+    if (newDiscount > 1000 || newDiscount > subtotal * 0.2) {
+      setPendingDiscount(newDiscount);
+      requestApproval('discount', newDiscount);
+    } else {
+      setDiscount(newDiscount);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Ultra Compact Top Bar */}
@@ -402,6 +437,9 @@ export default function POS() {
           </button>
           <button onClick={() => setEodOpen(true)} title="End of Day (F9)" className="h-6 px-1.5 text-[10px] flex items-center gap-0.5 bg-background border rounded hover:border-primary hover:text-primary">
             <Calculator className="w-2.5 h-2.5" /><span className="hidden sm:inline">EOD</span>
+          </button>
+          <button onClick={() => setAnalyticsOpen(true)} title="Sales Analytics" className="h-6 px-1.5 text-[10px] flex items-center gap-0.5 bg-background border rounded hover:border-primary hover:text-primary">
+            <TrendingUp className="w-2.5 h-2.5" /><span className="hidden sm:inline">Analytics</span>
           </button>
           <button onClick={() => setShortcutsOpen(true)} title="Keyboard shortcuts (?)" className="h-6 w-6 flex items-center justify-center bg-background border rounded hover:border-primary hover:text-primary">
             <Keyboard className="w-2.5 h-2.5" />
@@ -489,6 +527,12 @@ export default function POS() {
             favoriteIds={favoriteIds}
             toggleFavorite={toggleFavorite}
           />
+          {/* Quick Keys Panel */}
+          <QuickKeysPanel
+            products={allProducts}
+            onAddToCart={addToCart}
+            recentSales={allSales}
+          />
           {/* Product Grid */}
           <div className="flex-1 overflow-y-auto p-1">
             <ProductGrid
@@ -529,15 +573,23 @@ export default function POS() {
         <div className="cart-panel bg-card border-t lg:border-t-0 flex flex-col min-h-0">
           {/* Customer Search */}
           <div className="px-2 py-1.5 border-b bg-muted/20">
-            <CustomerSearchBar selectedCustomer={selectedCustomer} onSelectCustomer={setSelectedCustomer} />
+            <CustomerSearchBar 
+              selectedCustomer={selectedCustomer} 
+              onSelectCustomer={(cust) => {
+                setSelectedCustomer(cust);
+                if (cust) setCustomerHistoryOpen(true);
+              }} 
+            />
           </div>
+          {/* Stock Alerts */}
+          <StockAlert cart={cart} products={allProducts} />
           <Cart
             items={cart}
             onUpdateQuantity={updateQuantity}
             onRemoveItem={removeItem}
             onClearCart={clearCart}
             discount={discount}
-            onDiscountChange={setDiscount}
+            onDiscountChange={handleDiscountChange}
             taxRate={taxRate}
             onCheckout={() => setCheckoutOpen(true)}
           />
@@ -626,6 +678,34 @@ export default function POS() {
 
       {/* Keyboard Shortcuts */}
       <KeyboardShortcutsHelp open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {/* Manager Approval */}
+      <ManagerApprovalDialog
+        open={approvalOpen}
+        onClose={() => { setApprovalOpen(false); setApprovalAction(null); setPendingDiscount(0); }}
+        onApprove={handleApprovalApproved}
+        actionType={approvalAction?.type}
+        amount={approvalAction?.amount}
+        cart={cart}
+      />
+
+      {/* Customer Purchase History */}
+      <CustomerPurchaseHistory
+        customer={selectedCustomer}
+        open={customerHistoryOpen}
+        onClose={() => setCustomerHistoryOpen(false)}
+      />
+
+      {/* Sales Analytics */}
+      <Dialog open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          <SalesAnalytics
+            sales={allSales}
+            products={allProducts}
+            onClose={() => setAnalyticsOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Navigation Buttons */}
       <div className="flex justify-between p-4 border-t bg-card">
