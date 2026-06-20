@@ -20,7 +20,7 @@ const navItems = [
       { icon: FileText, label: 'Advanced Reports', path: '/advanced-reports' },
       { icon: TrendingUp, label: 'Cash Flow', path: '/cash-flow' },
       { icon: ReceiptIcon, label: 'Expenses', path: '/expenses' },
-      { icon: DollarSign, label: 'Cash Flow', path: '/cash-flow' },
+      { icon: Percent, label: 'Promotions', path: '/promotions' },
     ]
   },
   {
@@ -31,14 +31,6 @@ const navItems = [
     ]
   },
   { icon: Users, label: 'Customers', path: '/customers' },
-  {
-    icon: Building, label: 'Suppliers & Orders', path: '/suppliers',
-    children: [
-      { icon: Building, label: 'Suppliers', path: '/suppliers' },
-      { icon: Package, label: 'Purchase Orders', path: '/purchase-orders' },
-    ]
-  },
-  { icon: Percent, label: 'Promotions', path: '/promotions' },
   {
     icon: UserCog, label: 'Team Management', path: '/staff',
     children: [
