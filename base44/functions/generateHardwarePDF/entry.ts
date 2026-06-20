@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
             doc.setTextColor(...darkGray);
         };
 
-        const addSectionHeader = (title, icon, y) => {
+        const addSectionHeader = (title, y) => {
             doc.setFillColor(...primaryColor);
             doc.rect(20, y - 6, 170, 6, 'F');
             doc.setTextColor(255, 255, 255);
@@ -67,6 +67,96 @@ Deno.serve(async (req) => {
             y += 5;
             
             return y;
+        };
+
+        const addShopAdvice = (y) => {
+            doc.addPage();
+            y = 20;
+            doc.setFillColor(...primaryColor);
+            doc.rect(20, y - 6, 170, 6, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Shop Size Recommendations', 25, y - 1.5);
+            doc.setTextColor(...darkGray);
+            y += 10;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Small Shop (<500 sq ft, 1-2 staff):', 20, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text('Capacity: 50-100 customers/day | 1,500-3,000/month | 18,000-36,000/year', 25, y);
+            y += 5;
+            doc.text('Best for: Kiosks, small retail, cafes, salons, convenience stores', 25, y);
+            y += 5;
+            doc.text('Hardware: Basic POS (tablet/smartphone), USB scanner, 58mm printer', 25, y);
+            y += 5;
+            doc.text('Payment: Mobile card reader or cash-only initially', 25, y);
+            y += 5;
+            doc.text('Network: Basic WiFi router, no backup needed', 25, y);
+            y += 5;
+            doc.text('Tip: Start minimal, add hardware as revenue grows', 25, y);
+            y += 8;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Medium Shop (500-1500 sq ft, 3-5 staff):', 20, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text('Capacity: 150-300 customers/day | 4,500-9,000/month | 54,000-108,000/year', 25, y);
+            y += 5;
+            doc.text('Best for: Grocery stores, boutiques, pharmacies, electronics shops', 25, y);
+            y += 5;
+            doc.text('Hardware: All-in-one terminal, Bluetooth scanner, 80mm printer', 25, y);
+            y += 5;
+            doc.text('Payment: Integrated card reader + cash drawer required', 25, y);
+            y += 5;
+            doc.text('Network: Business router + UPS backup recommended', 25, y);
+            y += 5;
+            doc.text('Tip: Add customer display for better service experience', 25, y);
+            y += 8;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Large Shop (1500+ sq ft, 6+ staff):', 20, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text('Capacity: 400-800+ customers/day | 12,000-24,000/month | 144,000-288,000+/year', 25, y);
+            y += 5;
+            doc.text('Best for: Supermarkets, department stores, hardware stores, wholesale', 25, y);
+            y += 5;
+            doc.text('Hardware: Multiple terminals, 2D scanners, industrial printers', 25, y);
+            y += 5;
+            doc.text('Payment: Multiple terminals, contactless, integrated systems', 25, y);
+            y += 5;
+            doc.text('Network: Dual WAN + 4G/5G failover, enterprise router', 25, y);
+            y += 5;
+            doc.text('Tip: Invest in redundancy - backup everything (power, internet, hardware)', 25, y);
+            y += 8;
+            
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('General Recommendations:', 20, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text('- Budget 15-20% extra for cables, mounts, and accessories', 25, y);
+            y += 4;
+            doc.text('- Plan for 20% annual customer growth when sizing hardware', 25, y);
+            y += 4;
+            doc.text('- Replace receipt printers every 2-3 years with heavy use', 25, y);
+            y += 4;
+            doc.text('- Train all staff on basic troubleshooting', 25, y);
+            y += 4;
+            doc.text('- Keep spare scanner and printer for peak periods', 25, y);
+            y += 4;
+            doc.text('- Consider lease options for expensive equipment to preserve cash flow', 25, y);
+            
+            return y + 10;
         };
 
         const addTable = (headers, rows, startY) => {
@@ -512,7 +602,10 @@ Deno.serve(async (req) => {
         doc.setTextColor(...lightGray);
         doc.text('Contact support for unresolved issues.', 20, y);
 
-        // Page 11: Maintenance
+        // Page 11: Shop Size Advice
+        y = addShopAdvice(20);
+        
+        // Page 12: Maintenance
         doc.addPage();
         y = 20;
         y = addSectionHeader('7. Maintenance & Support', y);
