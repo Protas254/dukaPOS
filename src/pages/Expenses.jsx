@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, Filter, DollarSign, Trash2, Edit2, Upload, Receipt, X } from 'lucide-react';
+import { Plus, Search, Filter, DollarSign, Trash2, Edit2, Upload, Receipt, X, Table as TableIcon, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,6 +37,7 @@ export default function Expenses() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [receiptFile, setReceiptFile] = useState(null);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
 
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ['expenses'],
@@ -173,96 +175,220 @@ export default function Expenses() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 border rounded-lg p-1 bg-card">
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="h-8 px-3"
+          >
+            <TableIcon className="w-4 h-4 mr-1" />
+            Table
+          </Button>
+          <Button
+            variant={viewMode === 'cards' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('cards')}
+            className="h-8 px-3"
+          >
+            <LayoutGrid className="w-4 h-4 mr-1" />
+            Cards
+          </Button>
+        </div>
       </div>
 
       {/* Expenses List */}
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Loading expenses...</div>
       ) : filteredExpenses.length > 0 ? (
-        <div className="grid gap-3">
-          {filteredExpenses.map((expense) => (
-            <Card key={expense.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    {expense.receipt_url && (
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Receipt className="w-5 h-5 text-primary" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold">{expense.description || 'Expense'}</p>
-                        <Badge className={categoryColors[expense.category] || 'bg-slate-100 text-slate-700'}>
-                          {expense.category}
-                        </Badge>
-                        {expense.is_recurring && (
-                          <Badge variant="outline" className="text-[10px]">Recurring</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span>{format(new Date(expense.date), 'MMM d, yyyy')}</span>
-                        <span>•</span>
-                        <span className="capitalize">{expense.payment_method.replace('_', ' ')}</span>
-                        {expense.reference_number && (
-                          <>
-                            <span>•</span>
-                            <span>Ref: {expense.reference_number}</span>
-                          </>
-                        )}
-                      </div>
-                      {expense.notes && (
-                        <p className="text-sm text-muted-foreground mt-2">{expense.notes}</p>
+        viewMode === 'table' ? (
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-[50px]"></TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Payment Method</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Added By</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredExpenses.map((expense) => (
+                      <TableRow key={expense.id} className="hover:bg-muted/30">
+                        <TableCell>
+                          {expense.receipt_url && (
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Receipt className="w-4 h-4 text-primary" />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {format(new Date(expense.date), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell className="max-w-[200px]">
+                          <div className="font-medium truncate">{expense.description || 'Expense'}</div>
+                          {expense.notes && (
+                            <div className="text-xs text-muted-foreground truncate">{expense.notes}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={categoryColors[expense.category] || 'bg-slate-100 text-slate-700'}>
+                            {expense.category}
+                          </Badge>
+                          {expense.is_recurring && (
+                            <Badge variant="outline" className="ml-1 text-[10px]">Recurring</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="capitalize">
+                          {expense.payment_method.replace('_', ' ')}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {expense.reference_number || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {expense.added_by_name || 'Unknown'}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          KES {expense.amount?.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setEditingExpense(expense)}
+                                  className="h-8 w-8"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <ExpenseFormDialog
+                                open={!!editingExpense}
+                                onClose={() => {
+                                  setEditingExpense(null);
+                                  setReceiptFile(null);
+                                }}
+                                onSubmit={handleSubmit}
+                                isPending={updateExpense.isPending}
+                                initialData={editingExpense}
+                              />
+                            </Dialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (confirm('Are you sure you want to delete this expense?')) {
+                                  deleteExpense.mutate(expense.id);
+                                }
+                              }}
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3">
+            {filteredExpenses.map((expense) => (
+              <Card key={expense.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      {expense.receipt_url && (
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Receipt className="w-5 h-5 text-primary" />
+                        </div>
                       )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold">{expense.description || 'Expense'}</p>
+                          <Badge className={categoryColors[expense.category] || 'bg-slate-100 text-slate-700'}>
+                            {expense.category}
+                          </Badge>
+                          {expense.is_recurring && (
+                            <Badge variant="outline" className="text-[10px]">Recurring</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span>{format(new Date(expense.date), 'MMM d, yyyy')}</span>
+                          <span>•</span>
+                          <span className="capitalize">{expense.payment_method.replace('_', ' ')}</span>
+                          {expense.reference_number && (
+                            <>
+                              <span>•</span>
+                              <span>Ref: {expense.reference_number}</span>
+                            </>
+                          )}
+                        </div>
+                        {expense.notes && (
+                          <p className="text-sm text-muted-foreground mt-2">{expense.notes}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-lg font-bold">KES {expense.amount?.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Added by {expense.added_by_name || 'Unknown'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingExpense(expense)}
+                            className="h-8 w-8"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <ExpenseFormDialog
+                          open={!!editingExpense}
+                          onClose={() => {
+                            setEditingExpense(null);
+                            setReceiptFile(null);
+                          }}
+                          onSubmit={handleSubmit}
+                          isPending={updateExpense.isPending}
+                          initialData={editingExpense}
+                        />
+                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this expense?')) {
+                            deleteExpense.mutate(expense.id);
+                          }
+                        }}
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-lg font-bold">KES {expense.amount?.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Added by {expense.added_by_name || 'Unknown'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditingExpense(expense)}
-                          className="h-8 w-8"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <ExpenseFormDialog
-                        open={!!editingExpense}
-                        onClose={() => {
-                          setEditingExpense(null);
-                          setReceiptFile(null);
-                        }}
-                        onSubmit={handleSubmit}
-                        isPending={updateExpense.isPending}
-                        initialData={editingExpense}
-                      />
-                    </Dialog>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this expense?')) {
-                          deleteExpense.mutate(expense.id);
-                        }
-                      }}
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
       ) : (
         <Card>
           <CardContent className="text-center py-12">
