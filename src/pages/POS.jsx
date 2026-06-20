@@ -13,6 +13,7 @@ import ReceiptView from '@/components/pos/ReceiptView';
 import POSTopBar from '@/components/pos/POSTopBar';
 import POSFilters from '@/components/pos/POSFilters';
 import CustomerSearchBar from '@/components/pos/CustomerSearchBar';
+import FavoritesBar, { useFavorites } from '@/components/pos/FavoritesBar';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -42,6 +43,7 @@ export default function POS() {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [activeShift, setActiveShift] = React.useState(null);
   const [selectedCustomer, setSelectedCustomer] = React.useState(null);
+  const { favoriteIds, toggleFavorite, isFavorite } = useFavorites();
 
   // Resizable splitter state (desktop: cart width px, mobile: cart height %)
   const [cartWidth, setCartWidth] = useState(280);
@@ -339,9 +341,22 @@ export default function POS() {
               ))}
             </select>
           </div>
+          {/* Favourites Bar */}
+          <FavoritesBar
+            allProducts={allProducts}
+            onAddToCart={addToCart}
+            favoriteIds={favoriteIds}
+            toggleFavorite={toggleFavorite}
+          />
           {/* Product Grid */}
           <div className="flex-1 overflow-y-auto p-1">
-            <ProductGrid products={products} onAddToCart={addToCart} searchQuery={search} />
+            <ProductGrid
+              products={products}
+              onAddToCart={addToCart}
+              searchQuery={search}
+              onToggleFavorite={toggleFavorite}
+              isFavorite={isFavorite}
+            />
           </div>
         </div>
 

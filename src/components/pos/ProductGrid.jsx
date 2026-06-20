@@ -15,7 +15,7 @@ const categoryEmojis = {
   other: '📦'
 };
 
-export default function ProductGrid({ products, onAddToCart, searchQuery }) {
+export default function ProductGrid({ products, onAddToCart, searchQuery, onToggleFavorite, isFavorite }) {
   const filtered = products.filter(p =>
     p.is_active !== false &&
     (p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,6 +43,7 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
           <button
             key={product.id}
             onClick={() => onAddToCart(product)}
+            onContextMenu={(e) => { e.preventDefault(); onToggleFavorite?.(product.id); }}
             disabled={isOutOfStock}
             className={cn(
               "bg-card border rounded-md p-1 text-left transition-all hover:shadow-sm active:scale-[0.99] group relative overflow-hidden",
@@ -52,6 +53,12 @@ export default function ProductGrid({ products, onAddToCart, searchQuery }) {
               !isLowStock && !isOutOfStock && "hover:border-primary/30"
             )}
           >
+            {/* Favourite star */}
+            {isFavorite?.(product.id) && (
+              <div className="absolute top-0.5 left-0.5 z-10">
+                <span className="text-[8px]">⭐</span>
+              </div>
+            )}
             {/* Tiny Stock Dot */}
             {!isOutOfStock && (
               <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full z-10"
