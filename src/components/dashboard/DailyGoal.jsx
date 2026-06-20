@@ -99,6 +99,29 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
               </button>
             )}
           </div>
+          {/* Dynamic Status Indicator */}
+          {goal > 0 && (
+            <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${
+              pct >= 100 
+                ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' 
+                : pct >= 70 
+                  ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
+                  : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-400' : 'bg-red-500'
+              }`} />
+              <span className={`text-xs font-bold ${
+                pct >= 100 ? 'text-emerald-700 dark:text-emerald-400' : 
+                pct >= 70 ? 'text-amber-700 dark:text-amber-400' : 
+                'text-red-700 dark:text-red-400'
+              }`}>
+                {pct >= 100 ? '🎉 Goal achieved! Great job today!' : 
+                 pct >= 70 ? '💪 Almost there - keep pushing!' : 
+                 '⚠️ Behind target - focus on sales!'}
+              </span>
+            </div>
+          )}
           {/* 3 Color Status Buttons */}
           <div className="flex gap-1.5">
             {STATUS_BUTTONS.map(btn => {
