@@ -12,12 +12,12 @@ import { base44 } from '@/api/base44Client';
 import DiscountPanel from './DiscountPanel';
 
 const PAYMENT_METHODS = [
-  { id: 'cash',          label: 'Cash',          icon: Banknote,              color: 'bg-emerald-500' },
-  { id: 'mpesa',         label: 'M-Pesa',        icon: Smartphone,            color: 'bg-green-600'   },
-  { id: 'card',          label: 'Card',          icon: CreditCard,            color: 'bg-blue-500'    },
-  { id: 'bank_transfer', label: 'Bank Transfer', icon: Building2,             color: 'bg-indigo-500'  },
-  { id: 'cheque',        label: 'Cheque',        icon: FileText,              color: 'bg-orange-500'  },
-  { id: 'split',         label: 'Split',         icon: Split,                 color: 'bg-purple-500'  },
+  { id: 'cash',          label: 'Cash',          subtitle: 'Physical notes/coins', icon: Banknote,   activeColor: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20', iconBg: 'bg-emerald-500', textColor: 'text-emerald-700 dark:text-emerald-300' },
+  { id: 'mpesa',         label: 'M-Pesa',        subtitle: 'Mobile money',         icon: Smartphone, activeColor: 'border-green-600 bg-green-50 dark:bg-green-900/20',     iconBg: 'bg-green-600',   textColor: 'text-green-700 dark:text-green-300'   },
+  { id: 'card',          label: 'Card',          subtitle: 'Credit / debit',       icon: CreditCard, activeColor: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20',       iconBg: 'bg-blue-500',    textColor: 'text-blue-700 dark:text-blue-300'     },
+  { id: 'bank_transfer', label: 'Bank Transfer', subtitle: 'Wire / EFT',           icon: Building2,  activeColor: 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20', iconBg: 'bg-indigo-500',  textColor: 'text-indigo-700 dark:text-indigo-300' },
+  { id: 'cheque',        label: 'Cheque',        subtitle: 'Paper cheque',         icon: FileText,   activeColor: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20', iconBg: 'bg-orange-500',  textColor: 'text-orange-700 dark:text-orange-300' },
+  { id: 'split',         label: 'Split',         subtitle: 'Multiple methods',     icon: Split,      activeColor: 'border-purple-500 bg-purple-50 dark:bg-purple-900/20', iconBg: 'bg-purple-500',  textColor: 'text-purple-700 dark:text-purple-300' },
 ];
 
 const SPLIT_METHODS = [
@@ -230,25 +230,37 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
             </div>
           </div>
 
-          {/* Payment Method — 3-column grid */}
-          <div className="grid grid-cols-3 gap-2">
-            {PAYMENT_METHODS.map(pm => (
-              <button
-                key={pm.id}
-                onClick={() => setMethod(pm.id)}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all",
-                  method === pm.id
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-border hover:border-primary/30"
-                )}
-              >
-                <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white", pm.color)}>
-                  <pm.icon className="w-4 h-4" />
-                </div>
-                <span className="text-[11px] font-medium leading-tight text-center">{pm.label}</span>
-              </button>
-            ))}
+          {/* Payment Method */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Select Payment Method</p>
+            <div className="grid grid-cols-2 gap-2">
+              {PAYMENT_METHODS.map(pm => {
+                const isSelected = method === pm.id;
+                return (
+                  <button
+                    key={pm.id}
+                    onClick={() => setMethod(pm.id)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left w-full",
+                      isSelected
+                        ? cn("shadow-md", pm.activeColor)
+                        : "border-border hover:border-muted-foreground/30 bg-card"
+                    )}
+                  >
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-sm", pm.iconBg)}>
+                      <pm.icon className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={cn("text-sm font-semibold leading-tight", isSelected ? pm.textColor : 'text-foreground')}>{pm.label}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{pm.subtitle}</p>
+                    </div>
+                    {isSelected && (
+                      <CheckCircle className={cn("w-4 h-4 ml-auto flex-shrink-0", pm.textColor)} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Method-specific fields */}
