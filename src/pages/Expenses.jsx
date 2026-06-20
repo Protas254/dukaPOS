@@ -40,6 +40,8 @@ export default function Expenses() {
   const [viewMode, setViewMode] = useState('table');
   const [sortField, setSortField] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ['expenses'],
@@ -48,9 +50,21 @@ export default function Expenses() {
 
   const filteredExpenses = expenses.filter(exp => {
     const matchesSearch = exp.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         exp.reference_number?.toLowerCase().includes(searchTerm.toLowerCase());
+                         exp.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (exp.added_by_name && exp.added_by_name.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = categoryFilter === 'all' || exp.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    
+    let matchesDateFrom = true;
+    let matchesDateTo = true;
+    
+    if (dateFrom) {
+      matchesDateFrom = new Date(exp.date) >= new Date(dateFrom);
+    }
+    if (dateTo) {
+      matchesDateTo = new Date(exp.date) <= new Date(dateTo);
+    }
+    
+    return matchesSearch && matchesCategory && matchesDateFrom && matchesDateTo;
   });
 
   const sortedExpenses = [...filteredExpenses].sort((a, b) => {
@@ -190,19 +204,19 @@ export default function Expenses() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col lg:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by description or reference..."
+            placeholder="Search by description, reference, or added by..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Filter by category" />
+          <SelectTrigger className="w-full lg:w-[180px]">
+            <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
@@ -211,6 +225,23 @@ export default function Expenses() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            placeholder="From"
+            className="w-[150px]"
+          />
+          <span className="text-muted-foreground">to</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            placeholder="To"
+            className="w-[150px]"
+          />
+        </div>
         <div className="flex items-center gap-2 border rounded-lg p-1 bg-card">
           <Button
             variant={viewMode === 'table' ? 'default' : 'ghost'}
@@ -232,6 +263,27 @@ export default function Expenses() {
           </Button>
         </div>
       </div>
+      {(dateFrom || dateTo || searchTerm) && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Active filters:</span>
+          {dateFrom && <Badge variant="outline">From: {dateFrom}</Badge>}
+          {dateTo && <Badge variant="outline">To: {dateTo}</Badge>}
+          {searchTerm && <Badge variant="outline">Search: "{searchTerm}"</Badge>}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setDateFrom('');
+              setDateTo('');
+              setSearchTerm('');
+            }}
+            className="h-6 px-2 text-muted-foreground hover:text-destructive"
+          >
+            <X className="w-3 h-3 mr-1" />
+            Clear all
+          </Button>
+        </div>
+      )}
 
       {/* Expenses List */}
       {isLoading ? (
