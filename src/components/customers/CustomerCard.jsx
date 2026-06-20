@@ -21,11 +21,10 @@ export default function CustomerCard({ customer, onView, onEdit, onDelete, index
 
   return (
     <div
-      className={cn(
-        "flex items-center gap-4 px-4 py-3 border-b last:border-0 transition-colors cursor-pointer",
-        isEven ? "bg-white dark:bg-card" : "bg-emerald-100 dark:bg-emerald-900/30",
-        "hover:bg-primary/10"
-      )}
+      className="flex items-center gap-4 px-4 py-3 border-b last:border-0 transition-colors cursor-pointer"
+      style={{ backgroundColor: isEven ? '#ffffff' : '#d1fae5' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#a7f3d0'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = isEven ? '#ffffff' : '#d1fae5'}
       onClick={onView}
     >
       {/* Avatar */}
