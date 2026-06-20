@@ -13,6 +13,15 @@ import { Link } from 'react-router-dom';
 
 const PAYMENT_METHODS = ['cash', 'mpesa', 'card', 'bank_transfer', 'cheque', 'split'];
 
+const SEARCH_PLACEHOLDERS = {
+  all: 'Search receipt #, customer, cashier, product, M-Pesa ref...',
+  receipt: 'Search by receipt number...',
+  customer: 'Search by customer name...',
+  cashier: 'Search by cashier name...',
+  product: 'Search by product name...',
+  mpesa: 'Search by M-Pesa reference...',
+};
+
 const paymentMethodLabel = (method) => {
   const labels = { cash: 'Cash', mpesa: 'M-Pesa', card: 'Card', bank_transfer: 'Bank Transfer', cheque: 'Cheque', split: 'Split' };
   return labels[method] || method;
@@ -32,6 +41,7 @@ const paymentMethodColor = (method) => {
 
 export default function Transactions() {
   const [search, setSearch] = useState('');
+  const [searchField, setSearchField] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [cashierFilter, setCashierFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -60,17 +70,14 @@ export default function Transactions() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return sales.filter(s => {
-      // Text search: receipt, customer, M-Pesa ref, cashier, product names
+      // Text search scoped to selected field
       if (q) {
-        const productMatch = s.items?.some(item =>
-          item.product_name?.toLowerCase().includes(q)
-        );
-        const textMatch =
-          s.receipt_number?.toLowerCase().includes(q) ||
-          s.customer_name?.toLowerCase().includes(q) ||
-          s.mpesa_reference?.toLowerCase().includes(q) ||
-          s.cashier_name?.toLowerCase().includes(q) ||
-          productMatch;
+        let textMatch = false;
+        if (searchField === 'receipt' || searchField === 'all') textMatch = textMatch || s.receipt_number?.toLowerCase().includes(q);
+        if (searchField === 'customer' || searchField === 'all') textMatch = textMatch || s.customer_name?.toLowerCase().includes(q);
+        if (searchField === 'cashier' || searchField === 'all') textMatch = textMatch || s.cashier_name?.toLowerCase().includes(q);
+        if (searchField === 'mpesa' || searchField === 'all') textMatch = textMatch || s.mpesa_reference?.toLowerCase().includes(q);
+        if (searchField === 'product' || searchField === 'all') textMatch = textMatch || s.items?.some(item => item.product_name?.toLowerCase().includes(q));
         if (!textMatch) return false;
       }
 
@@ -135,20 +142,35 @@ export default function Transactions() {
         </Button>
       </div>
 
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by receipt #, customer, cashier, product name, or M-Pesa ref..."
-          className="pl-10 rounded-xl"
-        />
-        {search && (
-          <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        )}
+      {/* Search bar with category dropdown */}
+      <div className="flex gap-2">
+        <Select value={searchField} onValueChange={(v) => { setSearchField(v); setSearch(''); }}>
+          <SelectTrigger className="w-[160px] rounded-xl flex-shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Fields</SelectItem>
+            <SelectItem value="receipt">Receipt #</SelectItem>
+            <SelectItem value="customer">Customer</SelectItem>
+            <SelectItem value="cashier">Cashier</SelectItem>
+            <SelectItem value="product">Product</SelectItem>
+            <SelectItem value="mpesa">M-Pesa Ref</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={SEARCH_PLACEHOLDERS[searchField]}
+            className="pl-10 rounded-xl"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Expanded Filters Panel */}
