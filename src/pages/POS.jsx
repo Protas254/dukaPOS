@@ -21,6 +21,7 @@ import HeldTransactions, { saveHeldTransactions, loadHeldTransactions } from '@/
 import PriceCheckMode from '@/components/pos/PriceCheckMode';
 import EndOfDayReconciliation from '@/components/pos/EndOfDayReconciliation';
 import KeyboardShortcutsHelp from '@/components/pos/KeyboardShortcutsHelp';
+import { playSuccessBeep, playErrorBeep } from '@/utils/audio';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -439,26 +440,10 @@ export default function POS() {
                         addToCart(match);
                         setSearch('');
                         setScanFlash(true);
-                        // Beep on success
-                        try {
-                          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                          const o = ctx.createOscillator(); const g = ctx.createGain();
-                          o.connect(g); g.connect(ctx.destination);
-                          o.frequency.value = 880; g.gain.setValueAtTime(0.3, ctx.currentTime);
-                          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-                          o.start(); o.stop(ctx.currentTime + 0.15);
-                        } catch (_) {}
+                        playSuccessBeep();
                         setTimeout(() => setScanFlash(false), 400);
                       } else if (search.trim()) {
-                        // Error beep
-                        try {
-                          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                          const o = ctx.createOscillator(); const g = ctx.createGain();
-                          o.connect(g); g.connect(ctx.destination);
-                          o.frequency.value = 220; g.gain.setValueAtTime(0.3, ctx.currentTime);
-                          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-                          o.start(); o.stop(ctx.currentTime + 0.3);
-                        } catch (_) {}
+                        playErrorBeep();
                       }
                     }
                   }}
