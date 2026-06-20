@@ -31,6 +31,7 @@ import EmployeeProfile from '@/pages/EmployeeProfile';
 import Onboarding from '@/pages/Onboarding';
 import ShiftAudits from '@/pages/ShiftAudits';
 import Expenses from '@/pages/Expenses';
+import Features from '@/pages/Features';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/shift-audits" element={<ShiftAudits />} />
           <Route path="/expenses" element={<Expenses />} />
+          <Route path="/features" element={<Features />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
