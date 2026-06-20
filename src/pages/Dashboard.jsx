@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   DollarSign, ShoppingCart, TrendingUp, Package, 
-  AlertTriangle, ArrowRight, ArrowLeft, User, Award, Bell, Receipt
+  AlertTriangle, ArrowRight, ArrowLeft, User, Award, Bell, Receipt, FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfDay, subDays } from 'date-fns';
@@ -164,14 +164,23 @@ export default function Dashboard() {
               <span className="text-sm font-medium">{criticalStockProducts.length} critical stock items</span>
             </div>
           )}
-          <Link
-            to="/pos"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Open POS
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/features"
+              className="inline-flex items-center gap-2 bg-background text-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-muted transition-colors border"
+            >
+              <FileText className="w-4 h-4" />
+              Features
+            </Link>
+            <Link
+              to="/pos"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Open POS
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </div>
 
