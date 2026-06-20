@@ -81,21 +81,58 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
   return (
     <>
       <div className={`bg-card rounded-2xl border p-5 ${achieved ? 'ring-2 ring-emerald-400/40' : ''}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${achieved ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-primary/10'}`}>
-              <Target className={`w-4 h-4 ${achieved ? 'text-emerald-600' : 'text-primary'}`} />
+        <div className="flex flex-col gap-3 mb-4">
+          {/* Title row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${achieved ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-primary/10'}`}>
+                <Target className={`w-4 h-4 ${achieved ? 'text-emerald-600' : 'text-primary'}`} />
+              </div>
+              <h3 className="font-display font-semibold text-sm">Daily Revenue Goal</h3>
             </div>
-            <h3 className="font-display font-semibold text-sm">Daily Revenue Goal</h3>
+            {!editing && goal > 0 && (
+              <button
+                onClick={() => { setInputVal(String(goal)); setEditing(true); }}
+                className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          {!editing && goal > 0 && (
-            <button
-              onClick={() => { setInputVal(String(goal)); setEditing(true); }}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </button>
-          )}
+          {/* 3 Color Status Buttons */}
+          <div className="flex gap-1.5">
+            {STATUS_BUTTONS.map(btn => {
+              const isActive = activeKey === btn.key;
+              return (
+                <button
+                  key={btn.key}
+                  onClick={() => {
+                    if (isActive && btn.key === 'met') {
+                      setSummaryOpen(true);
+                    } else {
+                      setManualStatus(btn.key);
+                    }
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border text-[10px] font-bold transition-all
+                    ${isActive ? btn.active + ' cursor-pointer hover:opacity-90' : btn.inactive + ' cursor-default'}
+                  `}
+                  title={manualStatus ? 'Click another button to change status' : 'Click to set this status manually'}
+                >
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
+                  {btn.label}
+                </button>
+              );
+            })}
+            {manualStatus && (
+              <button
+                onClick={() => setManualStatus(null)}
+                className="px-2 py-1.5 rounded-lg border border-muted-foreground/30 text-[10px] font-medium text-muted-foreground hover:bg-muted/50"
+                title="Reset to automatic status"
+              >
+                Auto
+              </button>
+            )}
+          </div>
         </div>
 
         {editing ? (
@@ -133,40 +170,7 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
               </div>
             </div>
 
-            {/* Status buttons — clickable to manually set status */}
-            <div className="flex gap-2">
-              {STATUS_BUTTONS.map(btn => {
-                const isActive = activeKey === btn.key;
-                return (
-                  <button
-                    key={btn.key}
-                    onClick={() => {
-                      if (isActive && btn.key === 'met') {
-                        setSummaryOpen(true);
-                      } else {
-                        setManualStatus(btn.key);
-                      }
-                    }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border text-xs font-semibold transition-all
-                      ${isActive ? btn.active + ' cursor-pointer hover:opacity-90' : btn.inactive + ' cursor-default'}
-                    `}
-                    title={manualStatus ? 'Click another button to change status' : 'Click to set this status manually'}
-                  >
-                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
-                    {btn.label}
-                  </button>
-                );
-              })}
-              {manualStatus && (
-                <button
-                  onClick={() => setManualStatus(null)}
-                  className="px-2 py-2 rounded-xl border border-muted-foreground/30 text-xs font-medium text-muted-foreground hover:bg-muted/50"
-                  title="Reset to automatic status"
-                >
-                  Auto
-                </button>
-              )}
-            </div>
+
 
             {/* Stats row */}
             <div className="grid grid-cols-3 gap-2">
