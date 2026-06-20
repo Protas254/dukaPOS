@@ -10,9 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare, Barcode
+  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare, Barcode, Printer
 } from 'lucide-react';
 import ProductBarcodePrintDialog from '@/components/barcode/ProductBarcodePrintDialog';
+import BarcodeDisplay from '@/components/barcode/BarcodeDisplay';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -322,6 +323,7 @@ export default function Inventory() {
                   />
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Barcode</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Category</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Price</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Stock</th>
@@ -355,8 +357,33 @@ export default function Inventory() {
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium">{product.name}</p>
-                        {product.sku && <p className="text-xs text-muted-foreground">{product.sku}</p>}
+                        {product.sku && <p className="text-xs text-muted-foreground font-mono">{product.sku}</p>}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      {product.sku ? (
+                        <div className="flex items-center gap-2">
+                          <div className="bg-white border rounded p-1.5 shadow-sm">
+                            <BarcodeDisplay value={product.sku} width={1.2} height={32} fontSize={8} />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0"
+                            title="Print label"
+                            onClick={() => { setSelectedIds(new Set([product.id])); setBarcodePrintOpen(true); }}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <button
+                          className="text-xs text-muted-foreground/60 italic hover:text-primary transition-colors"
+                          onClick={() => openEdit(product)}
+                        >
+                          No SKU — click edit
+                        </button>
+                      )}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <Badge variant="secondary" className="capitalize text-xs">
@@ -462,6 +489,33 @@ export default function Inventory() {
                 </Button>
               </div>
             </div>
+            {form.sku && (
+              <div className="col-span-2 flex items-center gap-4 p-3 bg-muted/40 rounded-lg border">
+                <div className="bg-white border rounded-lg p-2 shadow-sm flex-shrink-0">
+                  <BarcodeDisplay value={form.sku} width={1.6} height={50} fontSize={10} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Barcode Preview</p>
+                  <p className="text-sm font-mono font-medium truncate">{form.sku}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Print this label for shelf tagging</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5 text-xs"
+                  onClick={() => {
+                    if (editingProduct) {
+                      setSelectedIds(new Set([editingProduct.id]));
+                      setBarcodePrintOpen(true);
+                    }
+                  }}
+                  disabled={!editingProduct}
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print Label
+                </Button>
+              </div>
+            )}
             <div>
               <Label className="text-xs">Category *</Label>
               <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
