@@ -53,6 +53,7 @@ export default function Inventory() {
   const [scanRestockQuery, setScanRestockQuery] = useState('');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showProducts, setShowProducts] = useState(true);
   const scanRestockRef = useRef(null);
   const { toast } = useToast();
 
@@ -321,6 +322,30 @@ export default function Inventory() {
 
       {/* Product Table */}
       <div className="bg-card rounded-2xl border overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b">
+          <div className="flex items-center gap-2">
+            <Package className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium text-sm">Products ({filtered.length})</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1 text-xs"
+            onClick={() => setShowProducts(!showProducts)}
+          >
+            {showProducts ? (
+              <>
+                <ChevronUp className="w-3.5 h-3.5" /> Hide
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3.5 h-3.5" /> Show
+              </>
+            )}
+          </Button>
+        </div>
+        {showProducts && (
+        <>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -517,6 +542,8 @@ export default function Inventory() {
               </Button>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
 
