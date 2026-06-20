@@ -398,12 +398,12 @@ Deno.serve(async (req) => {
         y += 6;
         
         const networkChecklist = [
-            '✓ Router with 4+ LAN ports',
-            '✓ Ethernet cables (Cat5e/Cat6)',
-            '✓ WiFi with WPA2/WPA3 security',
-            '✓ Static IP (optional)',
-            '✓ UPS for router/modem',
-            '✓ Mobile hotspot backup'
+            '- Router with 4+ LAN ports',
+            '- Ethernet cables (Cat5e/Cat6)',
+            '- WiFi with WPA2/WPA3 security',
+            '- Static IP (optional)',
+            '- UPS for router/modem',
+            '- Mobile hotspot backup'
         ];
         
         doc.setFont('helvetica', 'normal');
@@ -618,12 +618,12 @@ Deno.serve(async (req) => {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         const dailyTasks = [
-            '• Clean touchscreen',
-            '• Wipe scanner lens',
-            '• Check paper level',
-            '• Test cash drawer',
-            '• Run reports',
-            '• Restart terminal'
+            '- Clean touchscreen',
+            '- Wipe scanner lens',
+            '- Check paper level',
+            '- Test cash drawer',
+            '- Run reports',
+            '- Restart terminal'
         ];
         
         dailyTasks.forEach((task, idx) => {
@@ -637,12 +637,12 @@ Deno.serve(async (req) => {
         y += 5;
         
         const weeklyTasks = [
-            '• Deep clean hardware',
-            '• Check cables',
-            '• Test backup internet',
-            '• Verify settlement',
-            '• Review logs',
-            '• Update software'
+            '- Deep clean hardware',
+            '- Check cables',
+            '- Test backup internet',
+            '- Verify settlement',
+            '- Review logs',
+            '- Update software'
         ];
         
         doc.setFont('helvetica', 'normal');
@@ -658,12 +658,12 @@ Deno.serve(async (req) => {
         y += 5;
         
         const monthlyTasks = [
-            '• Replace paper rolls',
-            '• Clean internals',
-            '• Test UPS',
-            '• Archive data',
-            '• Check warranty',
-            '• Inventory assets'
+            '- Replace paper rolls',
+            '- Clean internals',
+            '- Test UPS',
+            '- Archive data',
+            '- Check warranty',
+            '- Inventory assets'
         ];
         
         doc.setFont('helvetica', 'normal');
