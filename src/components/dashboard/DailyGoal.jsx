@@ -51,6 +51,7 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
   const [editing, setEditing] = useState(goal === 0);
   const [inputVal, setInputVal] = useState(goal === 0 ? '' : String(goal));
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [manualStatus, setManualStatus] = useState(null); // 'not_met' | 'almost' | 'met' | null (auto)
 
   const handleSave = () => {
     const parsed = parseInt(inputVal, 10);
@@ -74,8 +75,8 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
   const barColor = pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-400' : 'bg-destructive';
   const statusColor = pct >= 100 ? 'text-emerald-600' : pct >= 70 ? 'text-amber-600' : 'text-destructive';
 
-  // Which button is currently active
-  const activeKey = pct >= 100 ? 'met' : pct >= 70 ? 'almost' : 'not_met';
+  // Which button is currently active (manual override or auto)
+  const activeKey = manualStatus || (pct >= 100 ? 'met' : pct >= 70 ? 'almost' : 'not_met');
 
   return (
     <>
@@ -132,23 +133,39 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
               </div>
             </div>
 
-            {/* Status buttons — active one is fully highlighted, others shown dimmed */}
+            {/* Status buttons — clickable to manually set status */}
             <div className="flex gap-2">
               {STATUS_BUTTONS.map(btn => {
                 const isActive = activeKey === btn.key;
                 return (
                   <button
                     key={btn.key}
-                    onClick={isActive ? () => setSummaryOpen(true) : undefined}
+                    onClick={() => {
+                      if (isActive && btn.key === 'met') {
+                        setSummaryOpen(true);
+                      } else {
+                        setManualStatus(btn.key);
+                      }
+                    }}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border text-xs font-semibold transition-all
                       ${isActive ? btn.active + ' cursor-pointer hover:opacity-90' : btn.inactive + ' cursor-default'}
                     `}
+                    title={manualStatus ? 'Click another button to change status' : 'Click to set this status manually'}
                   >
                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isActive ? btn.activeDot : btn.inactiveDot}`} />
                     {btn.label}
                   </button>
                 );
               })}
+              {manualStatus && (
+                <button
+                  onClick={() => setManualStatus(null)}
+                  className="px-2 py-2 rounded-xl border border-muted-foreground/30 text-xs font-medium text-muted-foreground hover:bg-muted/50"
+                  title="Reset to automatic status"
+                >
+                  Auto
+                </button>
+              )}
             </div>
 
             {/* Stats row */}
