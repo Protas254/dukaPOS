@@ -19,6 +19,7 @@ export default function Customers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState('');
+  const [searchField, setSearchField] = useState('all');
   const [tierFilter, setTierFilter] = useState('all');
   const [sort, setSort] = useState('recent');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -65,11 +66,19 @@ export default function Customers() {
 
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(c =>
-        c.name?.toLowerCase().includes(q) ||
-        c.phone?.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q)
-      );
+      list = list.filter(c => {
+        if (searchField === 'name')   return c.name?.toLowerCase().includes(q);
+        if (searchField === 'phone')  return c.phone?.toLowerCase().includes(q);
+        if (searchField === 'email')  return c.email?.toLowerCase().includes(q);
+        if (searchField === 'points') return String(c.loyalty_points || 0).includes(search.trim());
+        // 'all'
+        return (
+          c.name?.toLowerCase().includes(q) ||
+          c.phone?.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q) ||
+          String(c.loyalty_points || 0).includes(search.trim())
+        );
+      });
     }
 
     if (tierFilter !== 'all') {
@@ -85,7 +94,7 @@ export default function Customers() {
     }
 
     return list;
-  }, [customers, search, tierFilter, sort]);
+  }, [customers, search, searchField, tierFilter, sort]);
 
   const resetForm = () => setFormData({ name: '', phone: '', email: '', notes: '' });
 
@@ -185,6 +194,7 @@ export default function Customers() {
       {/* Filters */}
       <CustomerFilters
         search={search} onSearch={setSearch}
+        searchField={searchField} onSearchField={setSearchField}
         tier={tierFilter} onTier={setTierFilter}
         sort={sort} onSort={setSort}
       />
