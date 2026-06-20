@@ -109,14 +109,49 @@ export default function CashierComparisonChart({ periodSales }) {
 
       {/* Stats summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t">
-        {cashierData.slice(0, 4).map((c, i) => (
-          <div key={c.fullName} className="text-center">
-            <p className="text-xs text-muted-foreground mb-1">{c.name}</p>
-            <p className="text-sm font-bold text-primary">KES {c.revenue.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">{c.transactions} sales</p>
-          </div>
-        ))}
+        {cashierData.slice(0, 4).map((c, i) => {
+          const rank = i === 0 ? '🥇 Top Performer' : i === 1 ? '🥈 2nd Place' : i === 2 ? '🥉 3rd Place' : '4th Place';
+          return (
+            <div key={c.fullName} className="text-center p-2 rounded-xl bg-muted/30">
+              <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">{rank}</p>
+              <p className="text-sm font-bold truncate">{c.fullName}</p>
+              <p className="text-sm font-bold text-primary mt-1">KES {c.revenue.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">{c.transactions} txns · avg KES {c.avgTicket.toLocaleString()}</p>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Descriptive commentary */}
+      {cashierData.length > 0 && (() => {
+        const top = cashierData[0];
+        const total = cashierData.reduce((s, c) => s + c.revenue, 0);
+        const topShare = total > 0 ? Math.round((top.revenue / total) * 100) : 0;
+        const best = cashierData.reduce((a, b) => a.avgTicket > b.avgTicket ? a : b);
+        return (
+          <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-1.5 text-sm text-muted-foreground">
+            <p>
+              <span className="font-semibold text-foreground">{top.fullName}</span> leads the team with{' '}
+              <span className="font-semibold text-primary">KES {top.revenue.toLocaleString()}</span> in revenue across{' '}
+              <span className="font-semibold">{top.transactions}</span> transactions, accounting for{' '}
+              <span className="font-semibold text-primary">{topShare}%</span> of total sales this period.
+            </p>
+            <p>
+              Highest average basket size belongs to{' '}
+              <span className="font-semibold text-foreground">{best.fullName}</span> at{' '}
+              <span className="font-semibold text-primary">KES {best.avgTicket.toLocaleString()}</span> per transaction,
+              suggesting stronger upselling or larger-value purchases.
+            </p>
+            {cashierData.length > 1 && (
+              <p>
+                A total of <span className="font-semibold">{cashierData.length}</span> cashiers processed{' '}
+                <span className="font-semibold">{cashierData.reduce((s, c) => s + c.transactions, 0)}</span> transactions
+                worth <span className="font-semibold text-primary">KES {total.toLocaleString()}</span> during this period.
+              </p>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
