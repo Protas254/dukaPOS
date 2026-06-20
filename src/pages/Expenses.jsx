@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, DollarSign, Trash2, Edit2, Upload, Receipt, X, Table as TableIcon, LayoutGrid, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -35,6 +35,8 @@ export default function Expenses() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
   const [addedByFilter, setAddedByFilter] = useState('all');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [receiptFile, setReceiptFile] = useState(null);
@@ -88,6 +90,23 @@ export default function Expenses() {
   });
 
   const totalExpenses = sortedExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  const totalPages = Math.ceil(sortedExpenses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedExpenses = sortedExpenses.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToPreviousPage = () => {
+    setCurrentPage(Math.max(1, currentPage - 1));
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage(Math.min(totalPages, currentPage + 1));
+  };
 
   const createExpense = useMutation({
     mutationFn: async (expenseData) => {
@@ -146,6 +165,10 @@ export default function Expenses() {
 
   const categoryColors = Object.fromEntries(CATEGORIES.map(c => [c.value, c.color]));
   const uniqueAddedBy = [...new Set(expenses.map(e => e.added_by_name).filter(Boolean))];
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage, categoryFilter, paymentMethodFilter, addedByFilter, dateFrom, dateTo]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -307,40 +330,56 @@ export default function Expenses() {
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Loading expenses...</div>
       ) : sortedExpenses.length > 0 ? (
-        viewMode === 'table' ? (
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="w-[50px]"></TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('date')}>
-                        <div className="flex items-center">Date<SortIcon field="date" /></div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('description')}>
-                        <div className="flex items-center">Description<SortIcon field="description" /></div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('category')}>
-                        <div className="flex items-center">Category<SortIcon field="category" /></div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('payment_method')}>
-                        <div className="flex items-center">Payment<SortIcon field="payment_method" /></div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('reference_number')}>
-                        <div className="flex items-center">Reference<SortIcon field="reference_number" /></div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('added_by_name')}>
-                        <div className="flex items-center">Added By<SortIcon field="added_by_name" /></div>
-                      </TableHead>
-                      <TableHead className="text-right cursor-pointer hover:bg-muted/70" onClick={() => handleSort('amount')}>
-                        <div className="flex items-center justify-end">Amount<SortIcon field="amount" /></div>
-                      </TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedExpenses.map((expense) => (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Select value={itemsPerPage} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Items per page" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 per page</SelectItem>
+                <SelectItem value="20">20 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, sortedExpenses.length)} of {sortedExpenses.length} expenses
+            </div>
+          </div>
+          {viewMode === 'table' ? (
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('date')}>
+                          <div className="flex items-center">Date<SortIcon field="date" /></div>
+                        </TableHead>
+                        <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('description')}>
+                          <div className="flex items-center">Description<SortIcon field="description" /></div>
+                        </TableHead>
+                        <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('category')}>
+                          <div className="flex items-center">Category<SortIcon field="category" /></div>
+                        </TableHead>
+                        <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('payment_method')}>
+                          <div className="flex items-center">Payment<SortIcon field="payment_method" /></div>
+                        </TableHead>
+                        <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('reference_number')}>
+                          <div className="flex items-center">Reference<SortIcon field="reference_number" /></div>
+                        </TableHead>
+                        <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('added_by_name')}>
+                          <div className="flex items-center">Added By<SortIcon field="added_by_name" /></div>
+                        </TableHead>
+                        <TableHead className="text-right cursor-pointer hover:bg-muted/70" onClick={() => handleSort('amount')}>
+                          <div className="flex items-center justify-end">Amount<SortIcon field="amount" /></div>
+                        </TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedExpenses.map((expense) => (
                       <TableRow key={expense.id} className="hover:bg-muted/30">
                         <TableCell>
                           {expense.receipt_url && (
@@ -425,7 +464,7 @@ export default function Expenses() {
           </Card>
         ) : (
           <div className="grid gap-3">
-            {filteredExpenses.map((expense) => (
+            {paginatedExpenses.map((expense) => (
               <Card key={expense.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
@@ -508,7 +547,57 @@ export default function Expenses() {
               </Card>
             ))}
           </div>
-        )
+        )}
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between gap-4 pt-4">
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => goToPage(pageNum)}
+                      className="w-9"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : (
         <Card>
           <CardContent className="text-center py-12">
