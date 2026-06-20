@@ -299,7 +299,7 @@ Deno.serve(async (req) => {
 
 // Helper function to generate eTIMS roadmap PDF
 async function generateEtimsRoadmapPDF(user) {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ encoding: 'UTF-8' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 15;
     let y = margin;
@@ -328,7 +328,8 @@ async function generateEtimsRoadmapPDF(user) {
     const addText = (text, size = 9, style = 'normal') => {
         doc.setFontSize(size);
         doc.setFont('helvetica', style);
-        const lines = doc.splitTextToSize(text, pageWidth - margin * 2);
+        const cleanText = text.normalize('NFKD').replace(/[^\x00-\x7F]/g, '');
+        const lines = doc.splitTextToSize(cleanText, pageWidth - margin * 2);
         lines.forEach(line => {
             doc.text(line, margin, y);
             y += size + 1;
