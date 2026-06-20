@@ -86,6 +86,14 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
     enabled: open,
   });
 
+  const { data: businessSettings } = useQuery({
+    queryKey: ['business-settings'],
+    queryFn: () => base44.entities.BusinessSettings.list(),
+    enabled: open,
+  });
+
+  const mpesaDetails = businessSettings?.[0]?.mpesa_paybill || businessSettings?.[0]?.mpesa_till;
+
   useEffect(() => {
     if (customerPhone.length >= 10) {
       const found = customers.find(c =>
@@ -299,6 +307,45 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
 
           {method === 'mpesa' && (
             <div className="space-y-3">
+              {/* Paybill/Till Number Display */}
+              {mpesaDetails && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Smartphone className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <p className="text-xs font-semibold text-green-700 dark:text-green-300">M-Pesa Payment Details</p>
+                  </div>
+                  <div className="space-y-2">
+                    {businessSettings[0].mpesa_paybill && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-green-600 dark:text-green-400">Paybill Number:</span>
+                        <span className="text-sm font-bold text-green-700 dark:text-green-300 font-mono">
+                          {businessSettings[0].mpesa_paybill}
+                        </span>
+                      </div>
+                    )}
+                    {businessSettings[0].mpesa_till && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-green-600 dark:text-green-400">Till Number:</span>
+                        <span className="text-sm font-bold text-green-700 dark:text-green-300 font-mono">
+                          {businessSettings[0].mpesa_till}
+                        </span>
+                      </div>
+                    )}
+                    {businessSettings[0].mpesa_account && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-green-600 dark:text-green-400">Account Name:</span>
+                        <span className="text-sm font-semibold text-green-700 dark:text-green-300">
+                          {businessSettings[0].mpesa_account}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-green-600/80 dark:text-green-400/80 mt-2">
+                    Customer can pay manually using these details or receive STK prompt below.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <Label className="text-xs">M-Pesa Phone Number</Label>
                 <Input

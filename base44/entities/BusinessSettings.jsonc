@@ -48,6 +48,18 @@
     "return_policy": {
       "type": "string",
       "description": "Store return & refund policy shown to staff and on receipts"
+    },
+    "mpesa_paybill": {
+      "type": "string",
+      "description": "M-Pesa Paybill number (e.g., 174379)"
+    },
+    "mpesa_till": {
+      "type": "string",
+      "description": "M-Pesa Buy Goods Till number"
+    },
+    "mpesa_account": {
+      "type": "string",
+      "description": "M-Pesa account name to use (e.g., business name)"
     }
   },
   "required": [
