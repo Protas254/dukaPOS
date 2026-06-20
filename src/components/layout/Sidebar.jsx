@@ -11,7 +11,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: ShoppingCart, label: 'POS Terminal', path: '/pos' },
   {
-    icon: Layers, label: 'Store Operations', path: '/store-ops',
+    icon: Layers, label: 'Operations', path: '/operations',
     children: [
       { icon: Package, label: 'Inventory', path: '/inventory' },
       { icon: Receipt, label: 'Transactions', path: '/transactions' },
