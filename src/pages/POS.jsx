@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Search, ArrowLeft, ArrowRight, Barcode, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductGrid from '@/components/pos/ProductGrid';
 import Cart from '@/components/pos/Cart';
@@ -44,6 +44,9 @@ export default function POS() {
   const [activeShift, setActiveShift] = React.useState(null);
   const [selectedCustomer, setSelectedCustomer] = React.useState(null);
   const { favoriteIds, toggleFavorite, isFavorite } = useFavorites();
+  const [scanMode, setScanMode] = useState(false);
+  const [scanFlash, setScanFlash] = useState(false);
+  const searchInputRef = useRef(null);
 
   // Resizable splitter state (desktop: cart width px, mobile: cart height %)
   const [cartWidth, setCartWidth] = useState(280);
@@ -319,27 +322,66 @@ export default function POS() {
       <div ref={containerRef} className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left Panel - Products */}
         <div className="flex-1 flex flex-col min-h-0" style={{ minWidth: 0 }}>
-          {/* Ultra Compact Filters */}
-          <div className="h-8 border-b flex items-center gap-1 px-2 bg-muted/30">
-            <div className="relative flex-1 max-w-[200px]">
-              <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search..."
-                className="w-full pl-6 pr-2 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary h-6"
-              />
+          {/* Ultra Compact Filters + Barcode Scan */}
+          <div className="border-b bg-muted/30">
+            <div className="h-8 flex items-center gap-1 px-2">
+              <div className="relative flex-1">
+                {scanMode
+                  ? <Barcode className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-primary animate-pulse" />
+                  : <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                }
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && search.trim()) {
+                      const q = search.trim().toLowerCase();
+                      const match = products.find(p => p.sku?.toLowerCase() === q)
+                        || products.find(p => p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q));
+                      if (match && match.stock_quantity > 0) {
+                        addToCart(match);
+                        setSearch('');
+                        setScanFlash(true);
+                        setTimeout(() => setScanFlash(false), 400);
+                      }
+                    }
+                  }}
+                  placeholder={scanMode ? "Scan barcode / SKU → Enter to add..." : "Search by name or SKU..."}
+                  className={`w-full pl-5 pr-2 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 h-6 transition-colors ${
+                    scanMode ? 'border-primary focus:ring-primary bg-primary/5' : 'focus:ring-primary'
+                  } ${scanFlash ? 'bg-green-100 border-green-400' : ''}`}
+                />
+              </div>
+              <button
+                onClick={() => { setScanMode(m => !m); setTimeout(() => searchInputRef.current?.focus(), 50); }}
+                title={scanMode ? "Exit scan mode" : "Enable barcode scan mode"}
+                className={`h-6 px-2 text-[10px] font-bold rounded border transition-colors flex items-center gap-0.5 ${
+                  scanMode
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background text-muted-foreground border-border hover:border-primary hover:text-primary'
+                }`}
+              >
+                <Barcode className="w-3 h-3" />
+                <span className="hidden sm:inline">{scanMode ? 'ON' : 'SCAN'}</span>
+              </button>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="text-xs border rounded px-1.5 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary h-6 max-w-[100px] truncate"
+              >
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                ))}
+              </select>
             </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="text-xs border rounded px-1.5 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary h-6 max-w-[120px] truncate"
-            >
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.label}</option>
-              ))}
-            </select>
+            {scanMode && (
+              <div className="px-2 pb-1 text-[10px] text-primary/70 font-medium flex items-center gap-1">
+                <Zap className="w-2.5 h-2.5" />
+                Scan mode: scan a barcode or type a SKU and press Enter to add instantly
+              </div>
+            )}
           </div>
           {/* Favourites Bar */}
           <FavoritesBar
