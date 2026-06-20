@@ -117,7 +117,7 @@ export default function Dashboard() {
   }, [sales]);
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px] min-h-screen bg-green-50 dark:bg-green-950/20 rounded-xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
