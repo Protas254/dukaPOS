@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare, Barcode, Printer, ChevronDown, ChevronUp
+  ArrowUpDown, AlertTriangle, Loader2, Upload, Download, ArrowLeft, ArrowRight, Layers, CheckSquare, Barcode, Printer, ChevronDown, ChevronUp, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 import ProductBarcodePrintDialog from '@/components/barcode/ProductBarcodePrintDialog';
 import BarcodeDisplay from '@/components/barcode/BarcodeDisplay';
@@ -51,6 +51,8 @@ export default function Inventory() {
   const [barcodePrintOpen, setBarcodePrintOpen] = useState(false);
   const [scanRestockMode, setScanRestockMode] = useState(false);
   const [scanRestockQuery, setScanRestockQuery] = useState('');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const scanRestockRef = useRef(null);
   const { toast } = useToast();
 
@@ -127,6 +129,15 @@ export default function Inventory() {
     if (sortField === 'stock') return (a.stock_quantity || 0) - (b.stock_quantity || 0);
     return 0;
   });
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filtered.slice(startIndex, endIndex);
+
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages);
+  }
 
   const totalValue = products.reduce((sum, p) => sum + (p.price || 0) * (p.stock_quantity || 0), 0);
   const lowStockCount = products.filter(p => p.stock_quantity <= (p.low_stock_threshold || 10)).length;
@@ -333,7 +344,7 @@ export default function Inventory() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(product => {
+              {paginatedProducts.map(product => {
                 const threshold = product.low_stock_threshold || 10;
                 const isLow = product.stock_quantity <= threshold;
                 const isOutOfStock = product.stock_quantity <= 0;
@@ -470,6 +481,41 @@ export default function Inventory() {
           <div className="text-center py-12 text-muted-foreground">
             <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm">No products found</p>
+          </div>
+        )}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Show:</span>
+              <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                <SelectTrigger className="w-[90px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 items</SelectItem>
+                  <SelectItem value="50">50 items</SelectItem>
+                  <SelectItem value="100">100 items</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, filtered.length)} of {filtered.length} products
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+                <ChevronsLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                Previous
+              </Button>
+              <span className="text-xs font-medium px-2">Page {currentPage} of {totalPages}</span>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next
+              </Button>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
+                <ChevronsRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         )}
       </div>
