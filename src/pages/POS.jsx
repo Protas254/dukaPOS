@@ -312,16 +312,26 @@ export default function POS() {
         cashier_id: currentUser?.id || undefined,
         shift_id: activeShift?.id || undefined,
         payment_method: paymentDetails.payment_method,
-        cash_received: paymentDetails.cash_received || undefined,
-        change_given: paymentDetails.change_given ?? undefined,
-        mpesa_reference: paymentDetails.mpesa_reference || undefined,
-        bank_reference: paymentDetails.bank_reference || undefined,
-        cheque_number: paymentDetails.cheque_number || undefined,
-        split_payments: paymentDetails.split_payments || undefined,
-        customer_id: paymentDetails.customer_id || undefined,
-        customer_name: paymentDetails.customer_name || undefined,
-        customer_phone: paymentDetails.customer_phone || undefined,
       };
+
+      // Add payment-specific fields based on method
+      if (paymentDetails.payment_method === 'cash') {
+        saleData.cash_received = paymentDetails.cash_received;
+        saleData.change_given = paymentDetails.change_given;
+      } else if (paymentDetails.payment_method === 'mpesa') {
+        saleData.mpesa_reference = paymentDetails.mpesa_reference;
+      } else if (paymentDetails.payment_method === 'bank_transfer') {
+        saleData.bank_reference = paymentDetails.bank_reference;
+      } else if (paymentDetails.payment_method === 'cheque') {
+        saleData.cheque_number = paymentDetails.cheque_number;
+      } else if (paymentDetails.payment_method === 'split') {
+        saleData.split_payments = paymentDetails.split_payments;
+      }
+
+      // Add customer fields if provided
+      if (paymentDetails.customer_id) saleData.customer_id = paymentDetails.customer_id;
+      if (paymentDetails.customer_name) saleData.customer_name = paymentDetails.customer_name;
+      if (paymentDetails.customer_phone) saleData.customer_phone = paymentDetails.customer_phone;
 
       // CRITICAL: Only await this — everything else is fire-and-forget
       sale = await base44.entities.Sale.create(saleData);

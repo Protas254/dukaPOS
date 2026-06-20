@@ -178,13 +178,13 @@ export default function CheckoutDialog({ open, onClose, total, onComplete, isPro
       payment_method:  method,
       cash_received:   method === 'cash'  ? effectiveCash : undefined,
       change_given:    method === 'cash'  ? Math.max(0, (effectiveCash - finalTotal)) : undefined,
-      mpesa_reference: method === 'mpesa' ? mpesaRef : undefined,
-      bank_reference:  method === 'bank_transfer' ? bankRef : undefined,
-      cheque_number:   method === 'cheque' ? chequeNumber : undefined,
-      split_payments:  method === 'split' ? splitEntries.map(e => ({
+      mpesa_reference: method === 'mpesa' ? mpesaRef.trim() : undefined,
+      bank_reference:  method === 'bank_transfer' ? bankRef.trim() : undefined,
+      cheque_number:   method === 'cheque' ? chequeNumber.trim() : undefined,
+      split_payments:  method === 'split' ? splitEntries.filter(e => e.amount).map(e => ({
         method: e.method,
         amount: parseFloat(e.amount) || 0,
-        reference: e.reference || undefined,
+        reference: e.reference?.trim() || undefined,
       })) : undefined,
       customer_phone:  customerPhone || undefined,
       customer_name:   selectedCustomer?.name || undefined,
