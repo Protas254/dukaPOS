@@ -1,0 +1,73 @@
+{
+  "name": "EmployeeSchedule",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "User ID of employee"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name of employee"
+    },
+    "shift_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of scheduled shift"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Shift start time (e.g., '09:00')"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Shift end time (e.g., '17:00')"
+    },
+    "shift_type": {
+      "type": "string",
+      "enum": [
+        "morning",
+        "afternoon",
+        "evening",
+        "night",
+        "full_day"
+      ],
+      "description": "Type of shift"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "confirmed",
+        "cancelled",
+        "completed"
+      ],
+      "default": "scheduled",
+      "description": "Shift status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "User ID who created schedule"
+    },
+    "swap_requested": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether employee requested swap"
+    },
+    "swap_requested_with": {
+      "type": "string",
+      "description": "Employee ID to swap with"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "shift_date",
+    "start_time",
+    "end_time"
+  ]
+}

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, Receipt as ReceiptIcon, 
-  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers, FileWarning
+  BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers, FileWarning,
+  TrendingUp, Percent, Calendar, DollarSign, Building, FileText
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -16,15 +17,34 @@ const navItems = [
       { icon: Package, label: 'Inventory', path: '/inventory' },
       { icon: ReceiptIcon, label: 'Transactions', path: '/transactions' },
       { icon: BarChart3, label: 'Reports', path: '/reports' },
+      { icon: FileText, label: 'Advanced Reports', path: '/advanced-reports' },
+      { icon: TrendingUp, label: 'Cash Flow', path: '/cash-flow' },
       { icon: ReceiptIcon, label: 'Expenses', path: '/expenses' },
+      { icon: DollarSign, label: 'Cash Flow', path: '/cash-flow' },
+    ]
+  },
+  {
+    icon: Building, label: 'Suppliers & Orders', path: '/suppliers',
+    children: [
+      { icon: Building, label: 'Suppliers', path: '/suppliers' },
+      { icon: Package, label: 'Purchase Orders', path: '/purchase-orders' },
     ]
   },
   { icon: Users, label: 'Customers', path: '/customers' },
+  {
+    icon: Building, label: 'Suppliers & Orders', path: '/suppliers',
+    children: [
+      { icon: Building, label: 'Suppliers', path: '/suppliers' },
+      { icon: Package, label: 'Purchase Orders', path: '/purchase-orders' },
+    ]
+  },
+  { icon: Percent, label: 'Promotions', path: '/promotions' },
   {
     icon: UserCog, label: 'Team Management', path: '/staff',
     children: [
       { icon: Users, label: 'Employees', path: '/employees' },
       { icon: Clock, label: 'My Shifts', path: '/my-shifts' },
+      { icon: Calendar, label: 'Scheduling', path: '/employee-scheduling' },
       { icon: FileWarning, label: 'Shift Audits', path: '/shift-audits' },
     ]
   },

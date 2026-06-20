@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { 
   Zap, Package, Users, TrendingUp, Shield, CreditCard, BarChart3, 
@@ -95,8 +95,6 @@ const features = [
 ];
 
 export default function FeaturesShowcase() {
-  const { toast } = useToast();
-
   const handleDownloadPDF = async () => {
     try {
       const response = await base44.functions.invoke('generateUserManualPDF', {});
@@ -107,9 +105,9 @@ export default function FeaturesShowcase() {
       link.download = `DukaPOS_User_Manual_${new Date().toISOString().split('T')[0]}.pdf`;
       link.click();
       window.URL.revokeObjectURL(url);
-      toast({ title: 'Success', description: 'User manual downloaded successfully' });
+      toast.success('User manual downloaded successfully');
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
+      toast.error('Failed to generate PDF');
     }
   };
 

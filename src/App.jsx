@@ -32,6 +32,12 @@ import Onboarding from '@/pages/Onboarding';
 import ShiftAudits from '@/pages/ShiftAudits';
 import Expenses from '@/pages/Expenses';
 import Features from '@/pages/Features';
+import PurchaseOrders from '@/pages/PurchaseOrders';
+import Promotions from '@/pages/Promotions';
+import EmployeeScheduling from '@/pages/EmployeeScheduling';
+import CashFlow from '@/pages/CashFlow';
+import Suppliers from '@/pages/Suppliers';
+import AdvancedReports from '@/pages/AdvancedReports';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -80,6 +86,12 @@ const AuthenticatedApp = () => {
           <Route path="/shift-audits" element={<ShiftAudits />} />
           <Route path="/expenses" element={<Expenses />} />
           <Route path="/features" element={<Features />} />
+          <Route path="/purchase-orders" element={<PurchaseOrders />} />
+          <Route path="/promotions" element={<Promotions />} />
+          <Route path="/employee-scheduling" element={<EmployeeScheduling />} />
+          <Route path="/cash-flow" element={<CashFlow />} />
+          <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/advanced-reports" element={<AdvancedReports />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

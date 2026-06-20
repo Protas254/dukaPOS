@@ -1,0 +1,80 @@
+{
+  "name": "Promotion",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Promotion name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Promotion description"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "percentage_discount",
+        "fixed_discount",
+        "buy_x_get_y",
+        "bundle"
+      ],
+      "description": "Type of promotion"
+    },
+    "discount_value": {
+      "type": "number",
+      "description": "Discount percentage or fixed amount"
+    },
+    "applicable_products": {
+      "type": "array",
+      "description": "Product IDs this promotion applies to",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applicable_categories": {
+      "type": "array",
+      "description": "Categories this promotion applies to",
+      "items": {
+        "type": "string"
+      }
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Promotion start date/time"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Promotion end date/time"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether promotion is currently active"
+    },
+    "minimum_purchase": {
+      "type": "number",
+      "default": 0,
+      "description": "Minimum purchase amount required"
+    },
+    "buy_quantity": {
+      "type": "number",
+      "description": "Quantity to buy (for buy X get Y)"
+    },
+    "get_quantity": {
+      "type": "number",
+      "description": "Quantity to get free (for buy X get Y)"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "User ID who created promotion"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "start_date",
+    "end_date"
+  ]
+}
