@@ -19,7 +19,7 @@ export default function CustomerCard({ customer, onView, onEdit, onDelete }) {
   const txCount = customer.total_transactions || 0;
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 border-b last:border-0 hover:bg-muted/30 transition-colors">
+    <div className="flex items-center gap-4 px-4 py-3 border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={onView}>
       {/* Avatar */}
       <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
         <User className="w-4 h-4 text-primary" />
@@ -53,10 +53,7 @@ export default function CustomerCard({ customer, onView, onEdit, onDelete }) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView} title="View profile">
-          <Eye className="w-3.5 h-3.5" />
-        </Button>
+      <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} title="Edit">
           <Pencil className="w-3.5 h-3.5" />
         </Button>
