@@ -11,6 +11,7 @@ import {
   AlertTriangle, ChevronLeft, ChevronRight, FileJson, FileText, ArrowLeft, ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import EtimsRoadmap from '@/components/etims/EtimsRoadmap';
 
 const STATUS_CONFIG = {
   submitted:    { label: 'Submitted',     icon: CheckCircle,    cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
@@ -385,6 +386,9 @@ export default function EtimsCompliance() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Integration Roadmap */}
+      <EtimsRoadmap />
 
       {/* Navigation Buttons */}
       <div className="flex justify-between pt-4 border-t">
