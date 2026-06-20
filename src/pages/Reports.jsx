@@ -8,6 +8,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import { DollarSign, TrendingUp, ShoppingCart, Users, Percent, User, Gift, ArrowLeft, ArrowRight } from 'lucide-react';
 import CashierReport from '@/components/reports/CashierReport';
 import CashierComparisonChart from '@/components/reports/CashierComparisonChart';
+import ReportInsights from '@/components/reports/ReportInsights';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -209,6 +210,7 @@ export default function Reports() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+            <ReportInsights section="trend" data={{ dailyData, totalRevenue, periodSales, profitMargin }} />
           </div>
 
           {/* Charts Grid */}
@@ -225,6 +227,7 @@ export default function Reports() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+              <ReportInsights section="payment" data={{ paymentData }} />
             </div>
 
             <div className="bg-card rounded-2xl border p-5">
@@ -240,6 +243,7 @@ export default function Reports() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              <ReportInsights section="category" data={{ categoryChartData }} />
             </div>
           </div>
 
@@ -258,6 +262,7 @@ export default function Reports() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              <ReportInsights section="hours" data={{ hourlyData }} />
             </div>
 
             <div className="bg-card rounded-2xl border p-5">
@@ -281,6 +286,7 @@ export default function Reports() {
                   <p className="text-sm text-muted-foreground text-center py-8">No data for this period</p>
                 )}
               </div>
+              <ReportInsights section="products" data={{ topProductsList, periodSales }} />
             </div>
           </div>
 
@@ -333,6 +339,7 @@ export default function Reports() {
                 </p>
               </div>
             </div>
+            <ReportInsights section="loyalty" data={{ salesWithCustomers, periodSales, totalPointsAwarded, customerRevenue }} />
           </div>
 
           {/* Cashier Comparison Chart */}
