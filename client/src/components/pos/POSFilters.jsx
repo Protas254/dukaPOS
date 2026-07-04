@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Search, Tag, Trash2, Barcode, Zap } from 'lucide-react';
+import { Search, Tag, Trash2, Barcode, Zap, ChevronUp, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ export default function POSFilters({
 }) {
   const [scanMode, setScanMode] = useState(false);
   const [scanFlash, setScanFlash] = useState(false);
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
   const inputRef = useRef(null);
 
   const handleKeyDown = (e) => {
@@ -41,6 +42,8 @@ export default function POSFilters({
     setScanMode(prev => !prev);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
+
+  const activeCategoryLabel = categories?.find(c => c.id === selectedCategory)?.label || 'All Products';
 
   return (
     <div className="p-4 border-b bg-card/80 backdrop-blur-sm space-y-3 sticky top-0 z-10">
@@ -110,8 +113,34 @@ export default function POSFilters({
         </p>
       )}
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+      {/* Category Toggle Header */}
+      <div 
+        className="flex items-center justify-between cursor-pointer py-1 group"
+        onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+      >
+        <div className="flex items-center gap-2">
+          <Tag className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          <span className="text-sm font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+            Categories
+          </span>
+          {!isCategoriesExpanded && (
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {activeCategoryLabel}
+            </Badge>
+          )}
+        </div>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground group-hover:text-foreground">
+          {isCategoriesExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+      </div>
+
+      {/* Collapsible Categories */}
+      <div 
+        className={cn(
+          "flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide transition-all duration-300 origin-top",
+          isCategoriesExpanded ? "opacity-100 max-h-20 scale-y-100" : "opacity-0 max-h-0 scale-y-0 overflow-hidden"
+        )}
+      >
         {categories.map(cat => (
           <Badge
             key={cat.id}
@@ -122,7 +151,10 @@ export default function POSFilters({
                 ? "shadow-md shadow-primary/20 scale-105" 
                 : "hover:bg-primary/10 hover:text-primary hover:scale-105"
             )}
-            onClick={() => onCategoryChange(cat.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCategoryChange(cat.id);
+            }}
           >
             {cat.label}
           </Badge>

@@ -65,11 +65,9 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setAuthChecked(true);
 
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
+      if (error?.status === 401 || error?.status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('dukapos_access_token');
       }
     }
   };

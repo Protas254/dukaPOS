@@ -67,6 +67,11 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Stock quantity cannot be negative.")
         return value
 
+    def validate_sku(self, value):
+        if not value or value.strip() == "":
+            return None
+        return value
+
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['id'] = f"p_{instance.id}"

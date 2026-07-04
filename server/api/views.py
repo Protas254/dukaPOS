@@ -487,7 +487,7 @@ def entity_list_create(request, entity_name):
                 process_sale_stock_deduction(instance)
                 process_customer_loyalty_and_tier(instance, data)
                 CashFlow.objects.create(
-                    type='cash_in',
+                    transaction_type='inflow',
                     amount=instance.total_amount,
                     category='Sales Revenue',
                     description=f"Sale Receipt #{instance.receipt_number} ({instance.payment_method})"
@@ -496,7 +496,7 @@ def entity_list_create(request, entity_name):
                 process_purchase_order_stock_increase(instance)
             elif entity_name in ('Expense', 'expenses'):
                 CashFlow.objects.create(
-                    type='cash_out',
+                    transaction_type='outflow',
                     amount=instance.amount,
                     category=instance.category,
                     description=f"Expense: {instance.description}"

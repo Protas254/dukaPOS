@@ -312,7 +312,7 @@ export default function CashFlow() {
                         <span>•</span>
                         <span>{format(new Date(cf.date), 'MMM d, yyyy')}</span>
                         <span>•</span>
-                        <Badge variant="outline" className="text-[10px] capitalize">{cf.payment_method.replace('_', ' ')}</Badge>
+                        <Badge variant="outline" className="text-[10px] capitalize">{(cf.payment_method || 'cash').replace('_', ' ')}</Badge>
                         {cf.reference_number && (
                           <>
                             <span>•</span>

@@ -80,5 +80,6 @@ class ShiftAuditAdmin(admin.ModelAdmin):
 
 @admin.register(CashFlow)
 class CashFlowAdmin(admin.ModelAdmin):
-    list_display = ('type', 'amount', 'category', 'date')
-    list_filter = ('type', 'category')
+    list_display = ('transaction_type', 'amount', 'category', 'date', 'payment_method')
+    list_filter = ('transaction_type', 'category', 'date', 'payment_method')
+    search_fields = ('description', 'reference_number')

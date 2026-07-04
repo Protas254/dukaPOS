@@ -24,7 +24,7 @@ class BusinessSettings(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    sku = models.CharField(max_length=100, unique=True)
+    sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
     category = models.CharField(max_length=100)
     price = models.FloatField()
     cost_price = models.FloatField()
@@ -205,17 +205,20 @@ class ShiftAudit(models.Model):
 
 
 class CashFlow(models.Model):
-    type = models.CharField(max_length=50)  # 'cash_in', 'cash_out'
+    transaction_type = models.CharField(max_length=50, default='inflow')  # 'inflow', 'outflow'
     amount = models.FloatField()
     category = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    payment_method = models.CharField(max_length=50, default='cash')
+    reference_number = models.CharField(max_length=100, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.type} - {self.amount}"
+        return f"{self.transaction_type} - {self.amount}"
 
 
 class PurchaseOrder(models.Model):
