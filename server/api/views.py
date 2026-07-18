@@ -4,8 +4,11 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.http import HttpResponse, Http404
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.db.models import Model, F
 from django.shortcuts import get_object_or_404
+from django.core.mail import send_mail
+from django.conf import settings
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -165,27 +168,14 @@ def auth_login(request):
         return Response({'error': 'Email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.filter(email__iexact=email).first()
-    
+
     if not user:
-        # Auto register demo user
-        username = email.split('@')[0]
-        # Make username unique if collision
-        if User.objects.filter(username=username).exists():
-            username = f"{username}_{random.randint(10, 99)}"
-        
-        role_admin = 'admin' in email.lower()
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=username.capitalize(),
-            is_staff=role_admin,
-            is_superuser=role_admin
-        )
-    else:
-        # Check password securely using Django's built-in hashing check
-        if not user.check_password(password):
-            return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
+        # Do NOT auto-register — return a generic error to prevent user enumeration
+        return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check password securely using Django's built-in hashing check
+    if not user.check_password(password):
+        return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
 
     tokens = get_tokens_for_user(user)
     serializer = UserSerializer(user)
@@ -208,8 +198,30 @@ def auth_register(request):
     if User.objects.filter(email__iexact=email).exists():
         return Response({'error': 'User already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Store pending registration in session
-    request.session['pending_user'] = {'email': email, 'password': password}
+    # Generate a secure 6-digit OTP
+    otp_code = str(random.randint(100000, 999999))
+    
+    # Store hashed password instead of plaintext to prevent security vulnerabilities
+    hashed_password = make_password(password)
+    
+    request.session['pending_user'] = {
+        'email': email, 
+        'hashed_password': hashed_password,
+        'otp_code': otp_code
+    }
+    
+    # Send OTP via Email
+    try:
+        send_mail(
+            subject='Your DukaPOS Verification Code',
+            message=f'Your verification code is: {otp_code}\n\nPlease enter this code to complete your registration.',
+            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@dukapos.com',
+            recipient_list=[email],
+            fail_silently=True,  # In dev, this might fail if SMTP isn't set up yet
+        )
+    except Exception as e:
+        print(f"Error sending email: {e}")
+
     return Response({'email': email})
 
 
@@ -223,20 +235,26 @@ def auth_verify_otp(request):
     if not pending or pending['email'].lower() != email.lower():
         return Response({'error': 'No pending registration found'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create user with securely hashed password
+    # Verify OTP
+    if str(pending.get('otp_code')) != str(otp_code):
+        return Response({'error': 'Invalid verification code'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create user with previously hashed password
     username = email.split('@')[0]
     if User.objects.filter(username=username).exists():
         username = f"{username}_{random.randint(10, 99)}"
     
     role_admin = 'admin' in email.lower()
-    user = User.objects.create_user(
+    
+    user = User(
         username=username,
         email=email,
-        password=pending['password'],
         first_name=username.capitalize(),
         is_staff=role_admin,
         is_superuser=role_admin
     )
+    user.password = pending['hashed_password']
+    user.save()
     
     # Clear session
     del request.session['pending_user']
@@ -252,6 +270,30 @@ def auth_verify_otp(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def auth_resend_otp(request):
+    email = request.data.get('email')
+    pending = request.session.get('pending_user')
+    
+    if not pending or pending['email'].lower() != email.lower():
+        return Response({'error': 'No pending registration found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    # Generate a new secure 6-digit OTP
+    otp_code = str(random.randint(100000, 999999))
+    pending['otp_code'] = otp_code
+    request.session['pending_user'] = pending
+    request.session.modified = True
+    
+    # Send OTP via Email
+    try:
+        send_mail(
+            subject='Your New DukaPOS Verification Code',
+            message=f'Your new verification code is: {otp_code}\n\nPlease enter this code to complete your registration.',
+            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@dukapos.com',
+            recipient_list=[email],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        
     return Response({'success': True})
 
 
