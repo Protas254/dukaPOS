@@ -8,6 +8,7 @@ urlpatterns = [
     path('auth/register', views.auth_register, name='auth_register'),
     path('auth/verify-otp', views.auth_verify_otp, name='auth_verify_otp'),
     path('auth/resend-otp', views.auth_resend_otp, name='auth_resend_otp'),
+    path('auth/google', views.auth_google_login, name='auth_google_login'),
 
     # Generic Entities CRUD
     path('entities/<str:entity_name>', views.entity_list_create, name='entity_list_create'),

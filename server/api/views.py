@@ -297,7 +297,71 @@ def auth_resend_otp(request):
     return Response({'success': True})
 
 
-# ── Inventory Automation Helpers ──────────────────────────────
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def auth_google_login(request):
+    """
+    Verify a Google ID token (from Google Sign-In) and return a JWT.
+    The frontend sends: { credential: "<google_id_token>" }
+    """
+    credential = request.data.get('credential')
+    if not credential:
+        return Response({'error': 'Google credential is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    google_client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
+    if not google_client_id:
+        return Response({'error': 'Google OAuth is not configured on this server'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        idinfo = id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            google_client_id,
+            clock_skew_in_seconds=10,
+        )
+    except ValueError as e:
+        return Response({'error': f'Invalid Google token: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+    email = idinfo.get('email')
+    if not email:
+        return Response({'error': 'Google account has no email'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not idinfo.get('email_verified', False):
+        return Response({'error': 'Google email is not verified'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Get or create user
+    user = User.objects.filter(email__iexact=email).first()
+    if not user:
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
+        username = email.split('@')[0]
+        if User.objects.filter(username=username).exists():
+            username = f"{username}_{random.randint(10, 99)}"
+
+        role_admin = 'admin' in email.lower()
+        user = User.objects.create(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            is_staff=role_admin,
+            is_superuser=role_admin,
+        )
+        user.set_unusable_password()
+        user.save()
+
+    tokens = get_tokens_for_user(user)
+    serializer = UserSerializer(user)
+    data = serializer.data
+    data['token'] = tokens['access']
+    data['access_token'] = tokens['access']
+    data['refresh_token'] = tokens['refresh']
+    return Response(data)
+
+
+
 def process_sale_stock_deduction(sale_instance):
     """Automate stock deduction when a sale is completed."""
     if not sale_instance.items or not isinstance(sale_instance.items, list):

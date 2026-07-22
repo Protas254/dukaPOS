@@ -177,10 +177,21 @@ const auth = {
     window.location.href = '/login';
   },
 
+  googleLogin: async (credential) => {
+    const data = await request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    });
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('dukapos_access_token', data.token);
+    }
+    return data;
+  },
+
   loginWithProvider: async (provider, redirectUrl) => {
-    // OAuth not yet implemented on Django side — placeholder
-    console.warn('OAuth login not yet available on backend');
-    window.location.href = '/login';
+    // Kept for legacy calls — Google now handled via googleLogin()
+    console.warn('Use googleLogin() for Google OAuth');
   },
 
   resetPasswordRequest: async (email) => {

@@ -13,3 +13,5 @@ whitenoise==6.9.0
 boto3==1.34.60
 django-storages==1.14.2
 psycopg2-binary==2.9.9
+google-auth==2.29.0
+requests==2.31.0
