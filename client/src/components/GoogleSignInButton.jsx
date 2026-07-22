@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
  */
 export default function GoogleSignInButton({ onError, redirectTo = "/" }) {
   const buttonRef = useRef(null);
+  const initializedRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
 
@@ -21,7 +22,7 @@ export default function GoogleSignInButton({ onError, redirectTo = "/" }) {
   useEffect(() => {
     if (!clientId) return;
 
-    // Load the Google Identity Services script
+    // Load the Google Identity Services script only once
     const scriptId = "google-identity-services";
     if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
@@ -34,10 +35,18 @@ export default function GoogleSignInButton({ onError, redirectTo = "/" }) {
     } else if (window.google) {
       setSdkReady(true);
     }
+
+    // Reset init guard on unmount so re-mount works correctly
+    return () => {
+      initializedRef.current = false;
+    };
   }, [clientId]);
 
   useEffect(() => {
     if (!sdkReady || !clientId || !buttonRef.current) return;
+    // Prevent calling initialize() more than once per mount
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
     window.google.accounts.id.initialize({
       client_id: clientId,
@@ -53,6 +62,7 @@ export default function GoogleSignInButton({ onError, redirectTo = "/" }) {
       logo_alignment: "center",
     });
   }, [sdkReady, clientId]);
+
 
   const handleCredentialResponse = async (response) => {
     setLoading(true);
