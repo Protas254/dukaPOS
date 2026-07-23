@@ -2,7 +2,8 @@
 // DukaPOS API Client — Real Django Backend
 // ─────────────────────────────────────────────────────────
 
-const API_BASE = '/api';
+const baseURL = import.meta.env.VITE_DUKAPOS_APP_BASE_URL || '';
+const API_BASE = baseURL ? `${baseURL}/api` : '/api';
 
 // ── Helpers ──────────────────────────────────────────────
 
