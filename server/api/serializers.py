@@ -35,7 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['full_name'] = f"{instance.first_name} {instance.last_name}".strip() or instance.username
-        rep['role'] = 'admin' if (instance.is_superuser or instance.is_staff or 'admin' in instance.email.lower()) else 'user'
+        rep['role'] = 'admin' if (instance.is_superuser or instance.is_staff) else 'user'
         # Convert numeric ID to match string pattern 'u_{id}'
         rep['id'] = f"u_{instance.id}"
         return rep

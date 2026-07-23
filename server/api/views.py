@@ -78,7 +78,7 @@ def is_admin_user(user):
     """Check if a user has admin privileges."""
     if not user or not user.is_authenticated:
         return False
-    return user.is_superuser or user.is_staff or ('admin' in (user.email or '').lower())
+    return user.is_superuser or user.is_staff
 
 
 def check_entity_permission(request, entity_name, is_write=False):
@@ -245,14 +245,14 @@ def auth_verify_otp(request):
     if User.objects.filter(username=username).exists():
         username = f"{username}_{random.randint(10, 99)}"
     
-    role_admin = 'admin' in email.lower()
-    
+    # New signups are always normal users (Cashiers), never admins.
+    # Superadmin and Admins are pre-created by the management script.
     user = User(
         username=username,
         email=email,
         first_name=username.capitalize(),
-        is_staff=role_admin,
-        is_superuser=role_admin
+        is_staff=False,
+        is_superuser=False
     )
     user.password = pending['hashed_password']
     user.save()
