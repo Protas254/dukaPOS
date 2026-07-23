@@ -83,6 +83,7 @@ const AuthenticatedApp = () => {
 
           {/* ── Admin-only routes ── */}
           <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<Navigate to="/" replace />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/advanced-reports" element={<AdvancedReports />} />

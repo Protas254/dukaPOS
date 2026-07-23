@@ -1,7 +1,14 @@
 from django.urls import path
+from django.http import JsonResponse
 from . import views
 
+def health_check(request):
+    return JsonResponse({'status': 'ok'}, status=200)
+
 urlpatterns = [
+    # Health check (no DB — for AWS ALB)
+    path('health/', health_check, name='health_check'),
+
     # Auth
     path('auth/me/', views.auth_me, name='auth_me'),
     path('auth/login/', views.auth_login, name='auth_login'),

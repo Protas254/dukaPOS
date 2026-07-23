@@ -21,14 +21,13 @@ services:
       context: ./server
       dockerfile: Dockerfile
     restart: always
-    command: gunicorn --bind 0.0.0.0:8000 --workers 3 server.wsgi:application
     ports:
       # Map to host port 8000 so the Load Balancer can route api.bodapos.com here
       - "8000:8000"
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER:-dukapos}:${POSTGRES_PASSWORD:-dukapospassword}@db:5432/${POSTGRES_DB:-dukapos_db}
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-change-me-set-a-real-secret-key-in-production}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-api.bodapos.com,localhost,127.0.0.1}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://bodapos.com,http://localhost:3000}
       - USE_S3=${USE_S3:-False}
