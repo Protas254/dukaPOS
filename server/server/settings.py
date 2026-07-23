@@ -27,6 +27,8 @@ if env_path.exists():
                 key, _, value = line.partition('=')
                 os.environ.setdefault(key.strip(), value.strip())
 
+APPEND_SLASH = False
+
 # ── Core Security ─────────────────────────────────────────
 
 SECRET_KEY = os.environ.get(

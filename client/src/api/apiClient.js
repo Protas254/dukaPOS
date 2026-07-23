@@ -116,11 +116,11 @@ const entities = {
 
 const auth = {
   me: async () => {
-    return request('/auth/me');
+    return request('/auth/me/');
   },
 
   loginViaEmailPassword: async (email, password) => {
-    const data = await request('/auth/login', {
+    const data = await request('/auth/login/', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -135,14 +135,14 @@ const auth = {
   },
 
   register: async ({ email, password }) => {
-    return request('/auth/register', {
+    return request('/auth/register/', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   },
 
   verifyOtp: async ({ email, otpCode }) => {
-    const data = await request('/auth/verify-otp', {
+    const data = await request('/auth/verify-otp/', {
       method: 'POST',
       body: JSON.stringify({ email, otpCode }),
     });
@@ -156,7 +156,7 @@ const auth = {
   },
 
   resendOtp: async (email) => {
-    return request('/auth/resend-otp', {
+    return request('/auth/resend-otp/', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -178,7 +178,7 @@ const auth = {
   },
 
   googleLogin: async (credential) => {
-    const data = await request('/auth/google', {
+    const data = await request('/auth/google/', {
       method: 'POST',
       body: JSON.stringify({ credential }),
     });
