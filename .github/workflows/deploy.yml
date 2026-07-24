@@ -21,11 +21,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             # Navigate to the application directory
-            # Ensure this path matches where you cloned the repo on your EC2 instance
-            cd /home/${{ secrets.EC2_USERNAME }}/dukaPOS/dukaPOS || exit
+            cd /home/${{ secrets.EC2_USERNAME }}/dukaPOS || exit
             
             # Pull the latest changes from the main branch
             git pull origin main
             
             # Rebuild and restart the Docker containers in detached mode
-            docker-compose -f docker-compose.prod.yml up --build -d
+            sudo docker-compose -f docker-compose.prod.yml up --build -d
