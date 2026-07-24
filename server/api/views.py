@@ -199,31 +199,32 @@ def auth_register(request):
     if User.objects.filter(email__iexact=email).exists():
         return Response({'error': 'User already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Generate a secure 6-digit OTP
-    otp_code = str(random.randint(100000, 999999))
-    
     # Store hashed password instead of plaintext to prevent security vulnerabilities
     hashed_password = make_password(password)
     
-    request.session['pending_user'] = {
-        'email': email, 
-        'hashed_password': hashed_password,
-        'otp_code': otp_code
-    }
+    # Create user with previously hashed password
+    username = email.split('@')[0]
+    if User.objects.filter(username=username).exists():
+        username = f"{username}_{random.randint(10, 99)}"
     
-    # Send OTP via Email
-    try:
-        send_mail(
-            subject='Your DukaPOS Verification Code',
-            message=f'Your verification code is: {otp_code}\n\nPlease enter this code to complete your registration.',
-            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@dukapos.com',
-            recipient_list=[email],
-            fail_silently=True,  # In dev, this might fail if SMTP isn't set up yet
-        )
-    except Exception as e:
-        print(f"Error sending email: {e}")
-
-    return Response({'email': email})
+    # New signups are always normal users (Cashiers), never admins.
+    # Superadmin and Admins are pre-created by the management script.
+    user = User(
+        username=username,
+        email=email,
+        first_name=username.capitalize(),
+        is_staff=False,
+        is_superuser=False
+    )
+    user.password = hashed_password
+    user.save()
+    
+    tokens = get_tokens_for_user(user)
+    return Response({
+        'token': tokens['access'],
+        'access_token': tokens['access'],
+        'refresh_token': tokens['refresh']
+    })
 
 
 @api_view(['POST'])
@@ -309,7 +310,7 @@ def auth_google_login(request):
     if not credential:
         return Response({'error': 'Google credential is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    google_client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
+    google_client_id = getattr(settings, 'GOOGLE_CLIENT_ID', os.environ.get('GOOGLE_CLIENT_ID', ''))
     if not google_client_id:
         return Response({'error': 'Google OAuth is not configured on this server'}, status=status.HTTP_501_NOT_IMPLEMENTED)
 

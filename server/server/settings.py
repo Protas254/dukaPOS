@@ -36,6 +36,11 @@ SECRET_KEY = os.environ.get(
     'django-insecure-dev-only-fallback-change-me-in-production'
 )
 
+GOOGLE_CLIENT_ID = os.environ.get(
+    'GOOGLE_CLIENT_ID', 
+    '154288790729-d8120b8ghcic8jk81v3v34unku483ke2.apps.googleusercontent.com'
+)
+
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
