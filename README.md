@@ -52,12 +52,7 @@ npm run server    # Starts Express server on http://localhost:5000
 
 ---
 
-## Demo Credentials
 
-| Email              | Password  | Role      |
-|--------------------|-----------|-----------|
-| `admin@store.com`  | `admin`   | **Admin** |
-| `cashier@store.com`| `cashier` | **Cashier** |
 
 > Logging in with any other email auto-registers a new user. Emails containing `admin` are granted the admin role.
 
