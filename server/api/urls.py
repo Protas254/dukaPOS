@@ -18,4 +18,6 @@ urlpatterns = [
     path('entities/<str:entity_name>/<str:pk>', views.entity_detail, name='entity_detail'),
     path('functions/invoke', views.functions_invoke, name='functions_invoke'),
     path('analytics', views.analytics_view, name='analytics_view'),
+    path('receipters/engine-stats', views.receipters_engine_stats, name='receipters_engine_stats'),
+    path('receipters/vault/sign-url', views.receipters_vault_sign_url, name='receipters_vault_sign_url'),
 ]

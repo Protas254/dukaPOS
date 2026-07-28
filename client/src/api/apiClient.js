@@ -241,4 +241,10 @@ export const api = {
   auth,
   entities,
   functions,
+  get: (url) => request(url),
+  post: (url, data) => request(url, { method: 'POST', body: JSON.stringify(data) }),
+  put: (url, data) => request(url, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (url) => request(url, { method: 'DELETE' }),
 };
+
+export default api;

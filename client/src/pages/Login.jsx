@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("cashier");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,9 +61,16 @@ export default function Login() {
         </div>
       )}
 
+      <Tabs value={role} onValueChange={setRole} className="w-full mb-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="cashier">Log in as Cashier</TabsTrigger>
+          <TabsTrigger value="admin">Log in as Admin</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{role === 'admin' ? 'Admin Email' : 'Cashier Email'}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -69,7 +78,7 @@ export default function Login() {
               type="email"
               autoComplete="email"
               autoFocus
-              placeholder="you@example.com"
+              placeholder={role === 'admin' ? 'admin@dukapos.com' : 'cashier@dukapos.com'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"

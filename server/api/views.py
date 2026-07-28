@@ -23,14 +23,15 @@ from reportlab.pdfgen import canvas
 from .models import (
     BusinessSettings, Product, Customer, Supplier, Shift, Sale,
     Expense, EmployeeRating, EmployeeSchedule, Promotion, MpesaPayment,
-    ShiftAudit, CashFlow, PurchaseOrder
+    ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback
 )
 from .serializers import (
     UserSerializer, BusinessSettingsSerializer, ProductSerializer,
     CustomerSerializer, SupplierSerializer, ShiftSerializer, SaleSerializer,
     ExpenseSerializer, EmployeeRatingSerializer, EmployeeScheduleSerializer,
     PromotionSerializer, MpesaPaymentSerializer, ShiftAuditSerializer,
-    CashFlowSerializer, PurchaseOrderSerializer
+    CashFlowSerializer, PurchaseOrderSerializer, VaultDocumentSerializer,
+    ReceiptFeedbackSerializer
 )
 
 User = get_user_model()
@@ -53,6 +54,8 @@ MODEL_MAP = {
     'PurchaseOrder': (PurchaseOrder, PurchaseOrderSerializer, 'po_'),
     'User': (User, UserSerializer, 'u_'),
     'users': (User, UserSerializer, 'u_'),
+    'VaultDocument': (VaultDocument, VaultDocumentSerializer, 'vd_'),
+    'ReceiptFeedback': (ReceiptFeedback, ReceiptFeedbackSerializer, 'rf_'),
 }
 
 # ── Role-Based Access Control ──────────────────────────────
@@ -600,6 +603,17 @@ def entity_list_create(request, entity_name):
                     category='Sales Revenue',
                     description=f"Sale Receipt #{instance.receipt_number} ({instance.payment_method})"
                 )
+                VaultDocument.objects.create(
+                    title=f"Receipt {instance.receipt_number}",
+                    document_type="receipt",
+                    source="DukaPOS - POS Sales",
+                    category="Sales",
+                    amount=instance.total_amount,
+                    reference_number=instance.receipt_number,
+                    receipt_data=SerializerClass(instance).data,
+                    is_locked=True,
+                    stored_by_name=instance.cashier_name
+                )
             elif entity_name in ('PurchaseOrder', 'purchase_orders'):
                 process_purchase_order_stock_increase(instance)
             elif entity_name in ('Expense', 'expenses'):
@@ -1079,3 +1093,68 @@ def analytics_view(request):
             'net_balance': round(net_cash_flow, 2)
         }
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def receipters_engine_stats(request):
+    """
+    Mocked endpoint to return Engine statistics, insights, anomalies, etc.
+    """
+    # Fetch real sale stats
+    total_sales_qs = Sale.objects.all()
+    total_revenue = sum(sale.total_amount for sale in total_sales_qs)
+    total_receipts = total_sales_qs.count()
+
+    today = timezone.now()
+    this_month_qs = total_sales_qs.filter(created_at__month=today.month, created_at__year=today.year)
+    monthly_revenue = sum(sale.total_amount for sale in this_month_qs)
+    monthly_receipts = this_month_qs.count()
+
+    # Mocked AI Insights
+    insights = [
+        {"id": 1, "type": "trend", "title": "Rising Sales in Morning", "description": "Morning shift sales have increased by 15% this week.", "impact": "positive"},
+        {"id": 2, "type": "anomaly", "title": "Unusual Discount Pattern", "description": "Cashier John issued 5 manual discounts over 20% yesterday.", "impact": "negative"},
+        {"id": 3, "type": "opportunity", "title": "Bundle Potential", "description": "Customers frequently buy Milk and Bread together. Consider a bundle discount.", "impact": "positive"},
+    ]
+
+    # Mocked Budgets
+    budgets = [
+        {"id": 1, "category": "Office Supplies", "spent": 12000, "limit": 20000, "status": "on-track"},
+        {"id": 2, "category": "Marketing", "spent": 45000, "limit": 50000, "status": "at-risk"},
+        {"id": 3, "category": "Utilities", "spent": 15000, "limit": 12000, "status": "exceeded"},
+    ]
+
+    return Response({
+        'overview': {
+            'total_revenue': total_revenue,
+            'total_receipts': total_receipts,
+            'monthly_revenue': monthly_revenue,
+            'monthly_receipts': monthly_receipts,
+            'average_value': (total_revenue / total_receipts) if total_receipts > 0 else 0,
+        },
+        'insights': insights,
+        'budgets': budgets,
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def receipters_vault_sign_url(request):
+    """
+    Mocked endpoint for signing AWS S3 URLs.
+    """
+    document_id = request.data.get('document_id')
+    if not document_id:
+        return Response({'error': 'document_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # If it's a VaultDocument ID, look it up. The frontend might pass "vd_1" or "1".
+        doc_pk = document_id.replace('vd_', '') if isinstance(document_id, str) and document_id.startswith('vd_') else document_id
+        doc = VaultDocument.objects.get(id=doc_pk)
+        
+        # Mock AWS S3 Signed URL generation
+        signed_url = f"https://s3.amazonaws.com/dukapos-vault-mock/{doc.file_name or 'document'}.pdf?AWSAccessKeyId=MOCK&Expires=1700000000&Signature=MOCK"
+        
+        return Response({'url': signed_url, 'expires_in': 3600})
+    except VaultDocument.DoesNotExist:
+        return Response({'error': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)

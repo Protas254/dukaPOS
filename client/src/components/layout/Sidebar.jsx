@@ -3,8 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, Receipt as ReceiptIcon, 
   BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers, FileWarning,
-  TrendingUp, Percent, Calendar, DollarSign, Building, FileText
+  TrendingUp, Percent, Calendar, DollarSign, Building, FileText, Cpu, FolderLock
 } from 'lucide-react';
+import ReceiptersLogo from '@/components/ReceiptersLogo';
 import { api } from '@/api/apiClient';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
@@ -43,6 +44,9 @@ const navItems = [
       { icon: BarChart3, label: 'Performance', path: '/staff-performance' },
     ]
   },
+  { isHeader: true, label: 'RECEIPTERS TECHNOLOGIES LTD', roles: ['admin'] },
+  { icon: Cpu, label: 'Receipters Engine', path: '/admin/receipters-engine', roles: ['admin'], isReceipters: true },
+  { icon: FolderLock, label: 'Receipters Vault Hub', path: '/admin/receipters-vault', roles: ['admin'], isReceipters: true },
   // Cashier-visible standalone items that are hidden from the admin group
   { icon: Clock, label: 'My Shifts', path: '/my-shifts', roles: ['user'] },
   { icon: ReceiptIcon, label: 'Transactions', path: '/transactions', roles: ['user'] },
@@ -118,7 +122,11 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-2.5 overflow-y-auto">
-        {visibleItems.map(({ icon: Icon, label, path, children }) => {
+        {visibleItems.map(({ icon: Icon, label, path, children, isHeader, isReceipters }) => {
+          if (isHeader) {
+            if (collapsed) return null;
+            return <div key={label} className="px-4 pt-4 pb-1 text-[12px] font-bold text-[#1e3a8a] uppercase tracking-wider">{label}</div>;
+          }
           const isActive = location.pathname === path;
 
           if (children) {
@@ -177,14 +185,21 @@ export default function Sidebar({ collapsed, onToggle }) {
               to={path}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group relative shadow-sm",
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
-                  : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
+                isReceipters ? (
+                  isActive
+                    ? "bg-[#fca5a5] text-[#7f1d1d] border-[#fca5a5] shadow-md font-medium"
+                    : "bg-[#fef2f2] text-[#dc2626] border-[#fee2e2] hover:bg-[#fee2e2] hover:border-[#fecaca]"
+                ) : (
+                  isActive
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
+                    : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
+                ),
+                isReceipters && "text-[12px] px-3 py-2.5"
               )}
             >
-              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-sidebar-primary-foreground")} />
+              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && !isReceipters && "text-sidebar-primary-foreground")} />
               {!collapsed && (
-                <span className="text-sm font-semibold truncate">{label}</span>
+                <span className="font-semibold truncate">{label}</span>
               )}
               {collapsed && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">

@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from .models import (
     BusinessSettings, Product, Customer, Supplier, Shift, Sale,
     Expense, EmployeeRating, EmployeeSchedule, Promotion, MpesaPayment,
-    ShiftAudit, CashFlow, PurchaseOrder
+    ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback
 )
 
 User = get_user_model()
@@ -190,4 +190,26 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['id'] = f"po_{instance.id}"
+        return rep
+
+
+class VaultDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VaultDocument
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['id'] = f"vd_{instance.id}"
+        return rep
+
+
+class ReceiptFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReceiptFeedback
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['id'] = f"rf_{instance.id}"
         return rep

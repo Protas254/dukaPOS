@@ -239,3 +239,41 @@ class PurchaseOrder(models.Model):
 
     def __str__(self):
         return f"{self.order_number} - {self.supplier_name}"
+
+
+class VaultDocument(models.Model):
+    title = models.CharField(max_length=255)
+    document_type = models.CharField(max_length=50) # receipt, invoice, budget, etc.
+    source = models.CharField(max_length=100, default='DukaPOS')
+    category = models.CharField(max_length=100, blank=True, null=True)
+    file_url = models.URLField(max_length=1024, blank=True, null=True)
+    file_name = models.CharField(max_length=255, blank=True, null=True)
+    file_type = models.CharField(max_length=50, blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    amount = models.FloatField(default=0.0)
+    reference_number = models.CharField(max_length=100, blank=True, null=True)
+    receipt_data = models.JSONField(blank=True, null=True)
+    is_locked = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
+    stored_by_name = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.document_type})"
+
+
+class ReceiptFeedback(models.Model):
+    receipt_number = models.CharField(max_length=100)
+    merchant_name = models.CharField(max_length=255, blank=True, null=True)
+    rating = models.IntegerField(default=5)
+    comment = models.TextField(blank=True, null=True)
+    customer_name = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Feedback for {self.receipt_number} - {self.rating} stars"

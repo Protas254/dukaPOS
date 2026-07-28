@@ -42,6 +42,8 @@ import Suppliers from '@/pages/Suppliers';
 import AdvancedReports from '@/pages/AdvancedReports';
 import StaffPerformance from '@/pages/StaffPerformance';
 import HardwareRequirements from '@/pages/HardwareRequirements';
+import ReceiptersEngine from '@/pages/admin/ReceiptersEngine';
+import ReceiptersVaultHub from '@/pages/admin/ReceiptersVaultHub';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -100,6 +102,8 @@ const AuthenticatedApp = () => {
             <Route path="/staff-performance" element={<StaffPerformance />} />
             <Route path="/etims" element={<EtimsCompliance />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/admin/receipters-engine" element={<ReceiptersEngine />} />
+            <Route path="/admin/receipters-vault" element={<ReceiptersVaultHub />} />
           </Route>
         </Route>
       </Route>
