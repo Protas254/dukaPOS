@@ -117,22 +117,22 @@ export default function ReceiptersVaultHub() {
     <ReceiptersAuthGate featureName="Receipters Vault Hub">
       <div className="flex flex-col h-full bg-slate-50/50 p-6 space-y-6 max-w-7xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-blue-900 flex items-center gap-2 uppercase">
-              <FolderArchive className="w-6 h-6 text-blue-900" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-blue-900 flex items-center gap-2 uppercase">
+              <FolderArchive className="w-5 h-5 sm:w-6 sm:h-6 text-blue-900" />
               Receipters Vault Hub
             </h1>
-            <p className="text-muted-foreground mt-1">Securely store, organize, and retrieve receipts & documents.</p>
+            <p className="text-sm text-muted-foreground mt-1">Securely store, organize, and retrieve receipts & documents.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => toast.success("Exporting CSV...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" onClick={() => toast.success("Exporting CSV...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Download className="w-4 h-4 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Export CSV</span>
             </Button>
-            <Button onClick={() => setUploadOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Document
+            <Button size="sm" onClick={() => setUploadOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Add Document</span>
             </Button>
           </div>
         </div>

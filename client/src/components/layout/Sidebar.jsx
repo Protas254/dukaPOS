@@ -55,7 +55,7 @@ const navItems = [
   { icon: Settings, label: 'Settings', path: '/settings', roles: ['admin'] },
 ];
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, onNavigate }) {
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState({});
   const { user } = useAuth();
@@ -75,10 +75,16 @@ export default function Sidebar({ collapsed, onToggle }) {
     return item.roles.includes(userRole);
   });
 
+  const handleLinkClick = () => {
+    if (onNavigate) {
+      onNavigate();
+    }
+  };
+
   return (
     <aside className={cn(
-      "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-20 transition-all duration-300 flex flex-col",
-      collapsed ? "w-[84px]" : "w-[320px]"
+      "h-screen bg-sidebar text-sidebar-foreground flex flex-col shadow-xl lg:shadow-none",
+      collapsed ? "w-[84px]" : "w-[300px] sm:w-[320px]"
     )}>
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-border">
@@ -125,7 +131,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         {visibleItems.map(({ icon: Icon, label, path, children, isHeader, isReceipters }) => {
           if (isHeader) {
             if (collapsed) return null;
-            return <div key={label} className="px-4 pt-4 pb-1 text-[12px] font-bold text-[#1e3a8a] uppercase tracking-wider">{label}</div>;
+            return <div key={label} className="px-4 pt-4 pb-1 text-[12px] font-bold text-blue-900 uppercase tracking-wider">{label}</div>;
           }
           const isActive = location.pathname === path;
 
@@ -162,6 +168,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                       <Link
                         key={child.label}
                         to={child.path}
+                        onClick={handleLinkClick}
                         className={cn(
                           "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                           location.pathname === child.path
@@ -183,21 +190,22 @@ export default function Sidebar({ collapsed, onToggle }) {
             <Link
               key={path + label}
               to={path}
+              onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group relative shadow-sm",
                 isReceipters ? (
                   isActive
-                    ? "bg-[#fca5a5] text-[#7f1d1d] border-[#fca5a5] shadow-md font-medium"
-                    : "bg-[#fef2f2] text-[#dc2626] border-[#fee2e2] hover:bg-[#fee2e2] hover:border-[#fecaca]"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-md font-medium"
+                    : "bg-blue-50/80 text-blue-700 border-blue-100 hover:bg-blue-100 hover:border-blue-200"
                 ) : (
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
                     : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
                 ),
-                isReceipters && "text-[12px] px-3 py-2.5"
+                isReceipters && "text-[13px] px-3 py-2.5"
               )}
             >
-              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && !isReceipters && "text-sidebar-primary-foreground")} />
+              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && !isReceipters && "text-sidebar-primary-foreground", isReceipters && !isActive && "text-blue-600")} />
               {!collapsed && (
                 <span className="font-semibold truncate">{label}</span>
               )}

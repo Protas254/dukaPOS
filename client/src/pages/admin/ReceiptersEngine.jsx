@@ -51,15 +51,15 @@ export default function ReceiptersEngine() {
     <ReceiptersAuthGate featureName="Receipters Engine">
       <div className="flex flex-col h-full bg-slate-50/50 p-6 space-y-6 max-w-7xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-blue-900 uppercase flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-blue-900 uppercase flex items-center gap-2">
               Receipters Engine
             </h1>
-            <p className="text-muted-foreground mt-1">AI-powered receipt intelligence & analytics</p>
+            <p className="text-sm text-muted-foreground mt-1">AI-powered receipt intelligence & analytics</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 text-sm mr-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-3 text-xs sm:text-sm mr-2 sm:mr-4">
               <span className="flex items-center gap-1.5 text-slate-600">
                 <div className="w-2 h-2 rounded-full bg-slate-400"></div> {overview.total_receipts || 0} analyzed
               </span>
@@ -67,16 +67,16 @@ export default function ReceiptersEngine() {
                 <div className="w-2 h-2 rounded-full bg-amber-500"></div> {insights.length} insights
               </span>
             </div>
-            <Button variant="outline" onClick={() => toast.success("Exporting data...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
-              <Download className="w-4 h-4 mr-2" />
-              Export
+            <Button variant="outline" size="sm" onClick={() => toast.success("Exporting data...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Download className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
             </Button>
-            <Button variant="outline" onClick={() => toast.info("Opening guide...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
-              View Guide
+            <Button variant="outline" size="sm" onClick={() => toast.info("Opening guide...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
+              <span className="text-xs sm:text-sm">Guide</span>
             </Button>
-            <Button onClick={() => toast.success("Downloading PDF report...")} className="bg-blue-600 hover:bg-blue-700 text-white">
-              <FileDown className="w-4 h-4 mr-2" />
-              Download PDF
+            <Button size="sm" onClick={() => toast.success("Downloading PDF report...")} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <FileDown className="w-4 h-4 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Download PDF</span>
             </Button>
           </div>
         </div>
