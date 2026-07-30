@@ -33,14 +33,14 @@ export default function ReceiptersVaultHub() {
     queryKey: ['vault_documents'],
     queryFn: async () => {
       const res = await api.get('/entities/VaultDocument');
-      return res.data;
+      return Array.isArray(res) ? res : (res.data || []);
     }
   });
 
   const uploadMutation = useMutation({
     mutationFn: async (newDoc) => {
       const res = await api.post('/entities/VaultDocument', newDoc);
-      return res.data;
+      return Array.isArray(res) ? res : (res.data || []);
     },
     onSuccess: () => {
       toast.success("Document added to Vault");
@@ -118,18 +118,18 @@ export default function ReceiptersVaultHub() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-red-900 flex items-center gap-2 uppercase">
-              <FolderArchive className="w-6 h-6 text-red-900" />
+            <h1 className="text-2xl font-bold tracking-tight text-blue-900 flex items-center gap-2 uppercase">
+              <FolderArchive className="w-6 h-6 text-blue-900" />
               Receipters Vault Hub
             </h1>
             <p className="text-muted-foreground mt-1">Securely store, organize, and retrieve receipts & documents.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => toast.success("Exporting CSV...")} className="border-red-200 text-red-700 hover:bg-red-50">
+            <Button variant="outline" onClick={() => toast.success("Exporting CSV...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => setUploadOpen(true)} className="bg-red-600 hover:bg-red-700 text-white">
+            <Button onClick={() => setUploadOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
               <Plus className="w-4 h-4 mr-2" />
               Add Document
             </Button>
@@ -138,9 +138,9 @@ export default function ReceiptersVaultHub() {
 
         {/* Stats row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-red-100 p-5 flex items-start gap-4 shadow-sm relative overflow-hidden">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
-            <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+          <div className="bg-white rounded-xl border border-blue-100 p-5 flex items-start gap-4 shadow-sm relative overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
@@ -180,11 +180,30 @@ export default function ReceiptersVaultHub() {
             />
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <select className="h-11 rounded-md border border-slate-200 px-3 text-sm bg-white min-w-[140px]">
+            <select className="h-11 rounded-md border border-slate-200 px-3 text-sm bg-white min-w-[140px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-red-500">
               <option>All Types</option>
+              <option>Receipts</option>
+              <option>Expenses</option>
+              <option>Invoices</option>
+              <option>Budgets</option>
+              <option>Contracts</option>
+              <option>Reports</option>
+              <option>Statements</option>
+              <option>Other</option>
             </select>
-            <select className="h-11 rounded-md border border-slate-200 px-3 text-sm bg-white min-w-[180px]">
-              <option>All Sources</option>
+            <select className="h-11 rounded-md border border-slate-200 px-3 text-sm bg-white min-w-[180px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-red-500">
+              <option>All Sources / POS</option>
+              <optgroup label="POS Generated" className="font-bold">
+                <option value="POS Checkout" className="font-normal">&nbsp;&nbsp;POS Checkout</option>
+                <option value="POS Expense" className="font-normal">&nbsp;&nbsp;POS Expense</option>
+              </optgroup>
+              <optgroup label="Imported" className="font-bold">
+                <option value="Receipters Engine" className="font-normal">&nbsp;&nbsp;Receipters Engine</option>
+                <option value="Transactions" className="font-normal">&nbsp;&nbsp;Transactions</option>
+              </optgroup>
+              <optgroup label="Manual" className="font-bold">
+                <option value="Unknown" className="font-normal">&nbsp;&nbsp;Unknown</option>
+              </optgroup>
             </select>
             <Button variant="outline" className="h-11 font-medium bg-white">
               View Archived
@@ -203,15 +222,15 @@ export default function ReceiptersVaultHub() {
               filteredDocs.map(doc => (
                 <div key={doc.id} className={`p-5 flex items-center justify-between hover:bg-slate-50 transition-colors group ${doc.document_type === 'expense' ? 'bg-amber-50/30' : ''}`}>
                   <div className="flex items-start gap-4">
-                    <div className={`w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center ${doc.document_type === 'expense' ? 'bg-amber-100 text-amber-700' : 'bg-red-50 text-red-600'}`}>
+                    <div className={`w-10 h-10 flex-shrink-0 rounded-lg flex items-center justify-center ${doc.document_type === 'expense' ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'}`}>
                       <FileText className="w-5 h-5" />
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900">{doc.title}</span>
-                        <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-100 font-medium capitalize border-0">{doc.document_type}</Badge>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 font-medium capitalize border-0">{doc.document_type}</Badge>
                         <span className="text-xs text-slate-400">• {doc.source || 'Unknown Source'}</span>
-                        {doc.is_locked && <Lock className="w-3 h-3 text-red-500" />}
+                        {doc.is_locked && <Lock className="w-3 h-3 text-blue-500" />}
                       </div>
                       <p className="text-xs text-slate-500">
                         Ref: {doc.reference_number || 'N/A'} · By: {doc.stored_by_name || 'System'} · Date: {new Date(doc.created_at).toLocaleDateString()}
@@ -223,11 +242,11 @@ export default function ReceiptersVaultHub() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="font-bold text-slate-900 text-right">KES {parseFloat(doc.amount || 0).toLocaleString()}</div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleView(doc)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"><Eye className="w-4 h-4"/></button>
-                      <button onClick={() => toggleLockMutation.mutate({ id: doc.id, is_locked: !doc.is_locked })} className={`p-2 rounded-md transition-colors ${doc.is_locked ? 'text-red-600 bg-red-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}><Lock className="w-4 h-4"/></button>
-                      <button onClick={() => toast.success(`Document ${doc.id} archived`)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"><Archive className="w-4 h-4"/></button>
-                      <button onClick={() => deleteMutation.mutate(doc.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"><Trash2 className="w-4 h-4"/></button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleView(doc)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"><Eye className="w-4 h-4"/></button>
+                      <button onClick={() => toggleLockMutation.mutate({ id: doc.id, is_locked: !doc.is_locked })} className={`p-2 rounded-md transition-colors ${doc.is_locked ? 'text-slate-600 bg-slate-100' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}><Lock className="w-4 h-4"/></button>
+                      <button onClick={() => toast.success(`Document ${doc.id} archived`)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"><Archive className="w-4 h-4"/></button>
+                      <button onClick={() => deleteMutation.mutate(doc.id)} className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"><Trash2 className="w-4 h-4"/></button>
                     </div>
                   </div>
                 </div>
@@ -240,7 +259,7 @@ export default function ReceiptersVaultHub() {
         <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
           <DialogContent className="max-w-md bg-white">
             <DialogHeader>
-              <DialogTitle className="text-red-900 flex items-center gap-2">
+              <DialogTitle className="text-blue-900 flex items-center gap-2">
                 <UploadCloud className="w-5 h-5" /> Add Document to Vault
               </DialogTitle>
             </DialogHeader>
@@ -274,7 +293,7 @@ export default function ReceiptersVaultHub() {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setUploadOpen(false)}>Cancel</Button>
-                <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={handleUpload}>Save to Vault</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleUpload}>Save to Vault</Button>
               </div>
             </div>
           </DialogContent>
@@ -284,8 +303,8 @@ export default function ReceiptersVaultHub() {
         <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
           <DialogContent className="max-w-xl bg-white">
             <DialogHeader>
-              <DialogTitle className="text-red-900 text-xl flex items-center gap-2">
-                <FileText className="w-5 h-5 text-red-600" />
+              <DialogTitle className="text-blue-900 text-xl flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
                 Document Details
               </DialogTitle>
             </DialogHeader>
@@ -298,7 +317,7 @@ export default function ReceiptersVaultHub() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Amount</div>
-                    <div className="font-bold text-slate-900 text-xl text-red-700">KES {parseFloat(selectedDoc.amount || 0).toLocaleString()}</div>
+                    <div className="font-bold text-slate-900 text-xl text-blue-700">KES {parseFloat(selectedDoc.amount || 0).toLocaleString()}</div>
                   </div>
                 </div>
 

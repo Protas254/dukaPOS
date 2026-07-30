@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Download, FileDown, Search, Filter, AlertTriangle, 
-  TrendingUp, Activity, Bell, ListPlus, Banknote, ShieldAlert, Eye, Calendar
+  TrendingUp, Activity, Bell, ListPlus, Banknote, ShieldAlert, Eye, Calendar,
+  Zap, Tag, Maximize, FileText, Printer
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -28,7 +29,7 @@ export default function ReceiptersEngine() {
     queryKey: ['receipters_receipts'],
     queryFn: async () => {
       const res = await api.get('/entities/VaultDocument');
-      return res.data.filter(doc => doc.document_type === 'receipt');
+      const data = Array.isArray(res) ? res : (res.data || []); return data.filter(doc => doc.document_type === 'receipt');
     }
   });
 
@@ -37,7 +38,7 @@ export default function ReceiptersEngine() {
     queryKey: ['receipters_engine_stats'],
     queryFn: async () => {
       const res = await api.get('/receipters/engine-stats');
-      return res.data;
+      return Array.isArray(res) ? res : (res.data || []);
     }
   });
 
@@ -57,7 +58,7 @@ export default function ReceiptersEngine() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-red-900 uppercase flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-blue-900 uppercase flex items-center gap-2">
               Receipters Engine
             </h1>
             <p className="text-muted-foreground mt-1">AI-powered receipt intelligence & analytics</p>
@@ -71,14 +72,14 @@ export default function ReceiptersEngine() {
                 <div className="w-2 h-2 rounded-full bg-amber-500"></div> {insights.length} insights
               </span>
             </div>
-            <Button variant="outline" onClick={() => toast.success("Exporting data...")} className="border-red-200 text-red-700 hover:bg-red-50">
+            <Button variant="outline" onClick={() => toast.success("Exporting data...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button variant="outline" onClick={() => toast.info("Opening guide...")} className="border-red-200 text-red-700 hover:bg-red-50">
+            <Button variant="outline" onClick={() => toast.info("Opening guide...")} className="border-blue-200 text-blue-700 hover:bg-blue-50">
               View Guide
             </Button>
-            <Button onClick={() => toast.success("Downloading PDF report...")} className="bg-red-600 hover:bg-red-700 text-white">
+            <Button onClick={() => toast.success("Downloading PDF report...")} className="bg-blue-600 hover:bg-blue-700 text-white">
               <FileDown className="w-4 h-4 mr-2" />
               Download PDF
             </Button>
@@ -90,14 +91,14 @@ export default function ReceiptersEngine() {
           <Button 
             variant={activeTab === 'All Receipts' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('All Receipts')}
-            className={`rounded-full ${activeTab === 'All Receipts' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white border border-slate-200 hover:bg-slate-100'}`}
+            className={`rounded-full ${activeTab === 'All Receipts' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white border border-slate-200 hover:bg-slate-100'}`}
           >
             All Receipts
           </Button>
           <Button 
             variant={activeTab === 'My Receipts' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('My Receipts')}
-            className={`rounded-full ${activeTab === 'My Receipts' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white border border-slate-200 hover:bg-slate-100'}`}
+            className={`rounded-full ${activeTab === 'My Receipts' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white border border-slate-200 hover:bg-slate-100'}`}
           >
             My Receipts
           </Button>
@@ -106,25 +107,55 @@ export default function ReceiptersEngine() {
           <Button 
             variant={activeFilter === 'AI Analysis' ? 'default' : 'outline'} 
             onClick={() => { setActiveFilter('AI Analysis'); toast.info("AI Analysis selected"); }}
-            size="sm" className={`rounded-full ${activeFilter === 'AI Analysis' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white text-red-600 border-red-100 hover:bg-red-50'}`}>
-            <Activity className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'AI Analysis' ? '' : 'text-red-500'}`} /> AI Analysis
+            size="sm" className={`rounded-full ${activeFilter === 'AI Analysis' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-blue-600 border-blue-100 hover:bg-blue-50'}`}>
+            <Activity className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'AI Analysis' ? '' : 'text-blue-500'}`} /> AI Analysis
           </Button>
           <Button 
             variant={activeFilter === 'Anomaly Detection' ? 'default' : 'outline'} 
             onClick={() => { setActiveFilter('Anomaly Detection'); toast.info("Anomaly Detection selected"); }}
-            size="sm" className={`rounded-full ${activeFilter === 'Anomaly Detection' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            size="sm" className={`rounded-full ${activeFilter === 'Anomaly Detection' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
             <ShieldAlert className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'Anomaly Detection' ? '' : 'text-amber-500'}`} /> Anomaly Detection
           </Button>
           <Button 
             variant={activeFilter === 'Trends' ? 'default' : 'outline'} 
             onClick={() => { setActiveFilter('Trends'); toast.info("Trends selected"); }}
-            size="sm" className={`rounded-full ${activeFilter === 'Trends' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            size="sm" className={`rounded-full ${activeFilter === 'Trends' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
             <TrendingUp className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'Trends' ? '' : 'text-green-600'}`} /> Trends
+          </Button>
+          <Button 
+            variant={activeFilter === 'Real-time' ? 'default' : 'outline'} 
+            onClick={() => { setActiveFilter('Real-time'); toast.info("Real-time selected"); }}
+            size="sm" className={`rounded-full ${activeFilter === 'Real-time' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            <Zap className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'Real-time' ? '' : 'text-blue-500'}`} /> Real-time
+          </Button>
+          <Button 
+            variant={activeFilter === 'Search' ? 'default' : 'outline'} 
+            onClick={() => { setActiveFilter('Search'); }}
+            size="sm" className={`rounded-full ${activeFilter === 'Search' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            <Search className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'Search' ? '' : 'text-slate-500'}`} /> Search
+          </Button>
+          <Button 
+            variant={activeFilter === 'Categorize' ? 'default' : 'outline'} 
+            onClick={() => { setActiveFilter('Categorize'); toast.info("Categorize selected"); }}
+            size="sm" className={`rounded-full ${activeFilter === 'Categorize' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            <Tag className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'Categorize' ? '' : 'text-purple-500'}`} /> Categorize
+          </Button>
+          <Button 
+            variant={activeFilter === 'Alerts & Monitoring' ? 'default' : 'outline'} 
+            onClick={() => { setActiveFilter('Alerts & Monitoring'); toast.info("Alerts & Monitoring selected"); }}
+            size="sm" className={`rounded-full ${activeFilter === 'Alerts & Monitoring' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            <Bell className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'Alerts & Monitoring' ? '' : 'text-amber-500'}`} /> Alerts & Monitoring
+          </Button>
+          <Button 
+            variant={activeFilter === 'Manual Capture' ? 'default' : 'outline'} 
+            onClick={() => { setActiveFilter('Manual Capture'); toast.info("Manual Capture selected"); }}
+            size="sm" className={`rounded-full ${activeFilter === 'Manual Capture' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            <Maximize className={`w-3.5 h-3.5 mr-1.5 ${activeFilter === 'Manual Capture' ? '' : 'text-indigo-500'}`} /> Manual Capture
           </Button>
           <Button 
             variant={activeFilter === 'Budget' ? 'default' : 'outline'} 
             onClick={() => { setActiveFilter('Budget'); toast.info("Budget selected"); }}
-            size="sm" className={`rounded-full ${activeFilter === 'Budget' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+            size="sm" className={`rounded-full ${activeFilter === 'Budget' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
             <Banknote className="w-3.5 h-3.5 mr-1.5" /> Budget
           </Button>
         </div>
@@ -133,14 +164,14 @@ export default function ReceiptersEngine() {
         {activeFilter === 'AI Analysis' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {insights.map(insight => (
-              <div key={insight.id} className="bg-white p-5 rounded-xl border border-red-100 shadow-sm">
+              <div key={insight.id} className="bg-white p-5 rounded-xl border border-blue-100 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  {insight.impact === 'positive' ? <TrendingUp className="w-5 h-5 text-green-500" /> : <AlertTriangle className="w-5 h-5 text-red-500" />}
+                  {insight.impact === 'positive' ? <TrendingUp className="w-5 h-5 text-green-500" /> : <AlertTriangle className="w-5 h-5 text-blue-500" />}
                   <h3 className="font-semibold text-slate-900">{insight.title}</h3>
                 </div>
                 <p className="text-sm text-slate-600">{insight.description}</p>
                 <div className="mt-4">
-                  <Badge variant="outline" className={insight.impact === 'positive' ? 'text-green-700 border-green-200 bg-green-50' : 'text-red-700 border-red-200 bg-red-50'}>
+                  <Badge variant="outline" className={insight.impact === 'positive' ? 'text-green-700 border-green-200 bg-green-50' : 'text-blue-700 border-blue-200 bg-blue-50'}>
                     {insight.type.toUpperCase()}
                   </Badge>
                 </div>
@@ -160,7 +191,7 @@ export default function ReceiptersEngine() {
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2">
                   <div 
-                    className={`h-2 rounded-full ${budget.status === 'exceeded' ? 'bg-red-500' : budget.status === 'at-risk' ? 'bg-amber-500' : 'bg-green-500'}`} 
+                    className={`h-2 rounded-full ${budget.status === 'exceeded' ? 'bg-blue-500' : budget.status === 'at-risk' ? 'bg-amber-500' : 'bg-green-500'}`} 
                     style={{ width: `${Math.min((budget.spent / budget.limit) * 100, 100)}%` }}
                   ></div>
                 </div>
@@ -170,42 +201,90 @@ export default function ReceiptersEngine() {
         )}
 
         {/* Advanced Search Panel */}
+        {activeFilter === 'Search' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-          <div className="flex items-center justify-between text-red-900 font-medium">
+          <div className="flex items-center justify-between text-slate-700 font-semibold border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4" />
+              <Filter className="w-4 h-4 text-slate-500" />
               Advanced Search
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-500 uppercase">Search</label>
+              <label className="text-[11px] font-semibold text-slate-500 uppercase">Product</label>
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <Input 
-                  className="pl-9 h-9" 
-                  placeholder="Receipt ID or Name" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9 text-sm" 
+                  placeholder="Name or ID" 
                 />
               </div>
             </div>
             <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase">Min Price</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input type="number" className="pl-8 h-9 text-sm" placeholder="0" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase">Max Price</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input type="number" className="pl-8 h-9 text-sm" placeholder="∞" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase">City</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-8 h-9 text-sm" placeholder="City" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase">Zipcode</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-8 h-9 text-sm" placeholder="10001" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase">Store ID</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-8 h-9 text-sm" placeholder="Branch ID" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-slate-500 uppercase">From Date</label>
-              <Input type="date" className="h-9 text-slate-500" />
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input type="date" className="pl-8 h-9 text-slate-500 text-sm" />
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-slate-500 uppercase">To Date</label>
-              <Input type="date" className="h-9 text-slate-500" />
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input type="date" className="pl-8 h-9 text-slate-500 text-sm" />
+              </div>
             </div>
-            <div className="flex items-end justify-end pt-2">
-              <Button onClick={() => toast.success("Executing advanced search...")} className="bg-red-600 hover:bg-red-700 text-white w-full h-9">
-                <Search className="w-4 h-4 mr-2" /> Search
-              </Button>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase">Payment</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-8 h-9 text-sm" placeholder="All Methods" />
+              </div>
             </div>
           </div>
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <Button onClick={() => toast.success("Executing advanced search...")} className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-6 rounded-full">
+              <Search className="w-3.5 h-3.5 mr-2" /> Search
+            </Button>
+          </div>
         </div>
+        )}
 
         {/* Receipts List */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
@@ -227,22 +306,31 @@ export default function ReceiptersEngine() {
                 
                 return (
                   <div key={receipt.id} className="p-5 hover:bg-slate-50 transition-colors flex justify-between items-start">
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 flex-1 max-w-[80%]">
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-slate-900">{receipt.reference_number || receipt.title}</span>
-                        <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-100 border-0">{payMethod}</Badge>
+                        <span className="font-bold text-slate-900 text-[15px]">{receipt.reference_number || receipt.title}</span>
+                        <Badge variant="secondary" className={`${payMethod.toLowerCase() === 'cash' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'bg-blue-100 text-blue-700 hover:bg-blue-100'} border-0 px-2 py-0 h-5 text-[11px]`}>{payMethod}</Badge>
                       </div>
-                      <div className="text-sm text-slate-500 flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5" /> 
-                        {new Date(receipt.created_at).toLocaleString()} • {itemsCount} items • By {receipt.stored_by_name || 'System'}
+                      <div className="text-[13px] text-slate-400">
+                        {new Date(receipt.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {new Date(receipt.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {itemsCount} items • {receipt.stored_by_name || 'System'}
                       </div>
-                      <div className="flex items-center gap-4 pt-2">
-                        <button onClick={() => setSelectedReceipt(receipt)} className="text-sm font-medium text-red-600 hover:text-red-800 flex items-center gap-1.5"><Eye className="w-4 h-4"/> View Full Details</button>
-                        <button onClick={() => toast.success(`Receipt ${receipt.reference_number} downloaded`)} className="text-sm font-medium text-red-600 hover:text-red-800 flex items-center gap-1.5"><Download className="w-4 h-4"/> Download JSON</button>
+                      <div className="text-[13px] text-slate-400 truncate w-full">
+                        {(data.items || []).map(i => `${i.product_name} ${i.quantity > 1 ? `(${i.quantity})` : ''}`).join(', ') || 'No items listed'}
+                      </div>
+                      <div className="flex items-center gap-2 pt-3">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedReceipt(receipt)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
+                          <Eye className="w-3.5 h-3.5 mr-1.5"/> View
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => toast.success(`Receipt ${receipt.reference_number} downloaded`)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
+                          <Download className="w-3.5 h-3.5 mr-1.5"/> Download
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => toast.success(`Receipt ${receipt.reference_number} sent to printer`)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
+                          <Printer className="w-3.5 h-3.5 mr-1.5"/> Print
+                        </Button>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-lg text-slate-900">KES {parseFloat(receipt.amount).toLocaleString()}</div>
+                      <div className="font-bold text-sm text-slate-900">KES {parseFloat(receipt.amount).toLocaleString()}</div>
                     </div>
                   </div>
                 );
@@ -255,8 +343,8 @@ export default function ReceiptersEngine() {
         <Dialog open={!!selectedReceipt} onOpenChange={(open) => !open && setSelectedReceipt(null)}>
           <DialogContent className="max-w-2xl bg-white max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-red-900 text-xl flex items-center gap-2">
-                <Banknote className="w-5 h-5 text-red-600" />
+              <DialogTitle className="text-blue-900 text-xl flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-blue-600" />
                 Receipt Details
               </DialogTitle>
             </DialogHeader>
@@ -269,7 +357,7 @@ export default function ReceiptersEngine() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Total Amount</div>
-                    <div className="font-bold text-slate-900 text-xl text-red-700">KES {parseFloat(selectedReceipt.amount).toLocaleString()}</div>
+                    <div className="font-bold text-slate-900 text-xl text-blue-700">KES {parseFloat(selectedReceipt.amount).toLocaleString()}</div>
                   </div>
                 </div>
 
@@ -313,7 +401,7 @@ export default function ReceiptersEngine() {
                 
                 <div className="flex justify-end pt-4 border-t border-slate-100 gap-3">
                   <Button variant="outline" onClick={() => setSelectedReceipt(null)}>Close</Button>
-                  <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => {
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
                     toast.success("Receipt details downloaded");
                   }}>
                     <Download className="w-4 h-4 mr-2" /> Download JSON
