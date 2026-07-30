@@ -316,10 +316,10 @@ export default function ReceiptersEngine() {
                         <Button variant="outline" size="sm" onClick={() => setSelectedReceipt(receipt)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
                           <Eye className="w-3.5 h-3.5 mr-1.5"/> View
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => toast.success(`Receipt ${receipt.reference_number} downloaded`)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedReceipt(receipt)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
                           <Download className="w-3.5 h-3.5 mr-1.5"/> Download
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => toast.success(`Receipt ${receipt.reference_number} sent to printer`)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedReceipt(receipt)} className="text-blue-600 border-slate-200 hover:bg-blue-50 hover:text-blue-700 rounded-md h-8 text-xs font-semibold px-3">
                           <Printer className="w-3.5 h-3.5 mr-1.5"/> Print
                         </Button>
                       </div>

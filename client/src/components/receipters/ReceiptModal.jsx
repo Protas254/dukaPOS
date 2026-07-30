@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Download, Printer, Hourglass, Star } from 'lucide-react';
 import BarcodeDisplay from '@/components/barcode/BarcodeDisplay';
 import { toast } from 'sonner';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export default function ReceiptModal({ receipt, open, onClose }) {
+  const receiptRef = useRef(null);
+
   if (!receipt) return null;
 
   // The receipt object might be a VaultDocument (receipt_data inside) or a Sale object directly.
@@ -21,7 +25,76 @@ export default function ReceiptModal({ receipt, open, onClose }) {
   const amount = data.total_amount || receipt.amount || 0;
   const date = data.created_date || receipt.created_at || data.created_at || new Date().toISOString();
   const cashier = receipt.stored_by_name || data.cashier_name || 'System';
-  
+
+  const handleDownload = async () => {
+    if (!receiptRef.current) return;
+    try {
+      toast.info("Generating receipt PDF...");
+      const canvas = await html2canvas(receiptRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 80; // thermal receipt width standard 80mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [imgWidth, Math.max(imgHeight, 100)]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`Receipt-${reference}.pdf`);
+      toast.success(`Receipt ${reference} downloaded!`);
+    } catch (err) {
+      console.error("Failed to generate receipt PDF:", err);
+      toast.error("Could not download receipt. Please try again.");
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!receiptRef.current) return;
+    try {
+      toast.info("Preparing receipt for print...");
+      const canvas = await html2canvas(receiptRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const printWin = window.open('', '_blank');
+      if (printWin) {
+        printWin.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Print Receipt - ${reference}</title>
+              <style>
+                body { margin: 0; padding: 10px; display: flex; justify-content: center; background: #fff; }
+                img { max-width: 80mm; width: 100%; height: auto; }
+                @media print {
+                  body { padding: 0; }
+                  img { max-width: 100%; }
+                }
+              </style>
+            </head>
+            <body>
+              <img src="${imgData}" onload="window.print(); setTimeout(() => window.close(), 500);" />
+            </body>
+          </html>
+        `);
+        printWin.document.close();
+      }
+    } catch (err) {
+      console.error("Print failed:", err);
+      toast.error("Could not send receipt to printer.");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
       <DialogContent className="max-w-md bg-slate-100 p-0 overflow-hidden flex flex-col h-[90vh] sm:h-[85vh]">
@@ -33,7 +106,7 @@ export default function ReceiptModal({ receipt, open, onClose }) {
         
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Receipt Tape */}
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm font-mono text-[13px] leading-tight text-slate-800">
+          <div ref={receiptRef} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm font-mono text-[13px] leading-tight text-slate-800">
             <div className="text-center space-y-1.5 mb-5">
               <p className="font-bold text-[15px] uppercase">QUICKMART SUPERMARKET</p>
               <p className="font-bold">*** TAX INVOICE ***</p>
@@ -146,10 +219,10 @@ export default function ReceiptModal({ receipt, open, onClose }) {
         
         {/* Footer Buttons */}
         <div className="p-4 bg-white flex gap-3 shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)] z-10">
-          <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-11 rounded-lg" onClick={() => toast.success("Receipt downloaded")}>
+          <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-11 rounded-lg" onClick={handleDownload}>
             <Download className="w-4 h-4 mr-2" /> Download
           </Button>
-          <Button variant="outline" className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 h-11 rounded-lg" onClick={() => toast.success("Sent to printer")}>
+          <Button variant="outline" className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 h-11 rounded-lg" onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-2" /> Print
           </Button>
         </div>
