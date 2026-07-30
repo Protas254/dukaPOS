@@ -11,12 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/apiClient';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import ReceiptModal from '@/components/receipters/ReceiptModal';
 
 export default function ReceiptersEngine() {
   const [activeTab, setActiveTab] = useState('All Receipts');
@@ -340,78 +335,11 @@ export default function ReceiptersEngine() {
         </div>
 
         {/* Receipt Detail Dialog */}
-        <Dialog open={!!selectedReceipt} onOpenChange={(open) => !open && setSelectedReceipt(null)}>
-          <DialogContent className="max-w-2xl bg-white max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-blue-900 text-xl flex items-center gap-2">
-                <Banknote className="w-5 h-5 text-blue-600" />
-                Receipt Details
-              </DialogTitle>
-            </DialogHeader>
-            {selectedReceipt && (
-              <div className="space-y-6 mt-4">
-                <div className="flex justify-between items-start border-b border-slate-100 pb-4">
-                  <div>
-                    <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Reference Number</div>
-                    <div className="font-bold text-slate-900 text-lg">{selectedReceipt.reference_number || selectedReceipt.title}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Total Amount</div>
-                    <div className="font-bold text-slate-900 text-xl text-blue-700">KES {parseFloat(selectedReceipt.amount).toLocaleString()}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold">Date & Time</div>
-                    <div className="font-medium text-slate-900">{new Date(selectedReceipt.created_at).toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold">Payment Method</div>
-                    <div className="font-medium text-slate-900">{selectedReceipt.receipt_data?.payment_method || 'Unknown'}</div>
-                  </div>
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold">Cashier</div>
-                    <div className="font-medium text-slate-900">{selectedReceipt.stored_by_name || 'System'}</div>
-                  </div>
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold">Status</div>
-                    <div className="font-medium text-slate-900">
-                      <Badge variant="outline" className="text-green-700 bg-green-50 border-green-200">Captured & Verified</Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Line Items</h3>
-                  <div className="space-y-2">
-                    {selectedReceipt.receipt_data?.items?.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-sm p-2 hover:bg-slate-50 rounded-md">
-                        <div>
-                          <span className="font-medium text-slate-900">{item.product_name}</span>
-                          <span className="text-slate-500 ml-2">x{item.quantity}</span>
-                        </div>
-                        <div className="font-medium">
-                          KES {(parseFloat(item.price) * item.quantity).toLocaleString()}
-                        </div>
-                      </div>
-                    )) || <div className="text-sm text-slate-500 italic">No line items recorded.</div>}
-                  </div>
-                </div>
-                
-                <div className="flex justify-end pt-4 border-t border-slate-100 gap-3">
-                  <Button variant="outline" onClick={() => setSelectedReceipt(null)}>Close</Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-                    toast.success("Receipt details downloaded");
-                  }}>
-                    <Download className="w-4 h-4 mr-2" /> Download JSON
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
+        <ReceiptModal 
+          receipt={selectedReceipt} 
+          open={!!selectedReceipt} 
+          onClose={() => setSelectedReceipt(null)} 
+        />
       </div>
     </ReceiptersAuthGate>
   );

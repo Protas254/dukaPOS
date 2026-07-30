@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/apiClient';
+import ReceiptModal from '@/components/receipters/ReceiptModal';
 import {
   Dialog,
   DialogContent,
@@ -299,50 +300,55 @@ export default function ReceiptersVaultHub() {
           </DialogContent>
         </Dialog>
 
-        {/* Detail Dialog (Fallback when no secure URL) */}
-        <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
-          <DialogContent className="max-w-xl bg-white">
-            <DialogHeader>
-              <DialogTitle className="text-blue-900 text-xl flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                Document Details
-              </DialogTitle>
-            </DialogHeader>
-            {selectedDoc && (
-              <div className="space-y-4 mt-4">
-                <div className="flex justify-between items-start border-b border-slate-100 pb-4">
-                  <div>
-                    <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Title</div>
-                    <div className="font-bold text-slate-900 text-lg">{selectedDoc.title}</div>
+        {/* Detail Dialog — uses ReceiptModal for receipt/invoice types */}
+        {selectedDoc?.document_type === 'receipt' || selectedDoc?.document_type === 'invoice' ? (
+          <ReceiptModal
+            receipt={selectedDoc}
+            open={!!selectedDoc}
+            onClose={() => setSelectedDoc(null)}
+          />
+        ) : (
+          <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
+            <DialogContent className="max-w-xl bg-white">
+              <DialogHeader>
+                <DialogTitle className="text-blue-900 text-xl flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  Document Details
+                </DialogTitle>
+              </DialogHeader>
+              {selectedDoc && (
+                <div className="space-y-4 mt-4">
+                  <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+                    <div>
+                      <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Title</div>
+                      <div className="font-bold text-slate-900 text-lg">{selectedDoc.title}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Amount</div>
+                      <div className="font-bold text-slate-900 text-xl text-blue-700">KES {parseFloat(selectedDoc.amount || 0).toLocaleString()}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Amount</div>
-                    <div className="font-bold text-slate-900 text-xl text-blue-700">KES {parseFloat(selectedDoc.amount || 0).toLocaleString()}</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <div className="text-xs text-slate-500 uppercase font-semibold">Type</div>
+                      <div className="font-medium text-slate-900 capitalize">{selectedDoc.document_type}</div>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <div className="text-xs text-slate-500 uppercase font-semibold">Source</div>
+                      <div className="font-medium text-slate-900">{selectedDoc.source || 'N/A'}</div>
+                    </div>
+                  </div>
+                  <div className="pt-4 text-center text-slate-500 text-sm">
+                    No physical file is attached to this document record.
+                  </div>
+                  <div className="flex justify-end pt-4 border-t border-slate-100 gap-3">
+                    <Button variant="outline" onClick={() => setSelectedDoc(null)}>Close</Button>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold">Type</div>
-                    <div className="font-medium text-slate-900 capitalize">{selectedDoc.document_type}</div>
-                  </div>
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold">Source</div>
-                    <div className="font-medium text-slate-900">{selectedDoc.source || 'N/A'}</div>
-                  </div>
-                </div>
-
-                <div className="pt-4 text-center text-slate-500 text-sm">
-                  No physical file is attached to this document record.
-                </div>
-                
-                <div className="flex justify-end pt-4 border-t border-slate-100 gap-3">
-                  <Button variant="outline" onClick={() => setSelectedDoc(null)}>Close</Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
 
       </div>
     </ReceiptersAuthGate>
