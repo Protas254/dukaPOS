@@ -67,8 +67,13 @@ export default function GoogleSignInButton({ onError, redirectTo = "/" }) {
   const handleCredentialResponse = async (response) => {
     setLoading(true);
     try {
-      await api.auth.googleLogin(response.credential);
-      window.location.href = redirectTo;
+      const result = await api.auth.googleLogin(response.credential);
+      // New users should complete onboarding first
+      if (result.is_new_user) {
+        window.location.href = '/onboarding';
+      } else {
+        window.location.href = redirectTo;
+      }
     } catch (err) {
       onError?.(err.message || "Google sign-in failed");
     } finally {

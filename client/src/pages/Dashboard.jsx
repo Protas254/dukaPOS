@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/apiClient';
 import { 
   DollarSign, ShoppingCart, TrendingUp, Package, 
-  AlertTriangle, ArrowRight, ArrowLeft, User, Award, Bell, Receipt, FileText
+  AlertTriangle, ArrowRight, User, Award, Bell, Receipt, FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfDay, subDays } from 'date-fns';
@@ -12,6 +12,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import DailyGoal from '@/components/dashboard/DailyGoal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/AuthContext';
 
 const PAYMENT_COLORS = {
   cash: 'hsl(174, 62%, 32%)',
@@ -20,7 +21,22 @@ const PAYMENT_COLORS = {
   split: 'hsl(38, 92%, 55%)'
 };
 
+function useGreeting(name) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  return { greeting, now };
+}
+
 export default function Dashboard() {
+  const { user } = useAuth();
+  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
+  const { greeting, now } = useGreeting(firstName);
+
   const { data: sales = [], isLoading: salesLoading } = useQuery({
     queryKey: ['sales'],
     queryFn: () => api.entities.Sale.list('-created_date', 100),
@@ -152,9 +168,11 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-display font-bold">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            {format(new Date(), 'EEEE, MMMM d, yyyy')}
+          <h1 className="text-2xl md:text-3xl font-display font-bold">
+            {greeting}, <span className="text-primary">{firstName}</span>
+          </h1>
+          <p className="text-muted-foreground text-sm mt-0.5 font-medium">
+            {format(now, 'EEEE, MMMM d, yyyy')} · {format(now, 'h:mm:ss aa')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -535,13 +553,7 @@ export default function Dashboard() {
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-4 border-t">
-        <Link to="/onboarding">
-          <Button variant="outline" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Previous: Onboarding
-          </Button>
-        </Link>
+      <div className="flex justify-end pt-4 border-t">
         <Link to="/pos">
           <Button className="gap-2">
             Next: POS

@@ -120,10 +120,10 @@ const auth = {
     return request('/auth/me/');
   },
 
-  loginViaEmailPassword: async (email, password) => {
+  loginViaEmailPassword: async (email, password, role = 'admin') => {
     const data = await request('/auth/login/', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, role }),
     });
 
     // Store the token returned by the backend
@@ -235,10 +235,32 @@ const functions = {
 };
 
 
+// ── Tenants API ──────────────────────────────────────────
+
+const tenants = {
+  onboard: async (data) =>
+    request('/tenants/onboard/', { method: 'POST', body: JSON.stringify(data) }),
+
+  getMyTenants: async () =>
+    request('/tenants/my-tenants/'),
+
+  createTenant: async (data) =>
+    request('/tenants/my-tenants/', { method: 'POST', body: JSON.stringify(data) }),
+
+  switchTenant: async (tenantId) =>
+    request('/tenants/switch/', { method: 'POST', body: JSON.stringify({ tenant_id: tenantId }) }),
+  getCashiers: async () => request('/tenants/cashiers/'),
+  createCashier: async (data) => request('/tenants/cashiers/', { method: 'POST', body: JSON.stringify(data) }),
+  updateCashier: async (id, data) => request(`/tenants/cashiers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCashier: async (id) => request(`/tenants/cashiers/${id}`, { method: 'DELETE' }),
+};
+
+
 // ── Export ────────────────────────────────────────────────
 
 export const api = {
   auth,
+  tenants,
   entities,
   functions,
   get: (url) => request(url),

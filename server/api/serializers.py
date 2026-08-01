@@ -1,12 +1,28 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
-    BusinessSettings, Product, Customer, Supplier, Shift, Sale,
+    Tenant, UserProfile, BusinessSettings, Product, Customer, Supplier, Shift, Sale,
     Expense, EmployeeRating, EmployeeSchedule, Promotion, MpesaPayment,
-    ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback
+    ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback,
+    Subscription, ReceiptersEngine, ReceiptersVaultHub
 )
 
 User = get_user_model()
+
+
+class TenantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tenant
+        fields = '__all__'
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    tenant = TenantSerializer(read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = '__all__'
+
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
@@ -35,7 +51,20 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['full_name'] = f"{instance.first_name} {instance.last_name}".strip() or instance.username
-        rep['role'] = 'admin' if (instance.is_superuser or instance.is_staff) else 'user'
+        profile = getattr(instance, 'profile', None)
+        if profile:
+            rep['role'] = profile.role or ('admin' if (instance.is_superuser or instance.is_staff) else 'user')
+            if profile.tenant:
+                rep['tenant'] = TenantSerializer(profile.tenant).data
+                rep['tenant_id'] = profile.tenant.id
+            else:
+                rep['tenant'] = None
+                rep['tenant_id'] = None
+        else:
+            rep['role'] = 'admin' if (instance.is_superuser or instance.is_staff) else 'user'
+            rep['tenant'] = None
+            rep['tenant_id'] = None
+
         # Convert numeric ID to match string pattern 'u_{id}'
         rep['id'] = f"u_{instance.id}"
         return rep
@@ -213,3 +242,28 @@ class ReceiptFeedbackSerializer(serializers.ModelSerializer):
         rep = super().to_representation(instance)
         rep['id'] = f"rf_{instance.id}"
         return rep
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    tenant_name = serializers.CharField(source='tenant.name', read_only=True)
+
+    class Meta:
+        model = Subscription
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['id'] = f"sub_{instance.id}"
+        return rep
+
+
+class ReceiptersEngineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReceiptersEngine
+        fields = '__all__'
+
+
+class ReceiptersVaultHubSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReceiptersVaultHub
+        fields = '__all__'

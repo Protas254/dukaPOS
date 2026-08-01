@@ -10,19 +10,19 @@ import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function Login() {
+  const [role, setRole] = useState("cashier"); // 'cashier' | 'admin'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState("cashier");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await api.auth.loginViaEmailPassword(email, password);
+      await api.auth.loginViaEmailPassword(email, password, role);
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid email or password");
@@ -55,18 +55,26 @@ export default function Login() {
           <span className="bg-card px-3 text-muted-foreground">or</span>
         </div>
       </div>
+
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm font-medium">
           {error}
         </div>
       )}
 
-      <Tabs value={role} onValueChange={setRole} className="w-full mb-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="cashier">Log in as Cashier</TabsTrigger>
-          <TabsTrigger value="admin">Log in as Admin</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Role Switcher Tabs */}
+      <div className="mb-6">
+        <Tabs value={role} onValueChange={(val) => { setRole(val); setError(""); }} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 h-11 bg-muted/60 p-1 rounded-xl">
+            <TabsTrigger value="cashier" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Log in as Cashier
+            </TabsTrigger>
+            <TabsTrigger value="admin" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              Log in as Admin
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -129,10 +137,19 @@ export default function Login() {
               Logging in...
             </>
           ) : (
-            "Log in"
+            `Log in as ${role === 'admin' ? 'Admin' : 'Cashier'}`
           )}
         </Button>
       </form>
+      
+      <div className="mt-6 pt-4 border-t border-slate-100 text-center space-y-2">
+        <p className="text-xs text-slate-500">
+          Own a store or supermarket?{' '}
+          <Link to="/register-business" className="font-bold text-blue-600 hover:text-blue-700">
+            Host Your Business on DukaPOS
+          </Link>
+        </p>
+      </div>
     </AuthLayout>
   );
 }

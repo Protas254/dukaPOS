@@ -13,6 +13,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 // Auth pages
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import RegisterBusiness from '@/pages/RegisterBusiness';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 
@@ -46,7 +47,7 @@ import ReceiptersEngine from '@/pages/admin/ReceiptersEngine';
 import ReceiptersVaultHub from '@/pages/admin/ReceiptersVaultHub';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, user } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -65,13 +66,21 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // If authenticated but tenant hasn't completed onboarding, always redirect to /onboarding
+  const needsOnboarding = user && user.tenant && user.tenant.is_onboarded === false;
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/register-business" element={<RegisterBusiness />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      {/* Onboarding: full-page, no sidebar, protected */}
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        {/* Redirect to onboarding if tenant not yet onboarded */}
+        {needsOnboarding && <Route path="*" element={<Navigate to="/onboarding" replace />} />}
         <Route element={<AppLayout />}>
           {/* ── Shared routes (admin + cashier) ── */}
           <Route path="/" element={<Dashboard />} />
@@ -79,7 +88,6 @@ const AuthenticatedApp = () => {
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/my-shifts" element={<MyShifts />} />
-          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/features" element={<Features />} />
           <Route path="/hardware-requirements" element={<HardwareRequirements />} />
 

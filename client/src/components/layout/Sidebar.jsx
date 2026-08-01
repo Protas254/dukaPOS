@@ -51,7 +51,6 @@ const navItems = [
   { icon: Clock, label: 'My Shifts', path: '/my-shifts', roles: ['user'] },
   { icon: ReceiptIcon, label: 'Transactions', path: '/transactions', roles: ['user'] },
   { icon: ShieldCheck, label: 'eTIMS', path: '/etims', roles: ['admin'] },
-  { icon: BookOpen, label: 'Onboarding', path: '/onboarding' },
   { icon: Settings, label: 'Settings', path: '/settings', roles: ['admin'] },
 ];
 
@@ -102,7 +101,7 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
         {!collapsed && (
           <button
             onClick={onToggle}
-            className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
           >
             Close
           </button>

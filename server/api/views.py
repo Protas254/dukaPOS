@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.http import HttpResponse, Http404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from django.db.models import Model, F
+from django.db.models import Model, F, Q
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
@@ -17,21 +17,24 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from django.utils.text import slugify
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 from .models import (
-    BusinessSettings, Product, Customer, Supplier, Shift, Sale,
+    Tenant, UserProfile, BusinessSettings, Product, Customer, Supplier, Shift, Sale,
     Expense, EmployeeRating, EmployeeSchedule, Promotion, MpesaPayment,
-    ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback
+    ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback,
+    Subscription, ReceiptersEngine, ReceiptersVaultHub
 )
 from .serializers import (
-    UserSerializer, BusinessSettingsSerializer, ProductSerializer,
+    UserSerializer, TenantSerializer, UserProfileSerializer, BusinessSettingsSerializer, ProductSerializer,
     CustomerSerializer, SupplierSerializer, ShiftSerializer, SaleSerializer,
     ExpenseSerializer, EmployeeRatingSerializer, EmployeeScheduleSerializer,
     PromotionSerializer, MpesaPaymentSerializer, ShiftAuditSerializer,
     CashFlowSerializer, PurchaseOrderSerializer, VaultDocumentSerializer,
-    ReceiptFeedbackSerializer
+    ReceiptFeedbackSerializer, SubscriptionSerializer, ReceiptersEngineSerializer,
+    ReceiptersVaultHubSerializer
 )
 
 User = get_user_model()
@@ -56,6 +59,9 @@ MODEL_MAP = {
     'users': (User, UserSerializer, 'u_'),
     'VaultDocument': (VaultDocument, VaultDocumentSerializer, 'vd_'),
     'ReceiptFeedback': (ReceiptFeedback, ReceiptFeedbackSerializer, 'rf_'),
+    'Subscription': (Subscription, SubscriptionSerializer, 'sub_'),
+    'ReceiptersEngine': (ReceiptersEngine, ReceiptersEngineSerializer, ''),
+    'ReceiptersVaultHub': (ReceiptersVaultHub, ReceiptersVaultHubSerializer, ''),
 }
 
 # ── Role-Based Access Control ──────────────────────────────
@@ -63,7 +69,7 @@ MODEL_MAP = {
 ADMIN_ONLY_ENTITIES = {
     'BusinessSettings', 'Supplier', 'Expense', 'EmployeeRating',
     'EmployeeSchedule', 'Promotion', 'CashFlow', 'PurchaseOrder',
-    'ShiftAudit', 'User', 'users',
+    'ShiftAudit', 'User', 'users', 'Subscription',
 }
 
 # Entities that cashiers can both read AND write
@@ -139,9 +145,56 @@ def get_pk_from_prefixed_id(id_str, prefix=''):
         return None
 
 
-def seed_database_if_empty():
-    """Seeding disabled — production mode. All data is created through the API."""
-    pass
+def get_tenant_for_user(request):
+    """
+    Returns the active tenant associated with the user request.
+    - If superuser/staff and tenant_id query param or X-Tenant-Id header is set, returns that tenant.
+    - Otherwise returns request.user.profile.tenant.
+    """
+    if not request.user or not request.user.is_authenticated:
+        return None
+
+    if is_admin_user(request.user):
+        tenant_id = request.query_params.get('tenant_id') or request.headers.get('X-Tenant-Id')
+        if tenant_id:
+            tenant = Tenant.objects.filter(pk=tenant_id).first()
+            if tenant:
+                return tenant
+
+    profile = getattr(request.user, 'profile', None)
+    if profile and profile.tenant:
+        return profile.tenant
+
+    return None
+
+
+def get_scoped_queryset(request, ModelClass):
+    """
+    Scopes ModelClass querysets to the user's active tenant if the model has a 'tenant' field,
+    or via profile__tenant if ModelClass is User.
+    Superusers without a specific tenant filter see all data.
+    """
+    queryset = ModelClass.objects.all()
+
+    if ModelClass == User:
+        tenant = get_tenant_for_user(request)
+        if tenant:
+            return User.objects.filter(profile__tenant=tenant)
+        elif not is_admin_user(request.user):
+            return User.objects.none()
+        return queryset
+
+    model_field_names = [f.name for f in ModelClass._meta.get_fields()]
+    if 'tenant' not in model_field_names:
+        return queryset
+
+    tenant = get_tenant_for_user(request)
+    if tenant:
+        queryset = queryset.filter(tenant=tenant)
+    elif not is_admin_user(request.user):
+        queryset = queryset.none()
+
+    return queryset
 
 
 # Helper to generate JWT tokens for user
@@ -151,6 +204,16 @@ def get_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }
+
+
+# ── Seed helper ─────────────────────────────────────────────
+def seed_database_if_empty():
+    """
+    No-op in multi-tenant mode. Each business creates its own data through
+    onboarding and normal operations. Called in several legacy places so kept
+    as a safe stub to prevent NameError crashes.
+    """
+    pass
 
 
 # --- Auth Views ---
@@ -168,6 +231,8 @@ def auth_login(request):
     seed_database_if_empty()
     email = request.data.get('email')
     password = request.data.get('password')
+    requested_role = request.data.get('role') or request.data.get('login_as')
+
     if not email or not password:
         return Response({'error': 'Email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -180,6 +245,19 @@ def auth_login(request):
     # Check password securely using Django's built-in hashing check
     if not user.check_password(password):
         return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Role-based restriction validation
+    profile = getattr(user, 'profile', None)
+    actual_role = 'admin' if (user.is_superuser or user.is_staff) else 'cashier'
+    if profile and profile.role:
+        actual_role = profile.role.lower()
+
+    if requested_role:
+        requested_role = requested_role.lower()
+        if requested_role == 'cashier' and actual_role != 'cashier':
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        elif requested_role == 'admin' and actual_role == 'cashier':
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
     tokens = get_tokens_for_user(user)
     serializer = UserSerializer(user)
@@ -202,31 +280,59 @@ def auth_register(request):
     if User.objects.filter(email__iexact=email).exists():
         return Response({'error': 'User already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Store hashed password instead of plaintext to prevent security vulnerabilities
     hashed_password = make_password(password)
-    
-    # Create user with previously hashed password
+
     username = email.split('@')[0]
     if User.objects.filter(username=username).exists():
         username = f"{username}_{random.randint(10, 99)}"
-    
-    # New signups are always normal users (Cashiers), never admins.
-    # Superadmin and Admins are pre-created by the management script.
+
+    # Every new signup is a business owner / admin — they will complete onboarding next.
     user = User(
         username=username,
         email=email,
         first_name=username.capitalize(),
-        is_staff=False,
+        is_staff=True,
         is_superuser=False
     )
     user.password = hashed_password
     user.save()
-    
+
+    # Auto-create a placeholder Tenant so the user has a workspace from the start
+    base_slug = slugify(username) or 'store'
+    slug = base_slug
+    counter = 1
+    while Tenant.objects.filter(slug=slug).exists():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+    tenant = Tenant.objects.create(
+        name=username.capitalize() + "'s Store",
+        slug=slug,
+        owner_email=email,
+        is_onboarded=False
+    )
+
+    UserProfile.objects.create(
+        user=user,
+        tenant=tenant,
+        role='admin'
+    )
+
+    BusinessSettings.objects.create(
+        tenant=tenant,
+        business_name=tenant.name,
+        business_email=email,
+        currency='KES',
+        kra_pin='A000000000Z',
+        default_tax_rate=16.0,
+    )
+
     tokens = get_tokens_for_user(user)
     return Response({
         'token': tokens['access'],
         'access_token': tokens['access'],
-        'refresh_token': tokens['refresh']
+        'refresh_token': tokens['refresh'],
+        'needs_onboarding': True
     })
 
 
@@ -249,17 +355,35 @@ def auth_verify_otp(request):
     if User.objects.filter(username=username).exists():
         username = f"{username}_{random.randint(10, 99)}"
     
-    # New signups are always normal users (Cashiers), never admins.
-    # Superadmin and Admins are pre-created by the management script.
+    # Every new signup is a business owner / admin — they will complete onboarding next.
     user = User(
         username=username,
         email=email,
         first_name=username.capitalize(),
-        is_staff=False,
+        is_staff=True,
         is_superuser=False
     )
     user.password = pending['hashed_password']
     user.save()
+
+    # Auto-create a placeholder Tenant
+    base_slug = slugify(username) or 'store'
+    slug = base_slug
+    counter = 1
+    while Tenant.objects.filter(slug=slug).exists():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+    tenant = Tenant.objects.create(
+        name=username.capitalize() + "'s Store",
+        slug=slug,
+        owner_email=email,
+        is_onboarded=False
+    )
+    UserProfile.objects.create(user=user, tenant=tenant, role='admin')
+    BusinessSettings.objects.create(
+        tenant=tenant, business_name=tenant.name, business_email=email,
+        currency='KES', kra_pin='A000000000Z', default_tax_rate=16.0
+    )
     
     # Clear session
     del request.session['pending_user']
@@ -337,25 +461,60 @@ def auth_google_login(request):
         return Response({'error': 'Google email is not verified'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Get or create user
+    is_new_user = False
     user = User.objects.filter(email__iexact=email).first()
     if not user:
+        is_new_user = True
         first_name = idinfo.get('given_name', '')
         last_name = idinfo.get('family_name', '')
         username = email.split('@')[0]
         if User.objects.filter(username=username).exists():
             username = f"{username}_{random.randint(10, 99)}"
 
-        role_admin = 'admin' in email.lower()
+        role_admin = True
         user = User.objects.create(
             username=username,
             email=email,
             first_name=first_name,
             last_name=last_name,
             is_staff=role_admin,
-            is_superuser=role_admin,
+            is_superuser=False,
         )
         user.set_unusable_password()
         user.save()
+
+    # Ensure user profile and tenant exist
+    profile = getattr(user, 'profile', None)
+    if not profile or not profile.tenant:
+        base_slug = slugify(user.username) or 'store'
+        slug = base_slug
+        counter = 1
+        while Tenant.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        tenant = Tenant.objects.create(
+            name=f"{user.first_name or user.username}'s Business",
+            slug=slug,
+            owner_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+            owner_email=user.email,
+            is_onboarded=False
+        )
+        if not profile:
+            profile = UserProfile.objects.create(user=user, tenant=tenant, role='admin')
+        else:
+            profile.tenant = tenant
+            profile.save()
+
+        BusinessSettings.objects.get_or_create(
+            tenant=tenant,
+            defaults={
+                'business_name': tenant.name,
+                'business_email': user.email,
+                'currency': 'KES',
+                'default_tax_rate': 16.0,
+            }
+        )
 
     tokens = get_tokens_for_user(user)
     serializer = UserSerializer(user)
@@ -363,7 +522,420 @@ def auth_google_login(request):
     data['token'] = tokens['access']
     data['access_token'] = tokens['access']
     data['refresh_token'] = tokens['refresh']
+    data['is_new_user'] = is_new_user
     return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_tenant(request):
+    """
+    Registers a new business tenant and creates its primary owner/admin user account.
+    """
+    business_name = request.data.get('business_name')
+    owner_email = request.data.get('email') or request.data.get('owner_email')
+    owner_name = request.data.get('owner_name') or request.data.get('name') or 'Admin'
+    owner_phone = request.data.get('owner_phone') or request.data.get('phone', '')
+    password = request.data.get('password')
+    business_type = request.data.get('business_type', 'sme')
+    currency = request.data.get('currency', 'KES')
+    plan = request.data.get('plan', 'starter')
+
+    if not business_name or not owner_email or not password:
+        return Response({'error': 'Business name, email, and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email__iexact=owner_email).exists():
+        return Response({'error': 'An account with this email address already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Generate unique slug
+    base_slug = slugify(business_name) or 'store'
+    slug = base_slug
+    counter = 1
+    while Tenant.objects.filter(slug=slug).exists():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+    # Create Tenant
+    tenant = Tenant.objects.create(
+        name=business_name,
+        slug=slug,
+        owner_name=owner_name,
+        owner_email=owner_email,
+        owner_phone=owner_phone,
+        business_type=business_type,
+        currency=currency,
+        plan=plan,
+        is_onboarded=False
+    )
+
+    # Create User
+    username = owner_email.split('@')[0]
+    if User.objects.filter(username=username).exists():
+        username = f"{username}_{random.randint(100, 999)}"
+
+    user = User.objects.create(
+        username=username,
+        email=owner_email,
+        first_name=owner_name.split()[0] if owner_name else owner_name,
+        last_name=' '.join(owner_name.split()[1:]) if len(owner_name.split()) > 1 else '',
+        is_staff=True,
+        is_superuser=False
+    )
+    user.set_password(password)
+    user.save()
+
+    # Create UserProfile
+    UserProfile.objects.create(
+        user=user,
+        tenant=tenant,
+        role='admin'
+    )
+
+    # Create default BusinessSettings for Tenant
+    BusinessSettings.objects.create(
+        tenant=tenant,
+        business_name=business_name,
+        business_type=business_type,
+        business_phone=owner_phone or '+254 700 000000',
+        business_email=owner_email,
+        currency=currency,
+        kra_pin='A000000000Z',
+        default_tax_rate=16.0,
+        receipt_footer=f"Thank you for shopping at {business_name}!"
+    )
+
+    tokens = get_tokens_for_user(user)
+    user_data = UserSerializer(user).data
+    user_data['token'] = tokens['access']
+    user_data['access_token'] = tokens['access']
+    user_data['refresh_token'] = tokens['refresh']
+
+    return Response({
+        'message': 'Business registered successfully!',
+        'user': user_data,
+        'tenant': TenantSerializer(tenant).data,
+        'token': tokens['access'],
+        'access_token': tokens['access'],
+        'refresh_token': tokens['refresh']
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def onboard_tenant(request):
+    """
+    Onboarding wizard step: configures store profile, initial inventory, tax & receipt settings.
+    """
+    profile = getattr(request.user, 'profile', None)
+    if not profile or not profile.tenant:
+        return Response({'error': 'No tenant associated with user'}, status=status.HTTP_400_BAD_REQUEST)
+
+    tenant = profile.tenant
+
+    # Update Tenant meta
+    if 'business_name' in request.data and request.data['business_name']:
+        tenant.name = request.data['business_name']
+    if 'business_type' in request.data:
+        tenant.business_type = request.data['business_type']
+    if 'plan' in request.data:
+        tenant.plan = request.data['plan']
+    if 'user_type' in request.data:
+        tenant.owner_name = request.data.get('user_type', tenant.owner_name)
+
+    # Update BusinessSettings
+    bs, _ = BusinessSettings.objects.get_or_create(tenant=tenant)
+    
+    field_map = {
+        'business_name': 'business_name',
+        'trading_name': 'trading_name',
+        'business_type': 'business_type',
+        'pos_type': 'pos_type',
+        'business_phone': 'business_phone',
+        'business_email': 'business_email',
+        'business_address': 'business_address',
+        'business_website': 'business_website',
+        'year_established': 'year_established',
+        'employee_range': 'employee_range',
+        'registration_number': 'registration_number',
+        'kra_pin': 'kra_pin',
+        'vat_number': 'vat_number',
+        'vat_registered': 'vat_registered',
+        'etims_enabled': 'etims_enabled',
+        'currency': 'currency',
+        'receipt_header': 'receipt_header',
+        'receipt_footer': 'receipt_footer',
+        'return_policy': 'return_policy',
+        'exchange_policy': 'exchange_policy',
+        'license_no': 'license_no',
+        'license_expiry': 'license_expiry',
+        'mpesa_paybill': 'mpesa_paybill',
+        'mpesa_till': 'mpesa_till',
+        'mpesa_account_ref': 'mpesa_account_ref',
+        'selected_goods': 'selected_goods',
+        'selected_services': 'selected_services',
+        'branches': 'branches',
+        'contact': 'contact_info',
+        'owner_role': 'owner_role',
+        'logo_url': 'logo_url',
+    }
+
+    for req_key, attr_name in field_map.items():
+        if req_key in request.data:
+            setattr(bs, attr_name, request.data[req_key])
+
+    if 'default_tax_rate' in request.data:
+        try:
+            bs.default_tax_rate = float(request.data['default_tax_rate'])
+        except (ValueError, TypeError):
+            pass
+
+    if 'currency' in request.data:
+        tenant.currency = request.data['currency']
+
+    bs.save()
+
+    # Add initial products if supplied
+    initial_products = request.data.get('initial_products', [])
+    for p_data in initial_products:
+        if isinstance(p_data, dict) and p_data.get('name'):
+            Product.objects.create(
+                tenant=tenant,
+                name=p_data.get('name'),
+                category=p_data.get('category', 'General'),
+                price=float(p_data.get('price', 100)),
+                cost_price=float(p_data.get('cost_price', 70)),
+                stock_quantity=int(p_data.get('stock_quantity', 20)),
+                sku=f"SKU-{random.randint(1000, 9999)}"
+            )
+
+    tenant.is_onboarded = True
+    tenant.save()
+
+    return Response({
+        'message': 'Tenant onboarding completed successfully!',
+        'tenant': TenantSerializer(tenant).data,
+        'settings': BusinessSettingsSerializer(bs).data
+    })
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def manage_user_tenants(request):
+    """
+    GET: Returns all business tenants associated with the current user.
+    POST: Creates a new tenant business for the user.
+    """
+    if request.method == 'GET':
+        # Find all tenants where user is owner or has user profile
+        user_email = request.user.email
+        tenants = Tenant.objects.filter(
+            Q(owner_email__iexact=user_email) | Q(user_profiles__user=request.user)
+        ).distinct()
+
+        serializer = TenantSerializer(tenants, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        name = request.data.get('business_name') or request.data.get('name')
+        if not name:
+            return Response({'error': 'Business name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        base_slug = slugify(name) or 'store'
+        slug = base_slug
+        counter = 1
+        while Tenant.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        tenant = Tenant.objects.create(
+            name=name,
+            slug=slug,
+            owner_name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+            owner_email=request.user.email,
+            business_type=request.data.get('business_type', 'sme'),
+            currency=request.data.get('currency', 'KES'),
+            plan=request.data.get('plan', 'starter'),
+            is_onboarded=False
+        )
+
+        # Set or update active profile
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        profile.tenant = tenant
+        profile.role = 'admin'
+        profile.save()
+
+        BusinessSettings.objects.create(
+            tenant=tenant,
+            business_name=name,
+            business_email=request.user.email,
+            currency=tenant.currency,
+        )
+
+        return Response({
+            'message': 'Business created successfully!',
+            'tenant': TenantSerializer(tenant).data
+        }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def tenant_cashiers(request):
+    """
+    Dedicated endpoint for managing business cashiers/staff.
+    GET: List all cashiers/staff belonging strictly to the active business tenant.
+    POST: Create a new cashier user account assigned to the business tenant.
+    """
+    user = request.user
+    tenant = get_tenant_for_user(request)
+    if not tenant:
+        return Response({'error': 'No active business tenant found'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Only admins or managers can manage cashiers
+    if not is_admin_user(user):
+        profile = getattr(user, 'profile', None)
+        if not profile or profile.role not in ('admin', 'manager'):
+            return Response({'error': 'Only business admins can manage cashiers'}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == 'GET':
+        cashier_profiles = UserProfile.objects.filter(tenant=tenant).select_related('user')
+        results = []
+        for p in cashier_profiles:
+            u = p.user
+            results.append({
+                'id': f"u_{u.id}",
+                'raw_id': u.id,
+                'username': u.username,
+                'email': u.email,
+                'full_name': f"{u.first_name} {u.last_name}".strip() or u.username,
+                'first_name': u.first_name,
+                'last_name': u.last_name,
+                'role': p.role,
+                'is_active': u.is_active,
+                'date_joined': u.date_joined,
+            })
+        return Response(results)
+
+    elif request.method == 'POST':
+        email = request.data.get('email')
+        password = request.data.get('password') or request.data.get('pin')
+        raw_name = request.data.get('name') or request.data.get('full_name') or 'Cashier'
+        name_parts = raw_name.strip().split(' ')
+        first_name = request.data.get('first_name') or name_parts[0]
+        last_name = request.data.get('last_name') or (' '.join(name_parts[1:]) if len(name_parts) > 1 else '')
+        role = request.data.get('role', 'cashier')
+
+        if not email or not password:
+            return Response({'error': 'Email and password/PIN are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({'error': f"User with email '{email}' already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        username = email.split('@')[0]
+        if User.objects.filter(username=username).exists():
+            username = f"{username}_{random.randint(10, 99)}"
+
+        new_user = User.objects.create(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            is_staff=False,
+            is_superuser=False
+        )
+        new_user.set_password(password)
+        new_user.save()
+
+        profile = UserProfile.objects.create(
+            user=new_user,
+            tenant=tenant,
+            role=role
+        )
+
+        return Response({
+            'message': f"Cashier '{first_name}' created successfully for {tenant.name}!",
+            'user': {
+                'id': f"u_{new_user.id}",
+                'raw_id': new_user.id,
+                'username': new_user.username,
+                'email': new_user.email,
+                'full_name': f"{new_user.first_name} {new_user.last_name}".strip() or new_user.username,
+                'role': role,
+                'tenant_name': tenant.name
+            }
+        }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def tenant_cashier_detail(request, cashier_id):
+    """
+    Update or delete a cashier assigned to the active business tenant.
+    """
+    user = request.user
+    tenant = get_tenant_for_user(request)
+    if not tenant:
+        return Response({'error': 'No active business tenant found'}, status=status.HTTP_400_BAD_REQUEST)
+
+    pk_val = get_pk_from_prefixed_id(str(cashier_id), 'u_')
+    if not pk_val:
+        return Response({'error': 'Invalid cashier ID'}, status=status.HTTP_400_BAD_REQUEST)
+
+    target_profile = UserProfile.objects.filter(tenant=tenant, user_id=pk_val).select_related('user').first()
+    if not target_profile:
+        return Response({'error': 'Cashier not found in this business'}, status=status.HTTP_404_NOT_FOUND)
+
+    target_user = target_profile.user
+
+    if request.method == 'DELETE':
+        target_user.delete()
+        return Response({'message': 'Cashier removed successfully'})
+
+    elif request.method == 'PUT':
+        if 'password' in request.data and request.data['password']:
+            target_user.set_password(request.data['password'])
+        if 'first_name' in request.data:
+            target_user.first_name = request.data['first_name']
+        if 'last_name' in request.data:
+            target_user.last_name = request.data['last_name']
+        if 'email' in request.data:
+            target_user.email = request.data['email']
+        target_user.save()
+
+        if 'role' in request.data:
+            target_profile.role = request.data['role']
+            target_profile.save()
+
+        return Response({
+            'message': 'Cashier updated successfully',
+            'user': {
+                'id': f"u_{target_user.id}",
+                'full_name': f"{target_user.first_name} {target_user.last_name}".strip() or target_user.username,
+                'email': target_user.email,
+                'role': target_profile.role
+            }
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def switch_active_tenant(request):
+    """
+    Switch active tenant workspace for the authenticated user.
+    """
+    tenant_id = request.data.get('tenant_id')
+    if not tenant_id:
+        return Response({'error': 'tenant_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    tenant = get_object_or_404(Tenant, pk=tenant_id)
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile.tenant = tenant
+    profile.save()
+
+    return Response({
+        'message': f'Switched active workspace to {tenant.name}',
+        'tenant': TenantSerializer(tenant).data
+    })
+
 
 
 
@@ -383,7 +955,8 @@ def process_sale_stock_deduction(sale_instance):
         pk_val = get_pk_from_prefixed_id(str(prod_id), 'p_')
         if pk_val:
             try:
-                product = Product.objects.get(pk=pk_val)
+                sale_tenant = getattr(sale_instance, 'tenant', None)
+                product = Product.objects.get(tenant=sale_tenant, pk=pk_val)
                 product.stock_quantity = max(0, product.stock_quantity - int(qty))
                 product.save()
             except Product.DoesNotExist:
@@ -407,14 +980,15 @@ def process_purchase_order_stock_increase(po_instance):
             continue
 
         product = None
+        po_tenant = getattr(po_instance, 'tenant', None)
         if prod_id:
             pk_val = get_pk_from_prefixed_id(str(prod_id), 'p_')
             if pk_val:
-                product = Product.objects.filter(pk=pk_val).first()
+                product = Product.objects.filter(tenant=po_tenant, pk=pk_val).first()
         if not product and sku:
-            product = Product.objects.filter(sku__iexact=str(sku)).first()
+            product = Product.objects.filter(tenant=po_tenant, sku__iexact=str(sku)).first()
         if not product and item.get('product_name'):
-            product = Product.objects.filter(name__iexact=str(item.get('product_name'))).first()
+            product = Product.objects.filter(tenant=po_tenant, name__iexact=str(item.get('product_name'))).first()
 
         if product:
             product.stock_quantity += int(qty)
@@ -431,7 +1005,8 @@ def process_customer_loyalty_and_tier(sale_instance, payload_data):
     if not pk_val:
         return
 
-    customer = Customer.objects.filter(pk=pk_val).first()
+    sale_tenant = getattr(sale_instance, 'tenant', None)
+    customer = Customer.objects.filter(tenant=sale_tenant, pk=pk_val).first()
     if not customer:
         return
 
@@ -481,7 +1056,7 @@ def entity_list_create(request, entity_name):
         limit = request.query_params.get('limit')
         low_stock = request.query_params.get('low_stock')
         
-        queryset = ModelClass.objects.all()
+        queryset = get_scoped_queryset(request, ModelClass)
 
         if entity_name in ('Product', 'products') and low_stock and low_stock.lower() in ('true', '1'):
             queryset = queryset.filter(stock_quantity__lte=F('low_stock_threshold'))
@@ -516,6 +1091,12 @@ def entity_list_create(request, entity_name):
     elif request.method == 'POST':
         # Remove custom prefix from any ID in payload if updating/creating
         data = request.data.copy()
+        user_tenant = get_tenant_for_user(request)
+
+        model_field_names = [f.name for f in ModelClass._meta.get_fields()]
+        if 'tenant' in model_field_names and user_tenant and 'tenant' not in data and 'tenant_id' not in data:
+            data['tenant'] = user_tenant.id
+
         if 'id' in data and isinstance(data['id'], str):
             pk_val = get_pk_from_prefixed_id(data['id'], prefix)
             if pk_val:
@@ -525,18 +1106,18 @@ def entity_list_create(request, entity_name):
 
         if entity_name in ('Expense', 'expenses'):
             if not data.get('shift_id'):
-                active_shift = Shift.objects.filter(cashier_id=str(user.id), status='active').first()
+                active_shift = Shift.objects.filter(tenant=user_tenant, cashier_id=str(user.id), status='active').first()
                 if active_shift:
                     data['shift_id'] = f"shift_{active_shift.id}"
 
         if entity_name in ('Sale', 'sales'):
             # 1. Shift Validation: Cashiers must have an active shift open
             cashier_id = user.id
-            active_shift = Shift.objects.filter(cashier_id=str(cashier_id), status='active').first()
+            active_shift = Shift.objects.filter(tenant=user_tenant, cashier_id=str(cashier_id), status='active').first()
             if not active_shift and data.get('shift_id'):
                 shift_pk = get_pk_from_prefixed_id(str(data.get('shift_id')), 'shift_')
                 if shift_pk:
-                    active_shift = Shift.objects.filter(pk=shift_pk, status='active').first()
+                    active_shift = Shift.objects.filter(tenant=user_tenant, pk=shift_pk, status='active').first()
 
             if not active_shift and not is_admin_user(user):
                 return Response(
@@ -547,7 +1128,7 @@ def entity_list_create(request, entity_name):
             # 2. Cart & Tax Math: Server-side recalculation to prevent price tampering
             raw_items = data.get('items', [])
             if isinstance(raw_items, list) and len(raw_items) > 0:
-                biz_settings = BusinessSettings.objects.first()
+                biz_settings = BusinessSettings.objects.filter(tenant=user_tenant).first() if user_tenant else BusinessSettings.objects.first()
                 default_tax_rate = float(getattr(biz_settings, 'default_tax_rate', 16.0)) if biz_settings else 16.0
                 
                 calculated_subtotal = 0.0
@@ -563,7 +1144,7 @@ def entity_list_create(request, entity_name):
                     if prod_id:
                         pk_val = get_pk_from_prefixed_id(str(prod_id), 'p_')
                         if pk_val:
-                            product = Product.objects.filter(pk=pk_val).first()
+                            product = Product.objects.filter(tenant=user_tenant, pk=pk_val).first()
                     
                     unit_price = float(product.price) if product else float(item.get('unit_price') or item.get('price') or 0.0)
                     prod_tax_rate = float(product.tax_rate) if (product and getattr(product, 'tax_rate', None) is not None) else default_tax_rate
@@ -598,12 +1179,14 @@ def entity_list_create(request, entity_name):
                 process_sale_stock_deduction(instance)
                 process_customer_loyalty_and_tier(instance, data)
                 CashFlow.objects.create(
+                    tenant=user_tenant,
                     transaction_type='inflow',
                     amount=instance.total_amount,
                     category='Sales Revenue',
                     description=f"Sale Receipt #{instance.receipt_number} ({instance.payment_method})"
                 )
                 VaultDocument.objects.create(
+                    tenant=user_tenant,
                     title=f"Receipt {instance.receipt_number}",
                     document_type="receipt",
                     source="DukaPOS - POS Sales",
@@ -618,6 +1201,7 @@ def entity_list_create(request, entity_name):
                 process_purchase_order_stock_increase(instance)
             elif entity_name in ('Expense', 'expenses'):
                 CashFlow.objects.create(
+                    tenant=user_tenant,
                     transaction_type='outflow',
                     amount=instance.amount,
                     category=instance.category,
@@ -658,7 +1242,7 @@ def entity_filter(request, entity_name):
         else:
             filter_kwargs[key] = val
 
-    queryset = ModelClass.objects.filter(**filter_kwargs)
+    queryset = get_scoped_queryset(request, ModelClass).filter(**filter_kwargs)
     if entity_name in ('Product', 'products') and filter_low_stock:
         queryset = queryset.filter(stock_quantity__lte=F('low_stock_threshold'))
 
@@ -681,17 +1265,18 @@ def entity_detail(request, entity_name, pk):
     ModelClass, SerializerClass, prefix = MODEL_MAP[entity_name]
     
     # Retrieve object
+    scoped_qs = get_scoped_queryset(request, ModelClass)
     pk_val = get_pk_from_prefixed_id(pk, prefix)
     if pk_val is None:
         if ModelClass == BusinessSettings:
             # Special case for 'bs_default'
-            instance = ModelClass.objects.first()
+            instance = scoped_qs.first()
             if not instance:
                 return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response({'error': f"Invalid ID format: {pk}"}, status=status.HTTP_404_NOT_FOUND)
     else:
-        instance = get_object_or_404(ModelClass, pk=pk_val)
+        instance = get_object_or_404(scoped_qs, pk=pk_val)
 
     if request.method == 'GET':
         serializer = SerializerClass(instance)
@@ -736,14 +1321,14 @@ def functions_invoke(request):
         if sale_id:
             pk_val = get_pk_from_prefixed_id(str(sale_id), 'sale_')
             if pk_val:
-                sale = Sale.objects.filter(pk=pk_val).first()
+                sale = get_scoped_queryset(request, Sale).filter(pk=pk_val).first()
 
         if name == 'generateReceiptPDF' or (name == 'generateDukaPOSPDF' and (sale or sale_data)):
-            biz = BusinessSettings.objects.first()
-            store_name = biz.store_name if (biz and hasattr(biz, 'store_name')) else "DukaPOS Store"
-            store_address = biz.address if (biz and hasattr(biz, 'address') and biz.address) else "Nairobi, Kenya"
-            store_phone = biz.phone if (biz and hasattr(biz, 'phone') and biz.phone) else "+254 700 000000"
-            kra_pin = biz.kra_pin if (biz and hasattr(biz, 'kra_pin') and biz.kra_pin) else "P051234567Z"
+            biz = get_scoped_queryset(request, BusinessSettings).first() or BusinessSettings.objects.first()
+            store_name = getattr(biz, 'trading_name', None) or getattr(biz, 'business_name', None) or "DukaPOS Store"
+            store_address = getattr(biz, 'business_address', None) or "Nairobi, Kenya"
+            store_phone = getattr(biz, 'business_phone', None) or "+254 700 000000"
+            kra_pin = getattr(biz, 'kra_pin', None) or "P051234567Z"
 
             buffer = io.BytesIO()
             p = canvas.Canvas(buffer, pagesize=(226, 600))
@@ -917,7 +1502,7 @@ def functions_invoke(request):
             pk_val = get_pk_from_prefixed_id(sale_id, 'sale_')
             if pk_val:
                 try:
-                    sale = Sale.objects.get(pk=pk_val)
+                    sale = get_scoped_queryset(request, Sale).get(pk=pk_val)
                     cuin = 'KRAETIMS' + str(random.randint(1000000000, 9999999999))
                     sale.cuin = cuin
                     sale.etims_status = 'submitted'
@@ -943,17 +1528,21 @@ def functions_invoke(request):
         if shift_id:
             pk_val = get_pk_from_prefixed_id(str(shift_id), 'shift_')
             if pk_val:
-                shift = Shift.objects.filter(pk=pk_val).first()
+                shift = get_scoped_queryset(request, Shift).filter(pk=pk_val).first()
         if not shift:
-            shift = Shift.objects.filter(cashier_id=str(request.user.id), status='active').first()
+            shift = get_scoped_queryset(request, Shift).filter(cashier_id=str(request.user.id), status='active').first()
 
-        sales_qs = Sale.objects.filter(created_at__gte=shift.started_at) if shift else Sale.objects.all()
+        sales_qs = get_scoped_queryset(request, Sale)
+        if shift:
+            sales_qs = sales_qs.filter(created_at__gte=shift.started_at)
         cash_sales = sum(s.total_amount for s in sales_qs if getattr(s, 'payment_method', None) == 'cash')
         mpesa_sales = sum(s.total_amount for s in sales_qs if getattr(s, 'payment_method', None) == 'mpesa')
         card_sales = sum(s.total_amount for s in sales_qs if getattr(s, 'payment_method', None) == 'card')
         total_sales = sum(s.total_amount for s in sales_qs)
 
-        expenses_qs = Expense.objects.filter(created_at__gte=shift.started_at) if shift else Expense.objects.all()
+        expenses_qs = get_scoped_queryset(request, Expense)
+        if shift:
+            expenses_qs = expenses_qs.filter(created_at__gte=shift.started_at)
         cash_expenses = sum(e.amount for e in expenses_qs)
 
         starting_cash = shift.starting_cash if shift else 0.0
@@ -967,6 +1556,7 @@ def functions_invoke(request):
             shift.save()
 
         ShiftAudit.objects.create(
+            tenant=get_tenant_for_user(request),
             shift_id=f"shift_{shift.id}" if shift else "shift_0",
             action=action,
             performed_by=request.user.username,
@@ -1019,11 +1609,12 @@ def functions_invoke(request):
         if shift_id:
             pk_val = get_pk_from_prefixed_id(str(shift_id), 'shift_')
             if pk_val:
-                shift = Shift.objects.filter(pk=pk_val).first()
+                shift = get_scoped_queryset(request, Shift).filter(pk=pk_val).first()
         if not shift:
-            shift = Shift.objects.filter(cashier_id=str(request.user.id), status='active').first()
+            shift = get_scoped_queryset(request, Shift).filter(cashier_id=str(request.user.id), status='active').first()
 
         audit_entry = ShiftAudit.objects.create(
+            tenant=get_tenant_for_user(request),
             shift_id=f"shift_{shift.id}" if shift else "shift_0",
             action=action,
             performed_by=request.user.username,
@@ -1043,11 +1634,10 @@ def functions_invoke(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def analytics_view(request):
-    seed_database_if_empty()
+    sales = get_scoped_queryset(request, Sale)
     
     # 1. Top Selling Products
     product_sales = {}
-    sales = Sale.objects.all()
     for sale in sales:
         items = sale.items or []
         if isinstance(items, list):
@@ -1079,9 +1669,10 @@ def analytics_view(request):
             'transactions': tx_count
         })
 
-    # 3. Cash Flow Summary
-    cash_in = sum(c.amount for c in CashFlow.objects.filter(type='cash_in'))
-    cash_out = sum(c.amount for c in CashFlow.objects.filter(type='cash_out'))
+    # 3. Cash Flow Summary (scoped to tenant)
+    cashflows = get_scoped_queryset(request, CashFlow)
+    cash_in = sum(c.amount for c in cashflows.filter(transaction_type='inflow'))
+    cash_out = sum(c.amount for c in cashflows.filter(transaction_type='outflow'))
     net_cash_flow = cash_in - cash_out
 
     return Response({
@@ -1094,14 +1685,62 @@ def analytics_view(request):
         }
     })
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def superadmin_tenant_stats(request):
+    """
+    Super Admin endpoint: track performance and stats for each business tenant.
+    """
+    if not is_admin_user(request.user):
+        return Response({'error': 'Super Admin permission required'}, status=status.HTTP_403_FORBIDDEN)
+
+    tenants = Tenant.objects.all().order_by('-created_at')
+    tenant_list = []
+
+    for t in tenants:
+        t_sales = Sale.objects.filter(tenant=t)
+        total_rev = sum(s.total_amount for s in t_sales)
+        sales_count = t_sales.count()
+        prod_count = Product.objects.filter(tenant=t).count()
+        cust_count = Customer.objects.filter(tenant=t).count()
+        active_shifts = Shift.objects.filter(tenant=t, status='active').count()
+
+        tenant_list.append({
+            'id': t.id,
+            'name': t.name,
+            'slug': t.slug,
+            'owner_name': t.owner_name,
+            'owner_email': t.owner_email,
+            'business_type': t.business_type,
+            'currency': t.currency,
+            'plan': t.plan,
+            'is_onboarded': t.is_onboarded,
+            'is_active': t.is_active,
+            'created_at': t.created_at,
+            'stats': {
+                'total_revenue': round(total_rev, 2),
+                'total_sales': sales_count,
+                'total_products': prod_count,
+                'total_customers': cust_count,
+                'active_shifts': active_shifts,
+            }
+        })
+
+    return Response({
+        'total_tenants': tenants.count(),
+        'onboarded_tenants': tenants.filter(is_onboarded=True).count(),
+        'tenants': tenant_list
+    })
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def receipters_engine_stats(request):
     """
-    Mocked endpoint to return Engine statistics, insights, anomalies, etc.
+    Returns real Engine statistics, insights, anomalies, and budgets derived from DB.
     """
     # Fetch real sale stats
-    total_sales_qs = Sale.objects.all()
+    total_sales_qs = get_scoped_queryset(request, Sale)
     total_revenue = sum(sale.total_amount for sale in total_sales_qs)
     total_receipts = total_sales_qs.count()
 
@@ -1110,27 +1749,94 @@ def receipters_engine_stats(request):
     monthly_revenue = sum(sale.total_amount for sale in this_month_qs)
     monthly_receipts = this_month_qs.count()
 
-    # Mocked AI Insights
-    insights = [
-        {"id": 1, "type": "trend", "title": "Rising Sales in Morning", "description": "Morning shift sales have increased by 15% this week.", "impact": "positive"},
-        {"id": 2, "type": "anomaly", "title": "Unusual Discount Pattern", "description": "Cashier John issued 5 manual discounts over 20% yesterday.", "impact": "negative"},
-        {"id": 3, "type": "opportunity", "title": "Bundle Potential", "description": "Customers frequently buy Milk and Bread together. Consider a bundle discount.", "impact": "positive"},
-    ]
+    # Real calculated insights based on database queries
+    expenses = get_scoped_queryset(request, Expense)
+    shifts = get_scoped_queryset(request, Shift)
+    audits = get_scoped_queryset(request, ShiftAudit)
 
-    # Mocked Budgets
-    budgets = [
-        {"id": 1, "category": "Office Supplies", "spent": 12000, "limit": 20000, "status": "on-track"},
-        {"id": 2, "category": "Marketing", "spent": 45000, "limit": 50000, "status": "at-risk"},
-        {"id": 3, "category": "Utilities", "spent": 15000, "limit": 12000, "status": "exceeded"},
-    ]
+    insights = []
+    insight_id = 1
+
+    # Insight 1: Sales Trend
+    if monthly_receipts > 0:
+        insights.append({
+            "id": insight_id,
+            "type": "trend",
+            "title": "Monthly Sales Performance",
+            "description": f"Processed {monthly_receipts} transactions totaling KES {monthly_revenue:,.2f} this month.",
+            "impact": "positive"
+        })
+        insight_id += 1
+
+    # Insight 2: Shift Audits / Anomaly Detection
+    override_audits = audits.filter(action__in=['managerOverride', 'voidItem', 'openDrawer']).count()
+    if override_audits > 0:
+        insights.append({
+            "id": insight_id,
+            "type": "anomaly",
+            "title": "Shift Overrides Detected",
+            "description": f"Recorded {override_audits} manager override/void actions across cashiers.",
+            "impact": "negative"
+        })
+        insight_id += 1
+    else:
+        insights.append({
+            "id": insight_id,
+            "type": "compliance",
+            "title": "Clean Shift Audits",
+            "description": "No unauthorized drawer opens or unverified voids logged.",
+            "impact": "positive"
+        })
+        insight_id += 1
+
+    # Insight 3: Popular Category / Bundle Opportunity
+    top_prod = get_scoped_queryset(request, Product).order_by('-stock_quantity').first()
+    if top_prod:
+        insights.append({
+            "id": insight_id,
+            "type": "opportunity",
+            "title": "Inventory Optimization",
+            "description": f"Highest stocked item '{top_prod.name}' ({top_prod.stock_quantity} in stock). Consider bundling.",
+            "impact": "positive"
+        })
+
+    # Real Budgets calculated from Expenses grouped by category
+    category_expenses = {}
+    for exp in expenses:
+        cat = exp.category or 'General'
+        category_expenses[cat] = category_expenses.get(cat, 0.0) + exp.amount
+
+    budgets = []
+    b_id = 1
+    default_limits = {'Office Supplies': 20000.0, 'Marketing': 50000.0, 'Utilities': 15000.0, 'Rent': 100000.0, 'Inventory': 250000.0}
+
+    # Include existing expense categories plus defaults
+    all_categories = set(list(category_expenses.keys()) + list(default_limits.keys()))
+    for cat in sorted(all_categories)[:5]:
+        spent = category_expenses.get(cat, 0.0)
+        limit = default_limits.get(cat, 30000.0)
+        status_str = 'on-track'
+        if spent > limit:
+            status_str = 'exceeded'
+        elif spent >= limit * 0.8:
+            status_str = 'at-risk'
+
+        budgets.append({
+            "id": b_id,
+            "category": cat,
+            "spent": round(spent, 2),
+            "limit": round(limit, 2),
+            "status": status_str
+        })
+        b_id += 1
 
     return Response({
         'overview': {
-            'total_revenue': total_revenue,
+            'total_revenue': round(total_revenue, 2),
             'total_receipts': total_receipts,
-            'monthly_revenue': monthly_revenue,
+            'monthly_revenue': round(monthly_revenue, 2),
             'monthly_receipts': monthly_receipts,
-            'average_value': (total_revenue / total_receipts) if total_receipts > 0 else 0,
+            'average_value': round(total_revenue / total_receipts, 2) if total_receipts > 0 else 0.0,
         },
         'insights': insights,
         'budgets': budgets,
@@ -1141,20 +1847,19 @@ def receipters_engine_stats(request):
 @permission_classes([IsAuthenticated])
 def receipters_vault_sign_url(request):
     """
-    Mocked endpoint for signing AWS S3 URLs.
+    Returns signed / direct access URL for real VaultDocument records.
     """
     document_id = request.data.get('document_id')
     if not document_id:
         return Response({'error': 'document_id is required'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        # If it's a VaultDocument ID, look it up. The frontend might pass "vd_1" or "1".
         doc_pk = document_id.replace('vd_', '') if isinstance(document_id, str) and document_id.startswith('vd_') else document_id
-        doc = VaultDocument.objects.get(id=doc_pk)
+        doc = get_scoped_queryset(request, VaultDocument).get(id=doc_pk)
         
-        # Mock AWS S3 Signed URL generation
-        signed_url = f"https://s3.amazonaws.com/dukapos-vault-mock/{doc.file_name or 'document'}.pdf?AWSAccessKeyId=MOCK&Expires=1700000000&Signature=MOCK"
+        # Real document URL return (or generated downloadable URL)
+        real_url = doc.file_url if doc.file_url else f"/media/vault/{doc.file_name or 'document_' + str(doc.id) + '.pdf'}"
         
-        return Response({'url': signed_url, 'expires_in': 3600})
+        return Response({'url': real_url, 'expires_in': 3600, 'document_title': doc.title})
     except VaultDocument.DoesNotExist:
         return Response({'error': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)

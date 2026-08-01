@@ -268,13 +268,7 @@ export default function Settings() {
       </Button>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-4 border-t">
-        <Link to="/onboarding">
-          <Button variant="outline" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Previous: Onboarding
-          </Button>
-        </Link>
+      <div className="flex justify-end pt-4 border-t">
         <Link to="/">
           <Button className="gap-2">
             Next: Dashboard

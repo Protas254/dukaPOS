@@ -1,0 +1,119 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block after_related_objects %}
+{{ block.super }}
+
+{% if tenant_entities %}
+<style>
+    .tenant-dashboard {
+        margin: 20px 0 30px 0;
+        padding: 0;
+    }
+    .tenant-dashboard h2 {
+        font-size: 18px;
+        color: #333;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #417690;
+    }
+    .tenant-entity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+    }
+    .tenant-entity-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: #333;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .tenant-entity-card:hover {
+        border-color: #417690;
+        box-shadow: 0 4px 12px rgba(65,118,144,0.15);
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+    .tenant-entity-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    .tenant-entity-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .tenant-entity-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+        margin: 0 0 2px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .tenant-entity-count {
+        font-size: 12px;
+        color: #666;
+        margin: 0;
+    }
+    .tenant-entity-count strong {
+        color: #417690;
+        font-size: 16px;
+    }
+    .tenant-entity-add {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: #f0f7fa;
+        color: #417690;
+        font-size: 18px;
+        font-weight: bold;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .tenant-entity-add:hover {
+        background: #417690;
+        color: #fff;
+        text-decoration: none;
+    }
+</style>
+
+<fieldset class="module tenant-dashboard">
+    <h2>📊 {{ original.name }} — Business Data</h2>
+    <div class="tenant-entity-grid">
+        {% for entity in tenant_entities %}
+        <a href="{{ entity.url }}" class="tenant-entity-card">
+            <div class="tenant-entity-icon" style="background: {{ entity.bg_color }}; color: {{ entity.icon_color }};">
+                {{ entity.icon }}
+            </div>
+            <div class="tenant-entity-info">
+                <p class="tenant-entity-name">{{ entity.label }}</p>
+                <p class="tenant-entity-count"><strong>{{ entity.count }}</strong> record{{ entity.count|pluralize }}</p>
+            </div>
+            {% if entity.add_url %}
+            <a href="{{ entity.add_url }}" class="tenant-entity-add" title="Add new {{ entity.label }}">+</a>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</fieldset>
+{% endif %}
+
+{% endblock %}

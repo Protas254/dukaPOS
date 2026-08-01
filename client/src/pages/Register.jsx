@@ -23,9 +23,9 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError('');
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return;
     }
     setLoading(true);
@@ -33,26 +33,31 @@ export default function Register() {
       const result = await api.auth.register({ email, password });
       if (result?.access_token) {
         api.auth.setToken(result.access_token);
+        localStorage.setItem('token', result.access_token);
+        localStorage.setItem('dukapos_access_token', result.access_token);
       }
-      window.location.href = "/";
+      // Always go to onboarding — every new signup is a business owner
+      window.location.href = '/onboarding';
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerify = async () => {
-    setError("");
+    setError('');
     setLoading(true);
     try {
       const result = await api.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         api.auth.setToken(result.access_token);
+        localStorage.setItem('token', result.access_token);
+        localStorage.setItem('dukapos_access_token', result.access_token);
       }
-      window.location.href = "/";
+      window.location.href = '/onboarding';
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      setError(err.message || 'Invalid verification code');
     } finally {
       setLoading(false);
     }
@@ -132,11 +137,11 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      title="Start your free account"
+      subtitle="Create your business workspace in seconds"
       footer={
         <>
-          Already have an account?{" "}
+          Already have an account?{' '}
           <Link to="/login" className="text-primary font-medium hover:underline">
             Log in
           </Link>
