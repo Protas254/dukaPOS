@@ -1164,8 +1164,9 @@ def entity_list_create(request, entity_name):
                     
                 discount_amount = float(data.get('discount_amount') or data.get('discount') or 0.0)
                 taxable_amount = max(0.0, calculated_subtotal - discount_amount)
+                # Tax-inclusive: extract VAT from the price, do not add it on top
                 calculated_tax_total = taxable_amount * (default_tax_rate / (100.0 + default_tax_rate))
-                calculated_total = round(taxable_amount + calculated_tax_total, 2)
+                calculated_total = round(taxable_amount, 2)
                 
                 data['items'] = processed_items
                 data['subtotal'] = round(calculated_subtotal, 2)
