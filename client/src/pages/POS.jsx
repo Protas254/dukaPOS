@@ -262,11 +262,12 @@ export default function POS() {
     saveHeldTransactions(updated);
   };
 
-  // Calculations
+  // Calculations — Tax-INCLUSIVE (Kenya standard)
+  // Prices set in inventory already include VAT; extract VAT for KRA receipt display only
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const taxableAmount = subtotal - discount;
-  const taxTotal = taxableAmount * (taxRate / (100 + taxRate));
-  const total = Math.round(taxableAmount + taxTotal);
+  const taxTotal = Math.round(taxableAmount * (taxRate / (100 + taxRate))); // VAT already inside price
+  const total = Math.round(taxableAmount); // customer pays exactly the shelf price
 
   const generateReceiptNumber = () => {
     const now = new Date();
@@ -289,14 +290,15 @@ export default function POS() {
 
       const items = cart.map(i => {
         const itemTotal = i.price * i.quantity;
-        const itemTax = itemTotal * ((i.tax_rate || taxRate) / (100 + (i.tax_rate || taxRate)));
+        // Tax-inclusive: extract VAT from item total for KRA eTIMS line-item breakdown
+        const itemTax = Math.round(itemTotal * ((i.tax_rate || taxRate) / (100 + (i.tax_rate || taxRate))));
         return {
           product_id: i.id,
           product_name: i.name,
           quantity: i.quantity,
           unit_price: i.price,
           total: Math.round(itemTotal),
-          tax_amount: Math.round(itemTax),
+          tax_amount: itemTax,
         };
       });
 

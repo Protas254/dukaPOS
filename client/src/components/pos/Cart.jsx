@@ -9,8 +9,9 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discountAmount = discount || 0;
   const taxableAmount = subtotal - discountAmount;
-  const taxAmount = taxableAmount * (taxRate / (100 + taxRate));
-  const total = taxableAmount + taxAmount;
+  // Tax-INCLUSIVE: price already contains VAT — extract it for display only, do NOT add on top
+  const taxAmount = Math.round(taxableAmount * (taxRate / (100 + taxRate)));
+  const total = taxableAmount; // customer pays exactly the shelf price
 
   if (items.length === 0) {
     return (
@@ -96,8 +97,8 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, onClearCar
           </div>
         )}
         <div className="flex justify-between text-[10px]">
-          <span className="text-muted-foreground">VAT ({taxRate}%)</span>
-          <span className="font-medium">KES {Math.round(taxAmount).toLocaleString()}</span>
+          <span className="text-muted-foreground">VAT ({taxRate}%) incl.</span>
+          <span className="font-medium text-muted-foreground">KES {taxAmount.toLocaleString()}</span>
         </div>
         </div>
         <div className="flex justify-between items-center pt-1 border-t">
