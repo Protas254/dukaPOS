@@ -263,6 +263,10 @@ export const api = {
   tenants,
   entities,
   functions,
+  analytics: {
+    get: async () => request('/analytics'),
+    askBusiness: async (query) => request('/receipters/engine-stats', { method: 'POST', body: JSON.stringify({ query }) })
+  },
   branches: {
     getAll: async () => entities.Branch.list(),
     create: async (data) => entities.Branch.create(data),
