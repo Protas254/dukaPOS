@@ -264,7 +264,13 @@ export const api = {
   entities,
   functions,
   analytics: {
-    get: async () => request('/analytics'),
+    get: async (params = {}) => {
+      const search = new URLSearchParams();
+      if (params.range) search.append('range', params.range);
+      if (params.branch_id) search.append('branch_id', params.branch_id);
+      const query = search.toString();
+      return request(`/analytics${query ? '?' + query : ''}`);
+    },
     askBusiness: async (query) => request('/receipters/engine-stats', { method: 'POST', body: JSON.stringify({ query }) })
   },
   branches: {

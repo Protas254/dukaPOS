@@ -53,7 +53,12 @@ def tenant_cashiers(request):
     user = request.user
     tenant = get_tenant_for_user(request)
     if not tenant:
-        return Response({'error': 'No active business tenant found'}, status=status.HTTP_400_BAD_REQUEST)
+        # For superusers/staff, try to use first available tenant
+        if user.is_superuser or user.is_staff:
+            from ..models import Tenant as TenantModel
+            tenant = TenantModel.objects.first()
+        if not tenant:
+            return Response({'error': 'No active business tenant found. Please complete business onboarding first.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Only admins or managers can manage cashiers
     if not is_admin_user(user):

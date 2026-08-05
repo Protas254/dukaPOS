@@ -25,7 +25,7 @@ export default function StatCard({ title, value, subtitle, icon: Icon, trend, tr
         <div className="mt-3 flex items-center gap-1">
           <span className={cn(
             "text-xs font-semibold",
-            trendUp ? "text-emerald-600" : "text-destructive"
+            trendUp ? "text-blue-600" : "text-destructive"
           )}>
             {trendUp ? '↑' : '↓'} {trend}
           </span>

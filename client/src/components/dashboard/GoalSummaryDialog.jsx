@@ -16,11 +16,11 @@ export default function GoalSummaryDialog({ open, onClose, todayRevenue, goal, t
   const statusConfig = {
     met: {
       label: 'Goal Met! 🎉',
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-      border: 'border-emerald-200 dark:border-emerald-800',
+      color: 'text-blue-600',
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+      border: 'border-blue-200 dark:border-blue-800',
       icon: TrendingUp,
-      iconColor: 'text-emerald-600',
+      iconColor: 'text-blue-600',
     },
     almost: {
       label: 'Almost There',
@@ -52,7 +52,7 @@ export default function GoalSummaryDialog({ open, onClose, todayRevenue, goal, t
   const avgSale = todaySales.length > 0 ? todayRevenue / todaySales.length : 0;
 
   // Bar dimensions for progress
-  const barColor = achieved ? 'bg-emerald-500' : almost ? 'bg-amber-400' : 'bg-destructive';
+  const barColor = achieved ? 'bg-blue-500' : almost ? 'bg-amber-400' : 'bg-destructive';
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

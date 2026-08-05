@@ -94,12 +94,12 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-            <Store className="w-5 h-5 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-blue-600/10 p-1.5 flex items-center justify-center flex-shrink-0 border border-blue-500/20 shadow-sm">
+            <img src="/logo.svg" alt="Receipters Logo" className="w-full h-full object-contain" />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <h1 className="font-display font-bold text-base leading-tight truncate">SoftPOS</h1>
+              <h1 className="font-display font-bold text-base leading-tight truncate">Receipters</h1>
               <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">Kenya</p>
             </div>
           )}
@@ -107,7 +107,7 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
         {!collapsed && (
           <button
             onClick={onToggle}
-            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
           >
             Close
           </button>
@@ -116,17 +116,19 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
 
       {/* Role badge */}
       {!collapsed && (
-        <div className="px-4 py-2 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-              userRole === 'admin'
-                ? "bg-amber-500/20 text-amber-300"
-                : "bg-blue-500/20 text-blue-300"
+        <div className="px-4 py-2.5 border-b border-sidebar-border bg-sidebar-accent/30">
+          <div className="flex items-center gap-2.5">
+            <span className={cn(
+              "px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1",
+              (userRole === 'admin' || userRole === 'owner' || userRole === 'superadmin' || user?.is_superuser)
+                ? "bg-blue-600 text-white"
+                : "bg-emerald-600 text-white"
             )}>
-              {userRole === 'admin' ? '★ Admin' : '● Cashier'}
-            </div>
-            <span className="text-xs text-sidebar-foreground/60 truncate">{user?.full_name}</span>
+              {(userRole === 'admin' || userRole === 'owner' || userRole === 'superadmin' || user?.is_superuser) ? '★ ADMIN' : '● CASHIER'}
+            </span>
+            <span className="text-xs font-semibold text-sidebar-foreground/90 truncate">
+              {user?.first_name || user?.full_name || user?.username || 'James'}
+            </span>
           </div>
         </div>
       )}

@@ -17,23 +17,23 @@ export default function SalesHeatmapAndGoals({ salesHeatmap = [], kpis = {} }) {
   const getHeatmapColor = (intensity) => {
     switch (intensity) {
       case 1:
-        return 'bg-emerald-200 dark:bg-emerald-800';
+        return 'bg-blue-200 dark:bg-blue-800';
       case 2:
-        return 'bg-emerald-400 dark:bg-emerald-600';
+        return 'bg-blue-400 dark:bg-blue-600';
       case 3:
-        return 'bg-emerald-600 dark:bg-emerald-400';
+        return 'bg-blue-600 dark:bg-blue-400';
       default:
-        return 'bg-emerald-50 dark:bg-emerald-950/40';
+        return 'bg-blue-50 dark:bg-blue-950/40';
     }
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* 1. Hourly Sales Heatmap */}
-      <div className="lg:col-span-2 bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="lg:col-span-2 bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-emerald-600" />
+            <Clock className="w-4 h-4 text-blue-600" />
             <h3 className="font-display font-bold text-sm text-foreground">Hourly Sales Heatmap</h3>
           </div>
           <span className="text-[11px] font-semibold text-muted-foreground">Busiest hours in dark</span>
@@ -77,19 +77,19 @@ export default function SalesHeatmapAndGoals({ salesHeatmap = [], kpis = {} }) {
         {/* Legend */}
         <div className="flex items-center justify-end gap-1.5 text-[11px] font-semibold text-muted-foreground pt-1">
           <span>Low</span>
-          <span className="w-2.5 h-2.5 rounded bg-emerald-50 dark:bg-emerald-950/40" />
-          <span className="w-2.5 h-2.5 rounded bg-emerald-200 dark:bg-emerald-800" />
-          <span className="w-2.5 h-2.5 rounded bg-emerald-400 dark:bg-emerald-600" />
-          <span className="w-2.5 h-2.5 rounded bg-emerald-600 dark:bg-emerald-400" />
+          <span className="w-2.5 h-2.5 rounded bg-blue-50 dark:bg-blue-950/40" />
+          <span className="w-2.5 h-2.5 rounded bg-blue-200 dark:bg-blue-800" />
+          <span className="w-2.5 h-2.5 rounded bg-blue-400 dark:bg-blue-600" />
+          <span className="w-2.5 h-2.5 rounded bg-blue-600 dark:bg-blue-400" />
           <span>High</span>
         </div>
       </div>
 
       {/* 2. Goals & Streaks */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-emerald-600" />
+            <Target className="w-4 h-4 text-blue-600" />
             <h3 className="font-display font-bold text-sm text-foreground">Goals & Streaks</h3>
           </div>
           <div className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
@@ -102,7 +102,7 @@ export default function SalesHeatmapAndGoals({ salesHeatmap = [], kpis = {} }) {
         <div className="grid grid-cols-3 gap-2 py-4">
           {/* Daily */}
           <div className="flex flex-col items-center space-y-2">
-            <div className="relative w-14 h-14 rounded-full border-4 border-emerald-100 dark:border-emerald-900 flex items-center justify-center">
+            <div className="relative w-14 h-14 rounded-full border-4 border-blue-100 dark:border-blue-900 flex items-center justify-center">
               <span className="text-xs font-bold text-foreground">{dailyPct}%</span>
             </div>
             <div className="text-center space-y-0.5">
@@ -115,7 +115,7 @@ export default function SalesHeatmapAndGoals({ salesHeatmap = [], kpis = {} }) {
 
           {/* Weekly */}
           <div className="flex flex-col items-center space-y-2">
-            <div className="relative w-14 h-14 rounded-full border-4 border-emerald-100 dark:border-emerald-900 flex items-center justify-center">
+            <div className="relative w-14 h-14 rounded-full border-4 border-blue-100 dark:border-blue-900 flex items-center justify-center">
               <span className="text-xs font-bold text-foreground">{weeklyPct}%</span>
             </div>
             <div className="text-center space-y-0.5">
@@ -128,8 +128,8 @@ export default function SalesHeatmapAndGoals({ salesHeatmap = [], kpis = {} }) {
 
           {/* Monthly */}
           <div className="flex flex-col items-center space-y-2">
-            <div className="relative w-14 h-14 rounded-full border-4 border-emerald-500 flex items-center justify-center">
-              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{monthlyPct}%</span>
+            <div className="relative w-14 h-14 rounded-full border-4 border-blue-500 flex items-center justify-center">
+              <span className="text-xs font-bold text-blue-700 dark:text-blue-400">{monthlyPct}%</span>
             </div>
             <div className="text-center space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground block">Monthly</span>

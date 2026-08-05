@@ -17,15 +17,15 @@ export default function LiveStatusCards({ liveStatus = {} }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
       {/* 1. Live Sales (1h) */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
-        <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 relative">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
+        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 relative">
           <Wifi className="w-5 h-5" />
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse border-2 border-white dark:border-card" />
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-card" />
         </div>
         <div>
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">Live Sales (1h)</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
           </div>
           <p className="text-xl font-display font-bold text-foreground mt-0.5">{live_sales_count}</p>
           <p className="text-xs text-muted-foreground font-medium">KES {live_sales_revenue.toLocaleString()}</p>
@@ -33,7 +33,7 @@ export default function LiveStatusCards({ liveStatus = {} }) {
       </div>
 
       {/* 2. Active Shifts */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
         <div className="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400">
           <Users className="w-5 h-5" />
         </div>
@@ -45,7 +45,7 @@ export default function LiveStatusCards({ liveStatus = {} }) {
       </div>
 
       {/* 3. Pending M-Pesa */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
         <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
           <Smartphone className="w-5 h-5" />
         </div>
@@ -59,7 +59,7 @@ export default function LiveStatusCards({ liveStatus = {} }) {
       </div>
 
       {/* 4. Voids / Refunds */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm flex items-start gap-3.5">
         <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400">
           <Ban className="w-5 h-5" />
         </div>

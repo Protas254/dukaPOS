@@ -45,7 +45,7 @@ export default function ReceiptPDFDialog({ open, onClose, sale, businessSettings
     };
 
     // Header
-    center(biz.business_name || 'SoftPOS Store', y, 10, true); y += lineH + 1;
+    center(biz.business_name || 'Receipters Store', y, 10, true); y += lineH + 1;
     if (biz.business_address) { center(biz.business_address, y, 7); y += smallH; }
     if (biz.business_phone) { center(`Tel: ${biz.business_phone}`, y, 7); y += smallH; }
     if (biz.business_email) { center(biz.business_email, y, 7); y += smallH; }
@@ -165,7 +165,7 @@ export default function ReceiptPDFDialog({ open, onClose, sale, businessSettings
           >
             {/* Business Header */}
             <div className="text-center space-y-0.5 pb-3 border-b border-dashed border-gray-400">
-              <p className="font-bold text-sm uppercase tracking-wide">{biz.business_name || 'SoftPOS Store'}</p>
+              <p className="font-bold text-sm uppercase tracking-wide">{biz.business_name || 'Receipters Store'}</p>
               {biz.business_address && <p className="text-gray-600">{biz.business_address}</p>}
               {biz.business_phone && <p className="text-gray-600">Tel: {biz.business_phone}</p>}
               {biz.business_email && <p className="text-gray-600">{biz.business_email}</p>}

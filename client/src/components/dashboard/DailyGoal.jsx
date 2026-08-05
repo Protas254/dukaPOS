@@ -38,11 +38,11 @@ const STATUS_BUTTONS = [
   {
     key: 'met',
     label: 'Goal Met',
-    dot: 'bg-emerald-500',
-    activeDot: 'bg-emerald-500',
-    inactiveDot: 'bg-emerald-200',
-    active: 'bg-emerald-100 border-emerald-400 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-600 dark:text-emerald-400 shadow-sm',
-    inactive: 'bg-emerald-50 border-emerald-200 text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-700',
+    dot: 'bg-blue-500',
+    activeDot: 'bg-blue-500',
+    inactiveDot: 'bg-blue-200',
+    active: 'bg-blue-100 border-blue-400 text-blue-700 dark:bg-blue-900/30 dark:border-blue-600 dark:text-blue-400 shadow-sm',
+    inactive: 'bg-blue-50 border-blue-200 text-blue-400 dark:bg-blue-950/20 dark:border-blue-900 dark:text-blue-700',
   },
 ];
 
@@ -72,21 +72,21 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
   const remaining = goal > 0 ? Math.max(0, goal - todayRevenue) : 0;
   const over = goal > 0 && todayRevenue > goal ? todayRevenue - goal : 0;
 
-  const barColor = pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-400' : 'bg-destructive';
-  const statusColor = pct >= 100 ? 'text-emerald-600' : pct >= 70 ? 'text-amber-600' : 'text-destructive';
+  const barColor = pct >= 100 ? 'bg-blue-500' : pct >= 70 ? 'bg-amber-400' : 'bg-destructive';
+  const statusColor = pct >= 100 ? 'text-blue-600' : pct >= 70 ? 'text-amber-600' : 'text-destructive';
 
   // Which button is currently active (manual override or auto)
   const activeKey = manualStatus || (pct >= 100 ? 'met' : pct >= 70 ? 'almost' : 'not_met');
 
   return (
     <>
-      <div className={`bg-card rounded-2xl border p-5 ${achieved ? 'ring-2 ring-emerald-400/40' : ''}`}>
+      <div className={`bg-card rounded-2xl border p-5 ${achieved ? 'ring-2 ring-blue-400/40' : ''}`}>
         <div className="flex flex-col gap-3 mb-4">
           {/* Title row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${achieved ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-primary/10'}`}>
-                <Target className={`w-4 h-4 ${achieved ? 'text-emerald-600' : 'text-primary'}`} />
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${achieved ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-primary/10'}`}>
+                <Target className={`w-4 h-4 ${achieved ? 'text-blue-600' : 'text-primary'}`} />
               </div>
               <h3 className="font-display font-semibold text-sm">Daily Revenue Goal</h3>
             </div>
@@ -103,17 +103,17 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
           {goal > 0 && (
             <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
               pct >= 100 
-                ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' 
+                ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
                 : pct >= 70 
                   ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
                   : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
             }`}>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-400' : 'bg-red-500'
+                  pct >= 100 ? 'bg-blue-500' : pct >= 70 ? 'bg-amber-400' : 'bg-red-500'
                 }`} />
                 <span className={`text-xs font-bold ${
-                  pct >= 100 ? 'text-emerald-700 dark:text-emerald-400' : 
+                  pct >= 100 ? 'text-blue-700 dark:text-blue-400' : 
                   pct >= 70 ? 'text-amber-700 dark:text-amber-400' : 
                   'text-red-700 dark:text-red-400'
                 }`}>
@@ -123,7 +123,7 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
                 </span>
               </div>
               <div className={`flex items-center gap-1 text-xs font-bold ${
-                pct >= 100 ? 'text-emerald-700 dark:text-emerald-400' : 
+                pct >= 100 ? 'text-blue-700 dark:text-blue-400' : 
                 pct >= 70 ? 'text-amber-700 dark:text-amber-400' : 
                 'text-red-700 dark:text-red-400'
               }`}>
@@ -218,7 +218,7 @@ export default function DailyGoal({ todayRevenue, todaySales = [] }) {
               </div>
               <div className="text-center p-2 bg-muted/50 rounded-xl">
                 <p className="text-[10px] text-muted-foreground mb-0.5">{achieved ? 'Over by' : 'Remaining'}</p>
-                <p className={`text-sm font-bold ${achieved ? 'text-emerald-600' : 'text-amber-600'}`}>
+                <p className={`text-sm font-bold ${achieved ? 'text-blue-600' : 'text-amber-600'}`}>
                   KES {achieved ? Math.round(over).toLocaleString() : Math.round(remaining).toLocaleString()}
                 </p>
               </div>

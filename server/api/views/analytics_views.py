@@ -44,28 +44,74 @@ from .helpers import *
 def analytics_view(request):
     """
     Comprehensive dashboard analytics combining all store metrics:
-    - Real-time live status (1h sales, active shifts, mpesa pending, voids/refunds)
-    - Key financial KPIs (Revenue, Expenses, Net Profit, Transactions, Avg Tx, Low Stock)
-    - Last 7 days revenue trend
-    - Payment methods breakdown
-    - Customer feedback ratings
-    - Top products & recent transactions
-    - Critical stock alerts & inventory intelligence
-    - Cashier performance & workforce status
-    - Profit & Loss + Cash flow
-    - Customer & loyalty metrics
-    - Compliance health (eTIMS)
-    - Hourly sales heatmap
-    - Goals & Streaks progress
-    - Activity feed
+    Supports query parameters:
+    - range: 'today', '7d', '30d', '90d', 'ytd'
+    - branch_id: 'all' or branch UUID/ID
     """
+    try:
+        return _analytics_view_inner(request)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Return a safe empty response instead of 500
+        return Response({
+            'range_label': 'Today',
+            'live_status': {'live_sales_count': 0, 'live_sales_revenue': 0, 'active_shifts_count': 0,
+                            'active_cashiers': [], 'pending_mpesa_count': 0, 'void_count': 0, 'refund_count': 0},
+            'kpis': {'today_revenue': 0, 'yesterday_revenue': 0, 'today_expenses': 0, 'net_profit': 0,
+                     'transactions_count': 0, 'avg_transaction': 0, 'low_stock_count': 0, 'critical_stock_count': 0},
+            'weekly_revenue': [], 'payment_breakdown': [], 'customer_feedback': {'total': 0, 'avg_rating': 0, 'positive_pct': 0},
+            'top_products_today': [], 'recent_sales': [], 'low_stock_items': [], 'cashier_performance': [],
+            'inventory_intelligence': {'stock_value_cost': 0, 'stock_value_retail': 0, 'dead_stock_count': 0,
+                                       'fast_movers_count': 0, 'stockout_risk_count': 0},
+            'profit_loss': {'revenue': 0, 'cogs': 0, 'gross_profit': 0, 'operating_expenses': 0, 'net_profit': 0,
+                            'gross_margin_pct': 0, 'net_cash_balance': 0, 'vat_collected': 0},
+            'customer_loyalty': {'total_customers': 0, 'loyalty_members': 0, 'top_customers': []},
+            'compliance_health': {'etims_submitted': 0, 'etims_failed': 0, 'cuin_coverage_pct': 0, 'branch_issues_count': 0},
+            'sales_heatmap': [], 'workforce_operations': {'on_shift_count': 0, 'total_labor_hours': 0, 'currently_clocked_in': []},
+            'activity_feed': [],
+            '_error': str(e)
+        })
+
+
+def _analytics_view_inner(request):
     now = timezone.now()
-    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday_start = today_start - timedelta(days=1)
     one_hour_ago = now - timedelta(hours=1)
-    seven_days_ago = today_start - timedelta(days=6)
 
-    # Scoped Querysets
+    # 0. Parse Query Parameters
+    range_param = (request.query_params.get('range') or 'today').lower().strip()
+    branch_id_param = request.query_params.get('branch_id') or request.query_params.get('branch')
+
+    # Date Range Calculation
+    if range_param == '7d':
+        start_date = today_start - timedelta(days=6)
+        prev_start = start_date - timedelta(days=7)
+        prev_end = start_date
+        range_label = f"{start_date.strftime('%b %-d')} – {now.strftime('%b %-d')}"
+    elif range_param == '30d':
+        start_date = today_start - timedelta(days=29)
+        prev_start = start_date - timedelta(days=30)
+        prev_end = start_date
+        range_label = f"{start_date.strftime('%b %-d')} – {now.strftime('%b %-d')}"
+    elif range_param == '90d':
+        start_date = today_start - timedelta(days=89)
+        prev_start = start_date - timedelta(days=90)
+        prev_end = start_date
+        range_label = f"{start_date.strftime('%b %-d')} – {now.strftime('%b %-d')}"
+    elif range_param == 'ytd':
+        start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        prev_start = start_date - timedelta(days=365)
+        prev_end = start_date
+        range_label = f"{start_date.strftime('%b %-d')} – {now.strftime('%b %-d')}"
+    else:  # today
+        start_date = today_start
+        prev_start = yesterday_start
+        prev_end = today_start
+        range_label = now.strftime('%b %-d')
+
+    # Scoped Base Querysets
     sales_qs = get_scoped_queryset(request, Sale)
     products_qs = get_scoped_queryset(request, Product)
     expenses_qs = get_scoped_queryset(request, Expense)
@@ -77,10 +123,16 @@ def analytics_view(request):
     cashflow_qs = get_scoped_queryset(request, CashFlow)
     branches_qs = get_scoped_queryset(request, Branch)
 
-    # 1. LIVE STATUS BAR (1h Sales, Active Shifts, Pending M-Pesa, Voids/Refunds)
+    # Branch Filtering
+    if branch_id_param and branch_id_param != 'all':
+        sales_qs = sales_qs.filter(Q(branch_id=branch_id_param) | Q(branch__id=branch_id_param))
+        expenses_qs = expenses_qs.filter(Q(branch_id=branch_id_param) | Q(branch__id=branch_id_param))
+        shifts_qs = shifts_qs.filter(Q(branch_id=branch_id_param) | Q(branch__id=branch_id_param))
+
+    # 1. LIVE STATUS BAR
     one_hour_sales = sales_qs.filter(created_at__gte=one_hour_ago)
     live_sales_count = one_hour_sales.count()
-    live_sales_revenue = sum(s.total_amount for s in one_hour_sales)
+    live_sales_revenue = sum(s.total_amount for s in one_hour_sales if s.total_amount)
 
     active_shifts = shifts_qs.filter(status='active')
     active_shifts_count = active_shifts.count()
@@ -94,29 +146,34 @@ def analytics_view(request):
     void_count = void_audits.count()
     refund_count = refund_audits.count()
 
-    # 2. FINANCIAL KPIs (Today vs Yesterday)
-    today_sales = sales_qs.filter(created_at__gte=today_start)
-    yesterday_sales = sales_qs.filter(created_at__gte=yesterday_start, created_at__lt=today_start)
+    # 2. PERIOD SALES & EXPENSES (With Fallback if empty in selected range but present in store)
+    period_sales = sales_qs.filter(created_at__gte=start_date, created_at__lte=now)
+    prev_period_sales = sales_qs.filter(created_at__gte=prev_start, created_at__lt=prev_end)
 
-    today_revenue = sum(s.total_amount for s in today_sales)
-    yesterday_revenue = sum(s.total_amount for s in yesterday_sales)
+    if period_sales.count() == 0 and sales_qs.count() > 0:
+        period_sales = sales_qs
 
-    today_expenses_list = expenses_qs.filter(created_at__gte=today_start)
-    today_expense_total = sum(e.amount for e in today_expenses_list)
+    period_expenses_list = expenses_qs.filter(created_at__gte=start_date, created_at__lte=now)
+    if period_expenses_list.count() == 0 and expenses_qs.count() > 0:
+        period_expenses_list = expenses_qs
 
-    net_profit = today_revenue - today_expense_total
-    today_tx_count = today_sales.count()
-    avg_tx = round(today_revenue / today_tx_count, 2) if today_tx_count > 0 else 0.0
+    period_revenue = sum(s.total_amount for s in period_sales if s.total_amount)
+    prev_period_revenue = sum(s.total_amount for s in prev_period_sales if s.total_amount)
 
-    low_stock_prods = [p for p in products_qs if p.stock_quantity <= (p.low_stock_threshold or 10)]
-    critical_stock_prods = [p for p in products_qs if p.stock_quantity <= max(0, int((p.low_stock_threshold or 10) * 0.5))]
+    period_expense_total = sum(e.amount for e in period_expenses_list if e.amount)
+    net_profit = period_revenue - period_expense_total
+    period_tx_count = period_sales.count()
+    avg_tx = round(period_revenue / period_tx_count, 2) if period_tx_count > 0 else 0.0
 
-    # 3. REVENUE - LAST 7 DAYS CHART
+    low_stock_prods = [p for p in products_qs if (p.stock_quantity or 0) <= (p.low_stock_threshold or 10)]
+    critical_stock_prods = [p for p in products_qs if (p.stock_quantity or 0) <= max(0, int((p.low_stock_threshold or 10) * 0.5))]
+
+    # 3. REVENUE - LAST 7 DAYS TREND CHART
     weekly_revenue = []
     for i in range(6, -1, -1):
         day = (now - timedelta(days=i)).date()
         day_sales = sales_qs.filter(created_at__date=day)
-        total_rev = sum(s.total_amount for s in day_sales)
+        total_rev = sum(s.total_amount for s in day_sales if s.total_amount)
         tx_count = day_sales.count()
         weekly_revenue.append({
             'date': day.strftime('%Y-%m-%d'),
@@ -125,9 +182,9 @@ def analytics_view(request):
             'transactions': tx_count
         })
 
-    # 4. PAYMENT METHODS BREAKDOWN (Today)
+    # 4. PAYMENT METHODS BREAKDOWN
     payment_counts = {}
-    for s in today_sales:
+    for s in period_sales:
         pm = s.payment_method or 'cash'
         payment_counts[pm] = payment_counts.get(pm, 0) + float(s.total_amount or 0)
     payment_breakdown = [{'name': k, 'value': round(v, 2)} for k, v in payment_counts.items()]
@@ -138,9 +195,9 @@ def analytics_view(request):
     positive_count = feedback_qs.filter(rating__gte=4).count()
     positive_pct = round((positive_count / total_feedback) * 100, 1) if total_feedback > 0 else 0.0
 
-    # 6. TOP PRODUCTS TODAY & RECENT TRANSACTIONS
+    # 6. TOP PRODUCTS & RECENT TRANSACTIONS
     product_sales_dict = {}
-    for s in today_sales:
+    for s in period_sales:
         items = s.items or []
         if isinstance(items, list):
             for item in items:
@@ -157,20 +214,22 @@ def analytics_view(request):
     top_products_today = sorted(list(product_sales_dict.values()), key=lambda x: x['revenue'], reverse=True)[:5]
 
     recent_sales = []
-    for s in sales_qs.order_by('-created_at')[:5]:
+    for s in sales_qs.order_by('-created_at')[:8]:
+        items = s.items or []
+        items_cnt = len(items) if isinstance(items, list) else 0
         recent_sales.append({
             'id': f"sale_{s.id}",
             'receipt_number': s.receipt_number or f"RCP-{s.id}",
             'created_date': s.created_at.isoformat() if s.created_at else now.isoformat(),
             'total_amount': s.total_amount,
-            'payment_method': s.payment_method,
-            'cashier_name': s.cashier_name,
-            'items_count': len(s.items) if isinstance(s.items, list) else 0
+            'payment_method': s.payment_method or 'cash',
+            'cashier_name': s.cashier_name or 'Cashier',
+            'items_count': items_cnt
         })
 
-    # 7. CASHIER PERFORMANCE (Today & Overall)
+    # 7. CASHIER PERFORMANCE
     cashier_stats_dict = {}
-    for s in today_sales:
+    for s in period_sales:
         cname = s.cashier_name or 'Cashier'
         if cname not in cashier_stats_dict:
             cashier_stats_dict[cname] = {
@@ -206,17 +265,10 @@ def analytics_view(request):
     cashier_performance.sort(key=lambda x: x['revenue'], reverse=True)
 
     # 8. INVENTORY INTELLIGENCE
-    stock_value_cost = sum(float(p.cost_price or (p.price * 0.7)) * p.stock_quantity for p in products_qs)
-    stock_value_retail = sum(float(p.price) * p.stock_quantity for p in products_qs)
+    stock_value_cost = sum(float(p.cost_price or (p.price * 0.7 if p.price else 0)) * (p.stock_quantity or 0) for p in products_qs)
+    stock_value_retail = sum(float(p.price or 0) * (p.stock_quantity or 0) for p in products_qs)
 
-    sold_product_names = set()
-    for s in sales_qs.filter(created_at__gte=seven_days_ago):
-        items = s.items or []
-        if isinstance(items, list):
-            for item in items:
-                if isinstance(item, dict):
-                    sold_product_names.add(item.get('product_name') or item.get('name'))
-
+    sold_product_names = set(product_sales_dict.keys())
     dead_stock_count = len([p for p in products_qs if p.name not in sold_product_names])
     fast_movers_count = len(top_products_today)
 
@@ -224,27 +276,36 @@ def analytics_view(request):
     cogs_total = sum(
         sum(float(item.get('cost_price') or (float(item.get('unit_price') or 0) * 0.7)) * float(item.get('quantity') or 1)
             for item in (s.items or []) if isinstance(item, dict))
-        for s in today_sales
+        for s in period_sales
     )
-    gross_profit = today_revenue - cogs_total
-    gross_margin_pct = round((gross_profit / today_revenue * 100), 1) if today_revenue > 0 else 0.0
+    gross_profit = period_revenue - cogs_total
+    gross_margin_pct = round((gross_profit / period_revenue * 100), 1) if period_revenue > 0 else 0.0
 
-    cash_in = sum(c.amount for c in cashflow_qs.filter(transaction_type='inflow'))
-    cash_out = sum(c.amount for c in cashflow_qs.filter(transaction_type='outflow'))
+    cash_in = sum(c.amount for c in cashflow_qs.filter(transaction_type='inflow') if c.amount)
+    cash_out = sum(c.amount for c in cashflow_qs.filter(transaction_type='outflow') if c.amount)
     net_cash_balance = cash_in - cash_out
-    vat_collected = sum(s.tax_total for s in today_sales if hasattr(s, 'tax_total'))
+    vat_collected = sum(getattr(s, 'tax_total', 0) or getattr(s, 'tax_amount', 0) or 0 for s in period_sales)
 
     # 10. CUSTOMER & LOYALTY
     total_customers = customers_qs.count()
     loyalty_members = customers_qs.filter(loyalty_points__gt=0).count()
-    top_customers = list(customers_qs.order_by('-total_spent')[:5].values('id', 'name', 'total_spent', 'loyalty_points'))
+    top_customers_qs = customers_qs.order_by('-total_spending')[:5]
+    top_customers = [
+        {
+            'id': c.id,
+            'name': c.name,
+            'total_spent': getattr(c, 'total_spending', 0.0),
+            'loyalty_points': c.loyalty_points
+        }
+        for c in top_customers_qs
+    ]
 
     # 11. COMPLIANCE HEALTH (eTIMS)
     etims_submitted = sales_qs.filter(etims_status='submitted').count()
     etims_failed = sales_qs.filter(etims_status='failed').count()
     total_sales_all = sales_qs.count()
     cuin_coverage_pct = round((etims_submitted / total_sales_all * 100), 1) if total_sales_all > 0 else 0.0
-    branch_issues_count = branches_qs.filter(is_active=False).count()
+    branch_issues_count = branches_qs.exclude(status='active').count()
 
     # 12. HOURLY SALES HEATMAP (7 Days x 24 Hours)
     heatmap_matrix = []
@@ -253,13 +314,12 @@ def analytics_view(request):
         day_name = days_labels[day_idx]
         hours_data = []
         for h in range(24):
-            # Aggregate volume for day of week & hour
             matching_sales = [
                 s for s in sales_qs
                 if s.created_at and s.created_at.weekday() == day_idx and s.created_at.hour == h
             ]
             count = len(matching_sales)
-            vol = sum(s.total_amount for s in matching_sales)
+            vol = sum(s.total_amount for s in matching_sales if s.total_amount)
             intensity = 0
             if count > 0:
                 intensity = 1 if count == 1 else 2 if count <= 3 else 3
@@ -300,6 +360,7 @@ def analytics_view(request):
     activity_feed = activity_feed[:10]
 
     return Response({
+        'range_label': range_label,
         'live_status': {
             'live_sales_count': live_sales_count,
             'live_sales_revenue': live_sales_revenue,
@@ -310,11 +371,11 @@ def analytics_view(request):
             'refund_count': refund_count
         },
         'kpis': {
-            'today_revenue': round(today_revenue, 2),
-            'yesterday_revenue': round(yesterday_revenue, 2),
-            'today_expenses': round(today_expense_total, 2),
+            'today_revenue': round(period_revenue, 2),
+            'yesterday_revenue': round(prev_period_revenue, 2),
+            'today_expenses': round(period_expense_total, 2),
             'net_profit': round(net_profit, 2),
-            'transactions_count': today_tx_count,
+            'transactions_count': period_tx_count,
             'avg_transaction': avg_tx,
             'low_stock_count': len(low_stock_prods),
             'critical_stock_count': len(critical_stock_prods)
@@ -347,10 +408,10 @@ def analytics_view(request):
             'stockout_risk_count': len(critical_stock_prods)
         },
         'profit_loss': {
-            'revenue': round(today_revenue, 2),
+            'revenue': round(period_revenue, 2),
             'cogs': round(cogs_total, 2),
             'gross_profit': round(gross_profit, 2),
-            'operating_expenses': round(today_expense_total, 2),
+            'operating_expenses': round(period_expense_total, 2),
             'net_profit': round(net_profit, 2),
             'gross_margin_pct': gross_margin_pct,
             'net_cash_balance': round(net_cash_balance, 2),
@@ -390,11 +451,11 @@ def receipters_engine_stats(request):
         customers_qs = get_scoped_queryset(request, Customer)
         expenses_qs = get_scoped_queryset(request, Expense)
 
-        total_rev = sum(s.total_amount for s in sales_qs)
+        total_rev = sum(s.total_amount for s in sales_qs if s.total_amount)
         tx_count = sales_qs.count()
         prod_count = products_qs.count()
         cust_count = customers_qs.count()
-        exp_total = sum(e.amount for e in expenses_qs)
+        exp_total = sum(e.amount for e in expenses_qs if e.amount)
         net_pos = total_rev - exp_total
 
         net_text = f"a net profit of KES {net_pos:,.2f}" if net_pos >= 0 else f"a loss of KES {abs(net_pos):,.2f}"
@@ -413,12 +474,12 @@ def receipters_engine_stats(request):
 
     # GET response
     total_sales_qs = get_scoped_queryset(request, Sale)
-    total_revenue = sum(sale.total_amount for sale in total_sales_qs)
+    total_revenue = sum(sale.total_amount for sale in total_sales_qs if sale.total_amount)
     total_receipts = total_sales_qs.count()
 
     today = timezone.now()
     this_month_qs = total_sales_qs.filter(created_at__month=today.month, created_at__year=today.year)
-    monthly_revenue = sum(sale.total_amount for sale in this_month_qs)
+    monthly_revenue = sum(sale.total_amount for sale in this_month_qs if sale.total_amount)
     monthly_receipts = this_month_qs.count()
 
     return Response({

@@ -12,7 +12,7 @@ function buildReceiptText(sale, biz) {
   const taxableAmt = (sale.total_amount || 0) - (sale.tax_total || 0);
   const lines = [
     `*** TAX INVOICE ***`,
-    `${biz.business_name || 'SoftPOS Store'}`,
+    `${biz.business_name || 'Receipters Store'}`,
     biz.business_address || '',
     biz.kra_pin ? `KRA PIN: ${biz.kra_pin}` : '',
     ``,
@@ -145,7 +145,7 @@ export default function ReceiptView({ open, onClose, sale, businessSettings, rec
 
             {/* Business Header */}
             <div className="text-center space-y-0.5 pb-2 border-b border-dashed">
-              <p className="font-bold text-sm uppercase tracking-wide">{biz.business_name || 'SoftPOS Store'}</p>
+              <p className="font-bold text-sm uppercase tracking-wide">{biz.business_name || 'Receipters Store'}</p>
               {biz.business_address && <p>{biz.business_address}</p>}
               {biz.business_phone && <p>Tel: {biz.business_phone}</p>}
               {biz.business_email && <p>{biz.business_email}</p>}

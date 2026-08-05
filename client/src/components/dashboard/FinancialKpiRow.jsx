@@ -26,61 +26,61 @@ export default function FinancialKpiRow({ kpis = {} }) {
       {/* 5 Main Financial KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Today's Revenue */}
-        <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Today's Revenue</span>
-            <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
           <p className="text-xl font-display font-bold text-foreground mt-2">
             KES {today_revenue.toLocaleString()}
           </p>
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+          <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 mt-1">
             <span>↑ {revDiffPct}%</span>
             <span className="text-muted-foreground font-normal">vs yesterday</span>
           </div>
         </div>
 
         {/* Today's Expenses */}
-        <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Today's Expenses</span>
-            <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
           <p className="text-xl font-display font-bold text-foreground mt-2">
             KES {today_expenses.toLocaleString()}
           </p>
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+          <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 mt-1">
             <span>↓ {expPctRev}% of revenue</span>
             <span className="text-muted-foreground font-normal">vs yesterday</span>
           </div>
         </div>
 
         {/* Net Profit */}
-        <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Net Profit</span>
-            <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <p className="text-xl font-display font-bold text-foreground mt-2">
             KES {net_profit.toLocaleString()}
           </p>
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+          <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 mt-1">
             <span>↑ {net_profit >= 0 ? 'Positive' : 'Negative'}</span>
             <span className="text-muted-foreground font-normal">vs yesterday</span>
           </div>
         </div>
 
         {/* Transactions */}
-        <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Transactions</span>
-            <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <ShoppingCart className="w-4 h-4" />
             </div>
           </div>
@@ -91,10 +91,10 @@ export default function FinancialKpiRow({ kpis = {} }) {
         </div>
 
         {/* Avg. Transaction */}
-        <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Avg. Transaction</span>
-            <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
@@ -107,7 +107,7 @@ export default function FinancialKpiRow({ kpis = {} }) {
       {/* Low Stock Items Card */}
       <div className="w-full sm:w-64">
         <Link to="/inventory">
-          <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-3.5 shadow-sm flex items-center justify-between hover:border-emerald-300 transition-colors">
+          <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-3.5 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
             <div>
               <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Low Stock Items</span>
               <p className="text-xl font-display font-bold text-foreground mt-0.5">{low_stock_count}</p>

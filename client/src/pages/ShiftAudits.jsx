@@ -222,7 +222,7 @@ export default function ShiftAudits() {
             <div className="space-y-4">
               {/* Header */}
               <div className="text-center pb-4 border-b">
-                <h3 className="font-display font-bold text-lg">SoftPOS Kenya</h3>
+                <h3 className="font-display font-bold text-lg">Receipters Kenya</h3>
                 <p className="text-xs text-muted-foreground mt-1">
                   {new Date(selectedReceipt.created_date).toLocaleString()}
                 </p>

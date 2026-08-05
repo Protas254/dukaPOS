@@ -42,7 +42,10 @@ export default function AppLayout() {
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </Button>
-          <span className="font-display font-bold text-lg">SoftPOS</span>
+          <div className="flex items-center gap-2">
+            <img src="/logo.svg" alt="Receipters Logo" className="w-6 h-6 object-contain" />
+            <span className="font-display font-bold text-lg">Receipters</span>
+          </div>
         </div>
         <Outlet />
       </main>

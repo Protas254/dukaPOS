@@ -13,7 +13,7 @@ export default function RevenueAndPaymentCharts({ weeklyRevenue = [], paymentBre
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* 1. Revenue - Last 7 Days Chart */}
-      <div className="lg:col-span-2 bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="lg:col-span-2 bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm space-y-4">
         <h3 className="font-display font-bold text-sm text-foreground">Revenue - Last 7 Days</h3>
         <div className="h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -37,7 +37,7 @@ export default function RevenueAndPaymentCharts({ weeklyRevenue = [], paymentBre
       </div>
 
       {/* 2. Payment Methods Today */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
         <h3 className="font-display font-bold text-sm text-foreground">Payment Methods Today</h3>
         {paymentBreakdown.length > 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center space-y-3">

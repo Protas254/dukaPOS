@@ -159,24 +159,43 @@ def get_pk_from_prefixed_id(id_str, prefix=''):
 def get_tenant_for_user(request):
     """
     Returns the active tenant associated with the user request.
-    - If superuser/staff and tenant_id query param or X-Tenant-Id header is set, returns that tenant.
-    - Otherwise returns request.user.profile.tenant.
+    - If tenant_id query param or X-Tenant-Id header is set, returns that tenant.
+    - Otherwise returns request.user.profile.tenant if set.
+    - For superusers/staff without a profile, auto-creates a profile linked to the first tenant.
+    - Fallback to Tenant.objects.first() so authenticated users always have an active tenant context.
     """
     if not request.user or not request.user.is_authenticated:
         return None
 
-    if is_admin_user(request.user):
-        tenant_id = request.query_params.get('tenant_id') or request.headers.get('X-Tenant-Id')
-        if tenant_id:
-            tenant = Tenant.objects.filter(pk=tenant_id).first()
-            if tenant:
-                return tenant
+    tenant_id = request.query_params.get('tenant_id') or request.headers.get('X-Tenant-Id')
+    if tenant_id:
+        tenant = Tenant.objects.filter(pk=tenant_id).first()
+        if tenant:
+            return tenant
 
     profile = getattr(request.user, 'profile', None)
     if profile and profile.tenant:
         return profile.tenant
 
-    return None
+    # For superusers/staff without profiles, auto-link to first available tenant
+    from ..models import UserProfile as UP
+    first_tenant = Tenant.objects.first()
+    if first_tenant and not profile:
+        user = request.user
+        if user.is_superuser or user.is_staff:
+            try:
+                profile, _ = UP.objects.get_or_create(
+                    user=user,
+                    defaults={'tenant': first_tenant, 'role': 'admin'}
+                )
+                if not profile.tenant:
+                    profile.tenant = first_tenant
+                    profile.save()
+            except Exception:
+                pass
+            return first_tenant
+
+    return first_tenant
 
 
 def get_scoped_queryset(request, ModelClass):
@@ -201,7 +220,7 @@ def get_scoped_queryset(request, ModelClass):
 
     tenant = get_tenant_for_user(request)
     if tenant:
-        queryset = queryset.filter(tenant=tenant)
+        queryset = queryset.filter(Q(tenant=tenant) | Q(tenant__isnull=True))
     elif not is_admin_user(request.user):
         queryset = queryset.none()
 

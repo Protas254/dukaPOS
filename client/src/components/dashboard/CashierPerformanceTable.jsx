@@ -5,14 +5,14 @@ import { Badge } from '@/components/ui/badge';
 
 export default function CashierPerformanceTable({ cashierPerformance = [] }) {
   return (
-    <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           <h3 className="font-display font-bold text-sm text-foreground">Cashier Performance</h3>
         </div>
-        <Link to="/reports" className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold hover:underline">
+        <Link to="/reports" className="text-xs text-blue-700 dark:text-blue-400 font-semibold hover:underline">
           View detailed report
         </Link>
       </div>
@@ -22,7 +22,7 @@ export default function CashierPerformanceTable({ cashierPerformance = [] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-emerald-100 dark:border-emerald-900/40 text-muted-foreground font-semibold text-left">
+              <tr className="border-b border-blue-100 dark:border-blue-900/40 text-muted-foreground font-semibold text-left">
                 <th className="py-2.5 px-3">Cashier</th>
                 <th className="py-2.5 px-3 text-right">Transactions</th>
                 <th className="py-2.5 px-3 text-right">Total Revenue</th>
@@ -30,12 +30,12 @@ export default function CashierPerformanceTable({ cashierPerformance = [] }) {
                 <th className="py-2.5 px-3 text-right">Payment Breakdown</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-emerald-100/60 dark:divide-emerald-900/30">
+            <tbody className="divide-y divide-blue-100/60 dark:divide-blue-900/30">
               {cashierPerformance.map((c) => (
                 <tr key={c.name} className="hover:bg-muted/30 transition-colors">
                   <td className="py-3 px-3">
                     <div className="flex items-center gap-2 font-semibold text-foreground">
-                      <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center justify-center">
                         <User className="w-3.5 h-3.5" />
                       </div>
                       <span>{c.name}</span>
@@ -47,7 +47,7 @@ export default function CashierPerformanceTable({ cashierPerformance = [] }) {
                   <td className="py-3 px-3 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       {c.cashSales > 0 && (
-                        <Badge variant="outline" className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300">
+                        <Badge variant="outline" className="text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300">
                           Cash: {c.cashSales}
                         </Badge>
                       )}

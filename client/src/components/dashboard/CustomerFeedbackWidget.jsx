@@ -5,7 +5,7 @@ export default function CustomerFeedbackWidget({ customerFeedback = {} }) {
   const { total = 0, avg_rating = 0, positive_pct = 0 } = customerFeedback;
 
   return (
-    <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -15,8 +15,8 @@ export default function CustomerFeedbackWidget({ customerFeedback = {} }) {
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5 font-medium">Real-time ratings from receipts</p>
         </div>
-        <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-full text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-full text-[11px] font-bold text-blue-700 dark:text-blue-300">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
           <span>Live</span>
         </div>
       </div>
@@ -32,7 +32,7 @@ export default function CustomerFeedbackWidget({ customerFeedback = {} }) {
 
         <div className="p-3 bg-muted/40 dark:bg-muted/20 rounded-xl text-center">
           <span className="text-[11px] font-semibold text-muted-foreground block">Positive</span>
-          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+          <span className="text-sm font-bold text-blue-600 dark:text-blue-400 block mt-0.5">
             {positive_pct}%
           </span>
         </div>

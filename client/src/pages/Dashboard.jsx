@@ -26,7 +26,7 @@ export default function Dashboard() {
   // Comprehensive analytics query from real backend
   const { data: analyticsData = {}, isLoading: analyticsLoading } = useQuery({
     queryKey: ['dashboard-analytics', activeRange, selectedBranch],
-    queryFn: () => api.analytics.get(),
+    queryFn: () => api.analytics.get({ range: activeRange, branch_id: selectedBranch }),
     refetchInterval: 10000, // Real-time refresh every 10s
   });
 
@@ -37,6 +37,7 @@ export default function Dashboard() {
   });
 
   const {
+    range_label = '',
     live_status = {},
     kpis = {},
     weekly_revenue = [],
@@ -58,7 +59,7 @@ export default function Dashboard() {
   const criticalStockCount = kpis.critical_stock_count || low_stock_items.length;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1500px] mx-auto min-h-screen bg-emerald-50/40 dark:bg-emerald-950/10 rounded-2xl">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1500px] mx-auto min-h-screen bg-blue-50/40 dark:bg-blue-950/10 rounded-2xl">
       {/* 1. Header & Controls Bar */}
       <DashboardControlHeader
         activeRange={activeRange}
@@ -67,6 +68,7 @@ export default function Dashboard() {
         selectedBranch={selectedBranch}
         onBranchChange={setSelectedBranch}
         criticalStockCount={criticalStockCount}
+        rangeLabel={range_label}
       />
 
       {/* 2. Live Status Bar (1h Sales, Active Shifts, Pending M-Pesa, Voids/Refunds) */}

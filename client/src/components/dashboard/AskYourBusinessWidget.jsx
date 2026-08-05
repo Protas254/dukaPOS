@@ -29,10 +29,10 @@ export default function AskYourBusinessWidget({ defaultSummary = '' }) {
   };
 
   return (
-    <div className="bg-emerald-100/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl p-5 shadow-sm space-y-3.5">
+    <div className="bg-blue-100/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-2xl p-5 shadow-sm space-y-3.5">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+        <Sparkles className="w-4 h-4 text-blue-700 dark:text-blue-400" />
         <h3 className="font-display font-bold text-sm text-emerald-950 dark:text-emerald-100">
           Ask Your Business
         </h3>
@@ -41,18 +41,18 @@ export default function AskYourBusinessWidget({ defaultSummary = '' }) {
       {/* Input Bar */}
       <form onSubmit={handleAsk} className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-emerald-600 dark:text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-blue-600 dark:text-blue-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Q hello"
-            className="pl-9 h-10 bg-white dark:bg-card border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-foreground rounded-xl"
+            className="pl-9 h-10 bg-white dark:bg-card border-blue-200 dark:border-blue-800 text-xs font-semibold text-foreground rounded-xl"
           />
         </div>
         <Button
           type="submit"
           disabled={isLoading}
-          className="h-10 px-5 text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-700/20"
+          className="h-10 px-5 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded-xl flex items-center gap-1.5 shadow-md shadow-blue-700/20"
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span>{isLoading ? 'Asking...' : 'Ask'}</span>
@@ -61,7 +61,7 @@ export default function AskYourBusinessWidget({ defaultSummary = '' }) {
 
       {/* AI Answer Box */}
       {answer && (
-        <div className="p-3.5 bg-white/80 dark:bg-card/80 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl text-xs font-medium text-emerald-950 dark:text-emerald-100 leading-relaxed shadow-sm">
+        <div className="p-3.5 bg-white/80 dark:bg-card/80 border border-blue-200/60 dark:border-blue-800/40 rounded-xl text-xs font-medium text-emerald-950 dark:text-emerald-100 leading-relaxed shadow-sm">
           {answer}
         </div>
       )}

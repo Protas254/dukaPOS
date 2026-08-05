@@ -24,11 +24,11 @@ export default function DailyRevenueGoalSection({ todayRevenue = 0, todaySales =
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Daily Revenue Goal Box */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 flex items-center justify-center">
               <Target className="w-4 h-4" />
             </div>
             <h3 className="font-display font-bold text-sm text-foreground">Daily Revenue Goal</h3>
@@ -75,10 +75,10 @@ export default function DailyRevenueGoalSection({ todayRevenue = 0, todaySales =
 
           <div className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-1 ${
             isMet
-              ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+              ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800'
               : 'bg-muted/40 text-muted-foreground border-transparent'
           }`}>
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
             <span>Goal Met</span>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function DailyRevenueGoalSection({ todayRevenue = 0, todaySales =
         <div className="grid grid-cols-3 gap-2.5 pt-1">
           <div className="p-3 bg-muted/40 dark:bg-muted/20 rounded-xl text-center">
             <span className="text-[11px] font-semibold text-muted-foreground block">Today</span>
-            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400 block mt-0.5">
+            <span className="text-sm font-bold text-blue-700 dark:text-blue-400 block mt-0.5">
               KES {todayRevenue.toLocaleString()}
             </span>
           </div>
@@ -115,10 +115,10 @@ export default function DailyRevenueGoalSection({ todayRevenue = 0, todaySales =
       </div>
 
       {/* Right Sales Container */}
-      <div className="bg-white dark:bg-card border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 shadow-sm flex items-center justify-center min-h-[220px]">
+      <div className="bg-white dark:bg-card border border-blue-100 dark:border-blue-900/40 rounded-2xl p-5 shadow-sm flex items-center justify-center min-h-[220px]">
         {todaySales.length > 0 ? (
           <div className="w-full text-center space-y-2">
-            <p className="text-sm font-semibold text-emerald-700">Today's Sales Active</p>
+            <p className="text-sm font-semibold text-blue-700">Today's Sales Active</p>
             <p className="text-2xl font-bold font-display">{todaySales.length} Transactions</p>
             <p className="text-xs text-muted-foreground">Total Revenue: KES {todayRevenue.toLocaleString()}</p>
           </div>

@@ -12,7 +12,8 @@ export default function DashboardControlHeader({
   branches = [],
   selectedBranch,
   onBranchChange,
-  criticalStockCount = 0
+  criticalStockCount = 0,
+  rangeLabel
 }) {
   const { user } = useAuth();
   const [now, setNow] = useState(new Date());
@@ -44,7 +45,7 @@ export default function DashboardControlHeader({
         <h1 className="text-2xl md:text-3xl font-display font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">
           {greeting}, {firstName}
         </h1>
-        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-400 mt-0.5">
+        <p className="text-sm font-semibold text-blue-800 dark:text-blue-400 mt-0.5">
           {format(now, 'EEEE, MMMM d, yyyy')} • {format(now, 'h:mm:ss a')}
         </p>
       </div>
@@ -52,7 +53,7 @@ export default function DashboardControlHeader({
       {/* Control Filter Bar */}
       <div className="flex flex-wrap items-center gap-2.5 pt-1">
         {/* Time Range Pills */}
-        <div className="inline-flex items-center p-1 bg-emerald-100/60 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+        <div className="inline-flex items-center p-1 bg-blue-100/60 dark:bg-blue-950/40 rounded-xl border border-blue-200/60 dark:border-blue-800/40">
           {ranges.map((r) => {
             const isActive = activeRange === r.value;
             return (
@@ -61,8 +62,8 @@ export default function DashboardControlHeader({
                 onClick={() => onRangeChange(r.value)}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
                   isActive
-                    ? 'bg-emerald-700 text-white shadow-sm'
-                    : 'text-emerald-800 dark:text-emerald-200 hover:bg-emerald-200/50 dark:hover:bg-emerald-900/30'
+                    ? 'bg-blue-700 text-white shadow-sm'
+                    : 'text-blue-800 dark:text-blue-200 hover:bg-blue-200/50 dark:hover:bg-blue-900/30'
                 }`}
               >
                 {r.label}
@@ -74,8 +75,8 @@ export default function DashboardControlHeader({
         {/* Branch Selector */}
         <div className="relative">
           <Select value={selectedBranch || 'all'} onValueChange={onBranchChange}>
-            <SelectTrigger className="h-9 px-3 bg-white dark:bg-card border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-900 dark:text-emerald-100 rounded-xl flex items-center gap-1.5 shadow-sm">
-              <Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <SelectTrigger className="h-9 px-3 bg-white dark:bg-card border-blue-200 dark:border-blue-800 text-xs font-semibold text-emerald-900 dark:text-emerald-100 rounded-xl flex items-center gap-1.5 shadow-sm">
+              <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <SelectValue placeholder="All Branches" />
             </SelectTrigger>
             <SelectContent>
@@ -90,9 +91,9 @@ export default function DashboardControlHeader({
         </div>
 
         {/* Date Label Pill */}
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/40 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-          <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-          <span>{format(now, 'MMM d')} – {format(now, 'MMM d')}</span>
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-100/40 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold text-blue-800 dark:text-blue-300">
+          <Calendar className="w-3.5 h-3.5 text-blue-600" />
+          <span>{rangeLabel || format(now, 'MMM d')}</span>
         </div>
 
         {/* Critical Stock Badge Button */}

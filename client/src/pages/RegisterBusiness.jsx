@@ -97,7 +97,7 @@ export default function RegisterBusiness() {
           </div>
         </div>
         <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
-          Host Your Business on DukaPOS
+          Host Your Business on Receipters
         </h2>
         <p className="mt-2 text-sm text-slate-600">
           Create your isolated business workspace in less than 2 minutes.
@@ -266,7 +266,7 @@ export default function RegisterBusiness() {
 
             <div className="mt-6 pt-4 border-t border-slate-100 text-center">
               <p className="text-sm text-slate-600">
-                Already have a business on DukaPOS?{' '}
+                Already have a business on Receipters?{' '}
                 <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700">
                   Log In Here
                 </Link>

@@ -32,7 +32,7 @@ export default function CriticalStockBanner({ lowStockItems = [] }) {
 
         <Link
           to="/inventory"
-          className="text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:underline flex items-center gap-1 shrink-0"
+          className="text-xs font-bold text-blue-800 dark:text-blue-300 hover:underline flex items-center gap-1 shrink-0"
         >
           <span>Manage Inventory</span>
           <ArrowRight className="w-3.5 h-3.5" />
