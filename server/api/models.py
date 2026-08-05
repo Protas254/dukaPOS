@@ -235,12 +235,25 @@ class Sale(models.Model):
 
 
 class Expense(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('mpesa', 'M-Pesa'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('cheque', 'Cheque'),
+    ]
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='expenses', null=True, blank=True)
     shift_id = models.CharField(max_length=100, blank=True, null=True)
     amount = models.FloatField()
     category = models.CharField(max_length=100)
-    description = models.TextField()
-    date = models.DateTimeField(auto_now_add=True)
+    description = models.TextField(blank=True, default='')
+    date = models.DateField(null=True, blank=True)
+    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, default='cash')
+    reference_number = models.CharField(max_length=255, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    is_recurring = models.BooleanField(default=False)
+    receipt_url = models.URLField(max_length=1000, blank=True, null=True)
     status = models.CharField(max_length=50, default='approved')
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -248,6 +261,7 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"Expense {self.category} - {self.amount}"
+
 
 
 class EmployeeRating(models.Model):

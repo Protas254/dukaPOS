@@ -79,7 +79,6 @@ def entity_list_create(request, entity_name):
             # Map frontend sort keys to actual DB column names
             FIELD_ALIAS_MAP = {
                 'created_date': 'created_at',
-                'date': 'created_at',
             }
             field = FIELD_ALIAS_MAP.get(field, field)
             

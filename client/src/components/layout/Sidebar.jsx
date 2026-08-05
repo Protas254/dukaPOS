@@ -25,10 +25,8 @@ const navItems = [
       { icon: Package, label: 'Inventory', path: '/inventory' },
       { icon: ReceiptIcon, label: 'Transactions', path: '/transactions' },
       { icon: BarChart3, label: 'Reports', path: '/reports' },
-      { icon: FileText, label: 'Advanced Reports', path: '/advanced-reports' },
       { icon: TrendingUp, label: 'Cash Flow', path: '/cash-flow' },
       { icon: ReceiptIcon, label: 'Expenses', path: '/expenses' },
-      { icon: Percent, label: 'Promotions', path: '/promotions' },
     ]
   },
   {

@@ -85,10 +85,20 @@ CASHIER_READ_ONLY_ENTITIES = {
 
 
 def is_admin_user(user):
-    """Check if a user has admin privileges."""
+    """Check if a user has admin privileges.
+    
+    Checks both Django staff/superuser flags AND the UserProfile.role field,
+    since app-level business admins are stored as role='admin' in UserProfile.
+    """
     if not user or not user.is_authenticated:
         return False
-    return user.is_superuser or user.is_staff
+    if user.is_superuser or user.is_staff:
+        return True
+    # Check app-level role stored on UserProfile
+    profile = getattr(user, 'profile', None)
+    if profile and getattr(profile, 'role', None) == 'admin':
+        return True
+    return False
 
 
 def check_entity_permission(request, entity_name, is_write=False):
