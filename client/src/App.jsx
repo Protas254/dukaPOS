@@ -16,6 +16,7 @@ import Register from '@/pages/Register';
 import RegisterBusiness from '@/pages/RegisterBusiness';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import AcceptInvite from '@/pages/AcceptInvite';
 
 // App pages
 import AppLayout from '@/components/layout/AppLayout';
@@ -43,6 +44,7 @@ import Suppliers from '@/pages/Suppliers';
 import AdvancedReports from '@/pages/AdvancedReports';
 import StaffPerformance from '@/pages/StaffPerformance';
 import HardwareRequirements from '@/pages/HardwareRequirements';
+import Branches from '@/pages/Branches';
 import ReceiptersEngine from '@/pages/admin/ReceiptersEngine';
 import ReceiptersVaultHub from '@/pages/admin/ReceiptersVaultHub';
 
@@ -76,6 +78,7 @@ const AuthenticatedApp = () => {
       <Route path="/register-business" element={<RegisterBusiness />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/invite/accept" element={<AcceptInvite />} />
       {/* Onboarding: full-page, no sidebar, protected */}
       <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
@@ -94,6 +97,7 @@ const AuthenticatedApp = () => {
           {/* ── Admin-only routes ── */}
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<Navigate to="/" replace />} />
+            <Route path="/branches" element={<Branches />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/advanced-reports" element={<AdvancedReports />} />

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
-    Tenant, UserProfile, BusinessSettings, Product, Customer, Supplier, Shift, Sale,
+    Tenant, UserProfile, BusinessSettings, Branch, Product, Customer, Supplier, Shift, Sale,
     Expense, EmployeeRating, EmployeeSchedule, Promotion, MpesaPayment,
     ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback,
     Subscription, ReceiptersEngine, ReceiptersVaultHub
@@ -74,6 +74,13 @@ class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessSettings
         fields = '__all__'
+
+
+class BranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = '__all__'
+
 
 
 class ProductSerializer(serializers.ModelSerializer):

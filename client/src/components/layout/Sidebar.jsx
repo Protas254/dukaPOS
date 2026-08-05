@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, Receipt as ReceiptIcon, 
   BarChart3, Settings, LogOut, Store, ChevronLeft, ChevronRight, Users, Clock, ShieldCheck, BookOpen, UserCog, Layers, FileWarning,
@@ -12,7 +12,12 @@ import { useAuth } from '@/lib/AuthContext';
 
 // roles: which roles can see this item. Omit = everyone can see it.
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  {
+    icon: LayoutDashboard, label: 'Dashboard', path: '/',
+    children: [
+      { icon: Building, label: 'Branches', path: '/branches', roles: ['admin'] },
+    ]
+  },
   { icon: ShoppingCart, label: 'POS Terminal', path: '/pos' },
   {
     icon: Layers, label: 'Business Operations', path: '/operations', roles: ['admin'],
@@ -44,10 +49,7 @@ const navItems = [
       { icon: BarChart3, label: 'Performance', path: '/staff-performance' },
     ]
   },
-  { isHeader: true, label: 'RECEIPTERS TECHNOLOGIES LTD', roles: ['admin'] },
-  { icon: Cpu, label: 'Receipters Engine', path: '/admin/receipters-engine', roles: ['admin'], isReceipters: true },
-  { icon: FolderLock, label: 'Receipters Vault Hub', path: '/admin/receipters-vault', roles: ['admin'], isReceipters: true },
-  // Cashier-visible standalone items that are hidden from the admin group
+  // Cashier-visible standalone items
   { icon: Clock, label: 'My Shifts', path: '/my-shifts', roles: ['user'] },
   { icon: ReceiptIcon, label: 'Transactions', path: '/transactions', roles: ['user'] },
   { icon: ShieldCheck, label: 'eTIMS', path: '/etims', roles: ['admin'] },
@@ -56,7 +58,8 @@ const navItems = [
 
 export default function Sidebar({ collapsed, onToggle, onNavigate }) {
   const location = useLocation();
-  const [openGroups, setOpenGroups] = useState({});
+  const navigate = useNavigate();
+  const [openGroups, setOpenGroups] = useState({ '/': true });
   const { user } = useAuth();
 
   const userRole = user?.role || 'user';
@@ -65,14 +68,19 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
     setOpenGroups(prev => ({ ...prev, [path]: !prev[path] }));
   };
 
-  const isGroupActive = (children) =>
-    children.some(c => location.pathname === c.path);
+  const isGroupActive = (path, children) =>
+    location.pathname === path || children.some(c => location.pathname === c.path);
 
-  // Filter nav items by role
-  const visibleItems = navItems.filter(item => {
-    if (!item.roles) return true; // No restriction = everyone
-    return item.roles.includes(userRole);
-  });
+  // Helper: check if an item/child is visible for the current role
+  const isRoleAllowed = (item) => {
+    if (!item.roles) return true;
+    if (item.roles.includes(userRole)) return true;
+    if (userRole === 'cashier' && item.roles.includes('user')) return true;
+    return false;
+  };
+
+  // Filter nav items by role. Cashiers should see items marked for 'user'.
+  const visibleItems = navItems.filter(isRoleAllowed);
 
   const handleLinkClick = () => {
     if (onNavigate) {
@@ -127,43 +135,50 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-2.5 overflow-y-auto">
-        {visibleItems.map(({ icon: Icon, label, path, children, isHeader, isReceipters }) => {
-          if (isHeader) {
-            if (collapsed) return null;
-            return <div key={label} className="px-4 pt-4 pb-1 text-[12px] font-bold text-blue-900 uppercase tracking-wider">{label}</div>;
-          }
+        {visibleItems.map(({ icon: Icon, label, path, children }) => {
           const isActive = location.pathname === path;
 
           if (children) {
-            const groupOpen = openGroups[path] ?? isGroupActive(children);
-            const childActive = isGroupActive(children);
+            const groupOpen = openGroups[path] ?? isGroupActive(path, children);
+            const childActive = isGroupActive(path, children);
 
             return (
               <div key={path}>
-                <button
-                  onClick={() => toggleGroup(path)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group relative shadow-sm",
-                    childActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
-                      : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
-                  )}
-                >
-                  <Icon className={cn("w-5 h-5 flex-shrink-0", childActive && "text-sidebar-primary-foreground")} />
-                  {!collapsed && <span className="text-sm font-semibold truncate flex-1 text-left">{label}</span>}
-                  {!collapsed && (
-                    <ChevronRight className={cn("w-4 h-4 transition-transform", groupOpen && "rotate-90")} />
-                  )}
-                  {collapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                      {label}
-                    </div>
-                  )}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      if (path === '/') navigate('/');
+                      toggleGroup(path);
+                    }}
+                    className={cn(
+                      "flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group relative shadow-sm text-left",
+                      childActive
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
+                        : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
+                    )}
+                  >
+                    <Icon className={cn("w-5 h-5 flex-shrink-0", childActive && "text-sidebar-primary-foreground")} />
+                    {!collapsed && <span className="text-sm font-semibold truncate flex-1">{label}</span>}
+                    {!collapsed && (
+                      <ChevronRight
+                        className={cn("w-4 h-4 transition-transform ml-auto", groupOpen && "rotate-90")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleGroup(path);
+                        }}
+                      />
+                    )}
+                    {collapsed && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                        {label}
+                      </div>
+                    )}
+                  </button>
+                </div>
 
                 {groupOpen && !collapsed && (
                   <div className="mt-1.5 ml-4 space-y-1.5 border-l-2 border-sidebar-border pl-3">
-                    {children.map(child => (
+                    {children.filter(isRoleAllowed).map(child => (
                       <Link
                         key={child.label}
                         to={child.path}
@@ -192,19 +207,12 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
               onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 group relative shadow-sm",
-                isReceipters ? (
-                  isActive
-                    ? "bg-blue-600 text-white border-blue-600 shadow-md font-medium"
-                    : "bg-blue-50/80 text-blue-700 border-blue-100 hover:bg-blue-100 hover:border-blue-200"
-                ) : (
-                  isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
-                    : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
-                ),
-                isReceipters && "text-[13px] px-3 py-2.5"
+                isActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md"
+                  : "bg-sidebar-background text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-accent"
               )}
             >
-              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && !isReceipters && "text-sidebar-primary-foreground", isReceipters && !isActive && "text-blue-600")} />
+              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-sidebar-primary-foreground")} />
               {!collapsed && (
                 <span className="font-semibold truncate">{label}</span>
               )}
@@ -216,10 +224,50 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
             </Link>
           );
         })}
+
+        {/* ── Boxed Sub-Panel Card for RECEIPTERS TECHNOLOGIES LTD ── */}
+        {userRole === 'admin' && (
+          <div className="mt-4 p-3.5 rounded-2xl bg-red-50/70 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 space-y-2">
+            {!collapsed && (
+              <p className="text-[11px] font-extrabold text-blue-900 dark:text-blue-300 uppercase tracking-wider px-1">
+                RECEIPTERS TECHNOLOGIES LTD
+              </p>
+            )}
+            <div className="space-y-1.5">
+              <Link
+                to="/admin/receipters-engine"
+                onClick={handleLinkClick}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150",
+                  location.pathname === '/admin/receipters-engine'
+                    ? "bg-rose-600 text-white shadow-sm"
+                    : "text-rose-600 dark:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-900/40"
+                )}
+              >
+                <Cpu className="w-4 h-4 flex-shrink-0" />
+                {!collapsed && <span>Receipters Engine</span>}
+              </Link>
+
+              <Link
+                to="/admin/receipters-vault"
+                onClick={handleLinkClick}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150",
+                  location.pathname === '/admin/receipters-vault'
+                    ? "bg-rose-600 text-white shadow-sm"
+                    : "text-rose-600 dark:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-900/40"
+                )}
+              >
+                <FolderLock className="w-4 h-4 flex-shrink-0" />
+                {!collapsed && <span>Receipters Vault Hub</span>}
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
-      <div className="px-2 pb-4 space-y-1">
+      <div className="px-2 pb-4 space-y-1 border-t border-sidebar-border pt-2">
         <button
           onClick={onToggle}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all"

@@ -4,7 +4,8 @@ import { api } from '@/api/apiClient';
 import { format, formatDuration, intervalToDuration, subDays, startOfDay } from 'date-fns';
 import {
   Users, Clock, DollarSign, ShoppingCart, TrendingUp, ChevronDown, ChevronUp,
-  ArrowLeft, ArrowRight, Search, Award, Calendar, Download, Star, Pencil, Check, X
+  ArrowLeft, ArrowRight, Search, Award, Calendar, Download, Star, Pencil, Check, X, Plus,
+  Eye, EyeOff, Mail, Send
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from '@/components/ui/dialog';
 import { Link, useNavigate } from 'react-router-dom';
 import StatCard from '@/components/dashboard/StatCard';
 import ShiftPerformanceSummary from '@/components/shifts/ShiftPerformanceSummary';
@@ -70,11 +74,74 @@ function EmployeesTab({ sales, shifts, currentUser }) {
   const [search, setSearch] = useState('');
   const [expandedEmployee, setExpandedEmployee] = useState(null);
   const [editingRating, setEditingRating] = useState(null);
+  const [isAddCashierOpen, setIsAddCashierOpen] = useState(false);
+
+  const [cashierForm, setCashierForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'cashier',
+    branch_id: ''
+  });
+  const [showPwd, setShowPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
+  const [addMode, setAddMode] = useState('create'); // 'create' | 'invite'
+  const [inviteForm, setInviteForm] = useState({ email: '', role: 'cashier', name: '' });
+  const [inviteSent, setInviteSent] = useState(false);
+
+  const { data: registeredCashiers = [] } = useQuery({
+    queryKey: ['cashiers'],
+    queryFn: () => api.cashiers.getAll(),
+  });
+
+  const { data: branches = [] } = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => api.branches.getAll(),
+  });
 
   const { data: manualRatings = [] } = useQuery({
     queryKey: ['employee-ratings'],
     queryFn: () => api.entities.EmployeeRating.list(),
   });
+
+  const addCashierMutation = useMutation({
+    mutationFn: (data) => api.cashiers.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cashiers'] });
+      setIsAddCashierOpen(false);
+      setCashierForm({ name: '', email: '', password: '', confirmPassword: '', role: 'cashier', branch_id: '' });
+      setShowPwd(false); setShowConfirmPwd(false);
+    },
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: (data) => api.cashiers.invite(data),
+    onSuccess: () => { setInviteSent(true); },
+  });
+
+  const handleAddCashierSubmit = (e) => {
+    e.preventDefault();
+    if (!cashierForm.email || !cashierForm.password) return;
+    if (cashierForm.password !== cashierForm.confirmPassword) return;
+    addCashierMutation.mutate(cashierForm);
+  };
+
+  const handleInviteSubmit = (e) => {
+    e.preventDefault();
+    if (!inviteForm.email) return;
+    inviteMutation.mutate(inviteForm);
+  };
+
+  const handleModalClose = (open) => {
+    setIsAddCashierOpen(open);
+    if (!open) {
+      setAddMode('create'); setInviteSent(false);
+      setInviteForm({ email: '', role: 'cashier', name: '' });
+      setCashierForm({ name: '', email: '', password: '', confirmPassword: '', role: 'cashier', branch_id: '' });
+      setShowPwd(false); setShowConfirmPwd(false);
+    }
+  };
 
   const saveRatingMutation = useMutation({
     mutationFn: async ({ name, rating, notes }) => {
@@ -92,6 +159,22 @@ function EmployeesTab({ sales, shifts, currentUser }) {
 
   const employees = useMemo(() => {
     const map = {};
+    
+    // First map all registered cashiers from DRF backend
+    registeredCashiers.forEach(c => {
+      const name = c.full_name || c.username;
+      map[name] = { 
+        name, 
+        cashierId: c.id, 
+        email: c.email, 
+        role: c.role, 
+        shifts: [], 
+        totalRevenue: 0, 
+        totalTransactions: 0, 
+        activeShift: null 
+      };
+    });
+
     shifts.forEach(shift => {
       const name = shift.cashier_name || 'Unknown';
       if (!map[name]) map[name] = { name, cashierId: shift.cashier_id, shifts: [], totalRevenue: 0, totalTransactions: 0, activeShift: null };
@@ -106,12 +189,14 @@ function EmployeesTab({ sales, shifts, currentUser }) {
       map[name].totalTransactions += shiftSales.length;
       if (shift.status === 'active') map[name].activeShift = shiftData;
     });
+
     sales.forEach(sale => {
       const name = sale.cashier_name || 'Unknown';
       if (!map[name]) map[name] = { name, cashierId: sale.cashier_id, shifts: [], totalRevenue: 0, totalTransactions: 0, activeShift: null };
     });
+
     return Object.values(map).sort((a, b) => b.totalRevenue - a.totalRevenue);
-  }, [shifts, sales]);
+  }, [registeredCashiers, shifts, sales]);
 
   const employeesWithToday = useMemo(() => employees.map(emp => {
     const todaySales = sales.filter(s => s.cashier_name === emp.name && new Date(s.created_date) >= today);
@@ -170,8 +255,240 @@ function EmployeesTab({ sales, shifts, currentUser }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search employees..." className="pl-10" />
         </div>
-        <Button variant="outline" onClick={exportCSV} className="gap-2 flex-shrink-0"><Download className="w-4 h-4" /> Export CSV</Button>
+        <Button onClick={() => setIsAddCashierOpen(true)} className="gap-2 flex-shrink-0 bg-primary text-white">
+          <Plus className="w-4 h-4" /> Add Cashier
+        </Button>
+        <Button variant="outline" onClick={exportCSV} className="gap-2 flex-shrink-0">
+          <Download className="w-4 h-4" /> Export CSV
+        </Button>
       </div>
+
+      {/* Add Cashier Modal */}
+      <Dialog open={isAddCashierOpen} onOpenChange={handleModalClose}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-display font-bold">Add New Cashier / Staff</DialogTitle>
+            <DialogDescription className="text-xs">
+              Create an account directly or send an email invitation.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Mode Tabs */}
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setAddMode('create')}
+              className={`flex-1 py-2 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                addMode === 'create' ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5" /> Create Account
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAddMode('invite'); setInviteSent(false); }}
+              className={`flex-1 py-2 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                addMode === 'invite' ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              <Mail className="w-3.5 h-3.5" /> Invite via Email
+            </button>
+          </div>
+
+          {/* ── Create Account Form ── */}
+          {addMode === 'create' && (
+            <form onSubmit={handleAddCashierSubmit} className="space-y-4 py-1">
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Full Name *</label>
+                <Input
+                  required
+                  placeholder="e.g. Gordon Odera"
+                  value={cashierForm.name}
+                  onChange={e => setCashierForm({ ...cashierForm, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Email Address *</label>
+                <Input
+                  required
+                  type="email"
+                  placeholder="gordon@dukasmart.com"
+                  value={cashierForm.email}
+                  onChange={e => setCashierForm({ ...cashierForm, email: e.target.value })}
+                />
+              </div>
+
+              {/* Password + Role row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Password / PIN *</label>
+                  <div className="relative">
+                    <Input
+                      required
+                      type={showPwd ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={cashierForm.password}
+                      onChange={e => setCashierForm({ ...cashierForm, password: e.target.value })}
+                      className="pr-9"
+                    />
+                    <button
+                      type="button" tabIndex={-1}
+                      onClick={() => setShowPwd(v => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPwd ? 'Hide' : 'Show'}
+                    >
+                      {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Role</label>
+                  <select
+                    value={cashierForm.role}
+                    onChange={e => setCashierForm({ ...cashierForm, role: e.target.value })}
+                    className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md"
+                  >
+                    <option value="cashier">Cashier</option>
+                    <option value="manager">Store Manager</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Confirm Password *</label>
+                <div className="relative">
+                  <Input
+                    required
+                    type={showConfirmPwd ? 'text' : 'password'}
+                    placeholder="Repeat password"
+                    value={cashierForm.confirmPassword}
+                    onChange={e => setCashierForm({ ...cashierForm, confirmPassword: e.target.value })}
+                    className="pr-9"
+                  />
+                  <button
+                    type="button" tabIndex={-1}
+                    onClick={() => setShowConfirmPwd(v => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showConfirmPwd ? 'Hide' : 'Show'}
+                  >
+                    {showConfirmPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {cashierForm.confirmPassword && cashierForm.password !== cashierForm.confirmPassword && (
+                  <p className="text-[11px] text-red-500 mt-1">Passwords do not match</p>
+                )}
+              </div>
+
+              {/* Forgot password hint */}
+              <p className="text-[11px] text-muted-foreground">
+                Set a temporary password. The cashier can reset it via{' '}
+                <a href="/forgot-password" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  Forgot Password
+                </a>.
+              </p>
+
+              {branches.length > 0 && (
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Assigned Branch</label>
+                  <select
+                    value={cashierForm.branch_id}
+                    onChange={e => setCashierForm({ ...cashierForm, branch_id: e.target.value })}
+                    className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md"
+                  >
+                    <option value="">All / Primary Branch</option>
+                    {branches.map(b => (
+                      <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {addCashierMutation.isError && (
+                <p className="text-xs text-red-600 bg-red-50 p-2 rounded-md">
+                  {addCashierMutation.error?.message || 'Failed to create cashier.'}
+                </p>
+              )}
+
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="outline" onClick={() => handleModalClose(false)}>Cancel</Button>
+                <Button
+                  type="submit"
+                  disabled={addCashierMutation.isPending || (cashierForm.confirmPassword && cashierForm.password !== cashierForm.confirmPassword)}
+                  className="bg-primary text-white"
+                >
+                  {addCashierMutation.isPending ? 'Saving...' : 'Add Cashier'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+
+          {/* ── Invite via Email Form ── */}
+          {addMode === 'invite' && (
+            inviteSent ? (
+              <div className="py-8 flex flex-col items-center gap-3 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <Send className="w-5 h-5 text-emerald-600" />
+                </div>
+                <p className="font-semibold text-sm">Invite Sent!</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  An invite email has been sent to <strong>{inviteForm.email}</strong>. They have 48 hours to create their account.
+                </p>
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => { setInviteSent(false); setInviteForm({ email: '', role: 'cashier', name: '' }); }}>
+                  Send Another Invite
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleInviteSubmit} className="space-y-4 py-1">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Cashier's Name (optional)</label>
+                  <Input
+                    placeholder="e.g. Jane Wanjiku"
+                    value={inviteForm.name}
+                    onChange={e => setInviteForm({ ...inviteForm, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Email Address *</label>
+                  <Input
+                    required type="email"
+                    placeholder="jane@gmail.com"
+                    value={inviteForm.email}
+                    onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Role</label>
+                  <select
+                    value={inviteForm.role}
+                    onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })}
+                    className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md"
+                  >
+                    <option value="cashier">Cashier</option>
+                    <option value="manager">Store Manager</option>
+                  </select>
+                </div>
+                <p className="text-[11px] text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
+                  📧 An invite email with a secure link will be sent. The cashier clicks it to create their own password. The link expires in 48 hours.
+                </p>
+                {inviteMutation.isError && (
+                  <p className="text-xs text-red-600 bg-red-50 p-2 rounded-md">
+                    {inviteMutation.error?.message || 'Failed to send invite.'}
+                  </p>
+                )}
+                <DialogFooter className="pt-2">
+                  <Button type="button" variant="outline" onClick={() => handleModalClose(false)}>Cancel</Button>
+                  <Button type="submit" disabled={inviteMutation.isPending} className="bg-primary text-white gap-1.5">
+                    <Mail className="w-4 h-4" />
+                    {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-4">
         {filtered.length === 0 && <div className="text-center py-16 text-muted-foreground"><Users className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>No employees found.</p></div>}

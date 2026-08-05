@@ -22,19 +22,19 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 from .models import (
-    Tenant, UserProfile, BusinessSettings, Product, Customer, Supplier, Shift, Sale,
+    Tenant, UserProfile, BusinessSettings, Branch, CashierInvite, Product, Customer, Supplier, Shift, Sale,
     Expense, EmployeeRating, EmployeeSchedule, Promotion, MpesaPayment,
     ShiftAudit, CashFlow, PurchaseOrder, VaultDocument, ReceiptFeedback,
     Subscription, ReceiptersEngine, ReceiptersVaultHub
 )
 from .serializers import (
-    UserSerializer, TenantSerializer, UserProfileSerializer, BusinessSettingsSerializer, ProductSerializer,
-    CustomerSerializer, SupplierSerializer, ShiftSerializer, SaleSerializer,
-    ExpenseSerializer, EmployeeRatingSerializer, EmployeeScheduleSerializer,
-    PromotionSerializer, MpesaPaymentSerializer, ShiftAuditSerializer,
-    CashFlowSerializer, PurchaseOrderSerializer, VaultDocumentSerializer,
-    ReceiptFeedbackSerializer, SubscriptionSerializer, ReceiptersEngineSerializer,
-    ReceiptersVaultHubSerializer
+    TenantSerializer, UserProfileSerializer, UserSerializer,
+    BusinessSettingsSerializer, BranchSerializer, ProductSerializer, CustomerSerializer,
+    SupplierSerializer, ShiftSerializer, SaleSerializer, ExpenseSerializer,
+    EmployeeRatingSerializer, EmployeeScheduleSerializer, PromotionSerializer,
+    MpesaPaymentSerializer, ShiftAuditSerializer, CashFlowSerializer, PurchaseOrderSerializer,
+    VaultDocumentSerializer, ReceiptFeedbackSerializer, SubscriptionSerializer,
+    ReceiptersEngineSerializer, ReceiptersVaultHubSerializer
 )
 
 User = get_user_model()
@@ -42,6 +42,7 @@ User = get_user_model()
 # Model and Serializer map for generic CRUD
 MODEL_MAP = {
     'BusinessSettings': (BusinessSettings, BusinessSettingsSerializer, 'bs_'),
+    'Branch': (Branch, BranchSerializer, 'br_'),
     'Product': (Product, ProductSerializer, 'p_'),
     'Customer': (Customer, CustomerSerializer, 'c_'),
     'Supplier': (Supplier, SupplierSerializer, 's_'),
@@ -916,6 +917,168 @@ def tenant_cashier_detail(request, cashier_id):
         }, status=status.HTTP_200_OK)
 
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def invite_cashier(request):
+    """
+    Send an email invite to a new cashier/staff member.
+    The invitee receives an email with a link to create their account.
+    POST body: { email, role, name (optional) }
+    """
+    from django.utils import timezone as tz
+    user = request.user
+    tenant = get_tenant_for_user(request)
+    if not tenant:
+        return Response({'error': 'No active business tenant found'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not is_admin_user(user):
+        profile = getattr(user, 'profile', None)
+        if not profile or profile.role not in ('admin', 'manager'):
+            return Response({'error': 'Only business admins can invite cashiers'}, status=status.HTTP_403_FORBIDDEN)
+
+    email = (request.data.get('email') or '').strip().lower()
+    role = request.data.get('role', 'cashier')
+    invitee_name = request.data.get('name', '').strip()
+
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email__iexact=email).exists():
+        return Response({'error': f"A user with email '{email}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Invalidate any previous pending invites for same email+tenant
+    CashierInvite.objects.filter(tenant=tenant, email=email, accepted=False).delete()
+
+    invite = CashierInvite.objects.create(
+        tenant=tenant,
+        email=email,
+        role=role,
+        invited_by=user,
+        expires_at=tz.now() + timedelta(hours=48),
+    )
+
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+    invite_link = f"{frontend_url}/invite/accept?token={invite.token}"
+
+    inviter_name = f"{user.first_name} {user.last_name}".strip() or user.username
+    greeting = f"Hi {invitee_name}," if invitee_name else "Hello,"
+
+    subject = f"You've been invited to join {tenant.name} on DukaPOS"
+    message = (
+        f"{greeting}\n\n"
+        f"{inviter_name} has invited you to join {tenant.name} as a {role} on DukaPOS.\n\n"
+        f"Click the link below to create your account (link expires in 48 hours):\n\n"
+        f"{invite_link}\n\n"
+        f"If you did not expect this invitation, you can safely ignore this email.\n\n"
+        f"— The DukaPOS Team"
+    )
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@dukapos.com'),
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        # Delete invite and report error so admin knows email was not sent
+        invite.delete()
+        return Response({'error': f'Failed to send invite email: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({
+        'success': True,
+        'message': f"Invite sent to {email}. They have 48 hours to accept.",
+        'invite_id': str(invite.token),
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def accept_cashier_invite(request):
+    """
+    GET  ?token=<uuid>  → validate token, return invite info (email, tenant name, role)
+    POST { token, name, password } → create account, mark invite accepted, return JWT
+    """
+    from django.utils import timezone as tz
+    token_str = request.GET.get('token') or request.data.get('token')
+    if not token_str:
+        return Response({'error': 'Token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        import uuid as uuid_mod
+        invite = CashierInvite.objects.select_related('tenant').get(token=uuid_mod.UUID(str(token_str)))
+    except (CashierInvite.DoesNotExist, ValueError):
+        return Response({'error': 'Invalid or expired invitation link.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not invite.is_valid():
+        return Response({'error': 'This invite has already been used or has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.method == 'GET':
+        return Response({
+            'email': invite.email,
+            'role': invite.role,
+            'tenant_name': invite.tenant.name,
+            'expires_at': invite.expires_at,
+        })
+
+    # POST — create the account
+    name = (request.data.get('name') or '').strip()
+    password = request.data.get('password') or ''
+    if not name or not password:
+        return Response({'error': 'Full name and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(password) < 6:
+        return Response({'error': 'Password must be at least 6 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email__iexact=invite.email).exists():
+        return Response({'error': 'An account with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    name_parts = name.split(' ', 1)
+    first_name = name_parts[0]
+    last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+    username = invite.email.split('@')[0]
+    if User.objects.filter(username=username).exists():
+        username = f"{username}_{random.randint(10, 99)}"
+
+    new_user = User.objects.create(
+        username=username,
+        email=invite.email,
+        first_name=first_name,
+        last_name=last_name,
+        is_staff=False,
+        is_superuser=False,
+    )
+    new_user.set_password(password)
+    new_user.save()
+
+    UserProfile.objects.create(
+        user=new_user,
+        tenant=invite.tenant,
+        role=invite.role,
+    )
+
+    invite.accepted = True
+    invite.save()
+
+    # Issue JWT
+    refresh = RefreshToken.for_user(new_user)
+    return Response({
+        'success': True,
+        'message': f"Account created! Welcome to {invite.tenant.name}.",
+        'access': str(refresh.access_token),
+        'refresh': str(refresh),
+        'user': {
+            'id': new_user.id,
+            'email': new_user.email,
+            'full_name': f"{first_name} {last_name}".strip(),
+            'role': invite.role,
+            'tenant_name': invite.tenant.name,
+        }
+    }, status=status.HTTP_201_CREATED)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def switch_active_tenant(request):
@@ -1035,12 +1198,71 @@ def process_customer_loyalty_and_tier(sale_instance, payload_data):
     customer.save()
 
 
+def seed_branches_if_empty(tenant):
+    if not tenant:
+        return
+    if Branch.objects.filter(tenant=tenant).exists():
+        return
+    default_branches = [
+        {
+            'name': 'Nairobi CBD',
+            'code': 'NBI-01',
+            'location': 'Moja Towers, Kenyatta Avenue, Nairobi',
+            'manager': 'Grace Wanjiku',
+            'phone': '0712345678',
+            'working_hours': '08:00 - 20:00',
+            'status': 'active',
+            'monthly_rent': 45000,
+            'debt': 0
+        },
+        {
+            'name': 'Westlands',
+            'code': 'WST-02',
+            'location': 'Sarit Centre, Westlands, Nairobi',
+            'manager': 'James Otieno',
+            'phone': '0723456789',
+            'working_hours': '08:00 - 21:00',
+            'status': 'active',
+            'monthly_rent': 60000,
+            'debt': 0
+        },
+        {
+            'name': 'Mombasa Town',
+            'code': 'MBA-03',
+            'location': 'Nyali Centre, Mombasa',
+            'manager': 'Aisha Hassan',
+            'phone': '0734567890',
+            'working_hours': '08:00 - 20:00',
+            'status': 'active',
+            'monthly_rent': 35000,
+            'debt': 0
+        },
+        {
+            'name': 'Kisumu City',
+            'code': 'KSM-04',
+            'location': 'Mega Plaza, Oginga Odinga St, Kisumu',
+            'manager': 'Brian Kiprotich',
+            'phone': '0745678901',
+            'working_hours': '09:00 - 19:00',
+            'status': 'maintenance',
+            'monthly_rent': 28000,
+            'debt': 0
+        }
+    ]
+    for item in default_branches:
+        Branch.objects.create(tenant=tenant, **item)
+
+
 # --- Generic CRUD Views ---
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def entity_list_create(request, entity_name):
     seed_database_if_empty()
+    tenant = get_tenant_for_user(request)
+    if entity_name in ('Branch', 'branches') and tenant:
+        seed_branches_if_empty(tenant)
+
     if entity_name not in MODEL_MAP:
         return Response({'error': f"Entity {entity_name} not found"}, status=status.HTTP_404_NOT_FOUND)
 

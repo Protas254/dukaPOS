@@ -1,5 +1,7 @@
+import uuid
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Tenant(models.Model):
     name = models.CharField(max_length=255)
@@ -82,6 +84,53 @@ class BusinessSettings(models.Model):
 
     def __str__(self):
         return self.business_name
+
+
+class Branch(models.Model):
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='branches_list', null=True, blank=True)
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=50)
+    location = models.TextField(blank=True, default='')
+    manager = models.CharField(max_length=255, blank=True, default='')
+    phone = models.CharField(max_length=50, blank=True, default='')
+    working_hours = models.CharField(max_length=100, default='08:00 - 20:00')
+    status = models.CharField(max_length=50, default='active')  # 'active', 'maintenance', 'closed'
+    monthly_rent = models.FloatField(default=0.0)
+    debt = models.FloatField(default=0.0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Branch'
+        verbose_name_plural = 'Branches'
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class CashierInvite(models.Model):
+    """Token-based invite sent to a cashier to set up their account."""
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='cashier_invites')
+    email = models.EmailField()
+    role = models.CharField(max_length=50, default='cashier')
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    accepted = models.BooleanField(default=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Cashier Invite'
+        verbose_name_plural = 'Cashier Invites'
+
+    def __str__(self):
+        return f"Invite → {self.email} ({self.tenant.name})"
+
+    def is_valid(self):
+        return not self.accepted and self.expires_at > timezone.now()
 
 
 class Product(models.Model):
