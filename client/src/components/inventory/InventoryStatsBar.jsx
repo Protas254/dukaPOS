@@ -31,9 +31,9 @@ export default function InventoryStatsBar({
 
       {/* Stats bar */}
       {lowStockCount > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-          <span className="text-amber-800 dark:text-amber-200">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl text-sm">
+          <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+          <span className="text-red-800 dark:text-red-300">
             <strong>{lowStockCount}</strong> product{lowStockCount > 1 ? 's' : ''} running low on stock
           </span>
         </div>

@@ -6,7 +6,7 @@ const types = {
   info:    { icon: Info,          bg: 'bg-blue-50 border-blue-200',     text: 'text-blue-700',    icon_c: 'text-blue-500'    },
   tip:     { icon: Lightbulb,     bg: 'bg-amber-50 border-amber-200',   text: 'text-amber-800',   icon_c: 'text-amber-500'   },
   good:    { icon: CheckCircle2,  bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', icon_c: 'text-emerald-500' },
-  warning: { icon: AlertTriangle, bg: 'bg-orange-50 border-orange-200', text: 'text-orange-800',  icon_c: 'text-orange-500'  },
+  warning: { icon: AlertTriangle, bg: 'bg-red-50 border-red-200', text: 'text-red-800',  icon_c: 'text-red-500'  },
 };
 
 function Insight({ type = 'info', text }) {

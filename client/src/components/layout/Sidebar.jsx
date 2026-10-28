@@ -72,8 +72,12 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
   // Helper: check if an item/child is visible for the current role
   const isRoleAllowed = (item) => {
     if (!item.roles) return true;
+    const adminRoles = ['admin', 'manager', 'supervisor'];
+    const staffRoles = ['cashier', 'clerk', 'general_staff', 'staff', 'user'];
+    
     if (item.roles.includes(userRole)) return true;
-    if (userRole === 'cashier' && item.roles.includes('user')) return true;
+    if (adminRoles.includes(userRole) && item.roles.includes('admin')) return true;
+    if ((staffRoles.includes(userRole) || adminRoles.includes(userRole)) && item.roles.includes('user')) return true;
     return false;
   };
 
@@ -89,7 +93,7 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
   return (
     <aside className={cn(
       "h-screen bg-sidebar text-sidebar-foreground flex flex-col shadow-xl lg:shadow-none",
-      collapsed ? "w-[84px]" : "w-[300px] sm:w-[320px]"
+      collapsed ? "w-[84px]" : "w-[280px]"
     )}>
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-border">

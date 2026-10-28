@@ -41,6 +41,7 @@ User = get_user_model()
 
 
 from .helpers import *
+from ..emails import send_welcome_email
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -121,6 +122,7 @@ def register_tenant(request):
     )
 
     tokens = get_tokens_for_user(user)
+    send_welcome_email(owner_email, owner_name or username.capitalize(), business_name)
     user_data = UserSerializer(user).data
     user_data['token'] = tokens['access']
     user_data['access_token'] = tokens['access']

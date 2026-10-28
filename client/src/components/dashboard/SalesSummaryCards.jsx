@@ -51,6 +51,8 @@ export default function SalesSummaryCards({
         value={lowStockProductsCount}
         subtitle={lowStockProductsCount > 0 ? 'Need restocking' : 'All good'}
         icon={lowStockProductsCount > 0 ? AlertTriangle : Package}
+        iconClassName={lowStockProductsCount > 0 ? "text-red-600 dark:text-red-400" : undefined}
+        iconBgClassName={lowStockProductsCount > 0 ? "bg-red-100 dark:bg-red-950/50" : undefined}
       />
     </div>
   );

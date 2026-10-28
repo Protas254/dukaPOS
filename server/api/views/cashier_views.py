@@ -60,11 +60,11 @@ def tenant_cashiers(request):
         if not tenant:
             return Response({'error': 'No active business tenant found. Please complete business onboarding first.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Only admins or managers can manage cashiers
+    # Only admins, managers or supervisors can manage team members
     if not is_admin_user(user):
         profile = getattr(user, 'profile', None)
-        if not profile or profile.role not in ('admin', 'manager'):
-            return Response({'error': 'Only business admins can manage cashiers'}, status=status.HTTP_403_FORBIDDEN)
+        if not profile or profile.role not in ('admin', 'manager', 'supervisor'):
+            return Response({'error': 'Only business admins and supervisors can manage team members'}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'GET':
         cashier_profiles = UserProfile.objects.filter(tenant=tenant).select_related('user')
@@ -104,12 +104,13 @@ def tenant_cashiers(request):
         if User.objects.filter(username=username).exists():
             username = f"{username}_{random.randint(10, 99)}"
 
+        is_staff_role = role in ('admin', 'manager', 'supervisor')
         new_user = User.objects.create(
             username=username,
             email=email,
             first_name=first_name,
             last_name=last_name,
-            is_staff=False,
+            is_staff=is_staff_role,
             is_superuser=False
         )
         new_user.set_password(password)
@@ -122,7 +123,7 @@ def tenant_cashiers(request):
         )
 
         return Response({
-            'message': f"Cashier '{first_name}' created successfully for {tenant.name}!",
+            'message': f"Team member '{first_name}' ({role}) created successfully for {tenant.name}!",
             'user': {
                 'id': f"u_{new_user.id}",
                 'raw_id': new_user.id,
@@ -174,6 +175,8 @@ def tenant_cashier_detail(request, cashier_id):
         if 'role' in request.data:
             target_profile.role = request.data['role']
             target_profile.save()
+            target_user.is_staff = request.data['role'] in ('admin', 'manager', 'supervisor')
+            target_user.save()
 
         return Response({
             'message': 'Cashier updated successfully',
@@ -203,8 +206,8 @@ def invite_cashier(request):
 
     if not is_admin_user(user):
         profile = getattr(user, 'profile', None)
-        if not profile or profile.role not in ('admin', 'manager'):
-            return Response({'error': 'Only business admins can invite cashiers'}, status=status.HTTP_403_FORBIDDEN)
+        if not profile or profile.role not in ('admin', 'manager', 'supervisor'):
+            return Response({'error': 'Only business admins and supervisors can invite team members'}, status=status.HTTP_403_FORBIDDEN)
 
     email = (request.data.get('email') or '').strip().lower()
     role = request.data.get('role', 'cashier')
@@ -232,11 +235,12 @@ def invite_cashier(request):
 
     inviter_name = f"{user.first_name} {user.last_name}".strip() or user.username
     greeting = f"Hi {invitee_name}," if invitee_name else "Hello,"
+    role_display = role.replace('_', ' ').title()
 
     subject = f"You've been invited to join {tenant.name} on DukaPOS"
     message = (
         f"{greeting}\n\n"
-        f"{inviter_name} has invited you to join {tenant.name} as a {role} on DukaPOS.\n\n"
+        f"{inviter_name} has invited you to join {tenant.name} as a {role_display} on DukaPOS.\n\n"
         f"Click the link below to create your account (link expires in 48 hours):\n\n"
         f"{invite_link}\n\n"
         f"If you did not expect this invitation, you can safely ignore this email.\n\n"

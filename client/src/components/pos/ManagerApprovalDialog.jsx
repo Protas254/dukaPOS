@@ -27,9 +27,9 @@ export default function ManagerApprovalDialog({ open, onClose, onApprove, action
       await api.auth.loginViaEmailPassword(managerAuth.email, managerAuth.password);
       const user = await api.auth.me();
       
-      if (user.role !== 'admin') {
+      if (!['admin', 'supervisor', 'manager'].includes(user.role)) {
         await api.auth.logout();
-        toast({ title: 'Access denied', description: 'Manager access required', variant: 'destructive' });
+        toast({ title: 'Access denied', description: 'Manager or supervisor access required', variant: 'destructive' });
         setIsAuthenticating(false);
         return;
       }
@@ -55,15 +55,15 @@ export default function ManagerApprovalDialog({ open, onClose, onApprove, action
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-lg">
+            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-900">
+              <p className="text-sm font-semibold text-red-900 dark:text-red-200">
                 {actionType === 'discount' && `Discount of KES ${amount} requires approval`}
                 {actionType === 'void' && 'Voiding transaction requires approval'}
                 {actionType === 'refund' && 'Processing refund requires approval'}
               </p>
-              <p className="text-xs text-amber-700 mt-1">
+              <p className="text-xs text-red-700 dark:text-red-300 mt-1">
                 Cart total: KES {cart?.reduce((sum, i) => sum + i.price * i.quantity, 0)}
               </p>
             </div>

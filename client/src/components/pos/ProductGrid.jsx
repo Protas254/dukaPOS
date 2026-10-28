@@ -48,8 +48,8 @@ export default function ProductGrid({ products, onAddToCart, searchQuery, onTogg
             className={cn(
               "bg-card border rounded-md p-1 text-left transition-all hover:shadow-sm active:scale-[0.99] group relative overflow-hidden",
               isOutOfStock && "opacity-50 cursor-not-allowed border-muted",
-              isCriticalStock && "border-destructive/50",
-              isLowStock && !isCriticalStock && "border-amber-400/50",
+              isCriticalStock && "border-destructive/60 bg-red-50/20",
+              isLowStock && !isCriticalStock && "border-red-400/60 bg-red-50/10",
               !isLowStock && !isOutOfStock && "hover:border-primary/30"
             )}
           >
@@ -63,7 +63,7 @@ export default function ProductGrid({ products, onAddToCart, searchQuery, onTogg
             {!isOutOfStock && (
               <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full z-10"
                 style={{
-                  backgroundColor: isCriticalStock ? '#ef4444' : isLowStock ? '#f59e0b' : '#10b981'
+                  backgroundColor: isLowStock ? '#ef4444' : '#10b981'
                 }}
               />
             )}
@@ -80,7 +80,7 @@ export default function ProductGrid({ products, onAddToCart, searchQuery, onTogg
             {/* Category emoji */}
             <div className={cn(
               "w-5 h-5 rounded-sm flex items-center justify-center text-base mb-0.5",
-              isLowStock ? "bg-amber-50 dark:bg-amber-900/20" : "bg-muted/30"
+              isLowStock ? "bg-red-50 dark:bg-red-900/30" : "bg-muted/30"
             )}>
               {categoryEmojis[product.category] || '📦'}
             </div>

@@ -116,7 +116,7 @@ export default function FinancialKpiRow({ kpis = {} }) {
               </p>
             </div>
             <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-              {low_stock_count > 0 ? <AlertTriangle className="w-5 h-5 text-amber-500" /> : <Package className="w-5 h-5 text-teal-600" />}
+              {low_stock_count > 0 ? <AlertTriangle className="w-5 h-5 text-red-500" /> : <Package className="w-5 h-5 text-teal-600" />}
             </div>
           </div>
         </Link>

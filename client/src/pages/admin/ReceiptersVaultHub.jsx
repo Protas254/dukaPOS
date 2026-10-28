@@ -115,7 +115,7 @@ export default function ReceiptersVaultHub() {
 
   return (
     <ReceiptersAuthGate featureName="Receipters Vault Hub">
-      <div className="flex flex-col h-full bg-slate-50/50 p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col h-full bg-slate-50/50 p-6 space-y-6 w-full">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

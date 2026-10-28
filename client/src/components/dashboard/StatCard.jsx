@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export default function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, className }) {
+export default function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, className, iconClassName, iconBgClassName }) {
   return (
     <div className={cn(
       "bg-card rounded-2xl p-5 border border-border/50 hover:shadow-lg transition-all duration-300",
@@ -16,8 +16,11 @@ export default function StatCard({ title, value, subtitle, icon: Icon, trend, tr
           )}
         </div>
         {Icon && (
-          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Icon className="w-5 h-5 text-primary" />
+          <div className={cn(
+            "w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center",
+            iconBgClassName
+          )}>
+            <Icon className={cn("w-5 h-5 text-primary", iconClassName)} />
           </div>
         )}
       </div>

@@ -38,6 +38,10 @@ from ..serializers import (
 )
 
 User = get_user_model()
+from ..emails import (
+    send_low_stock_alert,
+    send_loyalty_tier_upgrade_email,
+)
 
 # Model and Serializer map for generic CRUD
 MODEL_MAP = {
@@ -96,7 +100,7 @@ def is_admin_user(user):
         return True
     # Check app-level role stored on UserProfile
     profile = getattr(user, 'profile', None)
-    if profile and getattr(profile, 'role', None) == 'admin':
+    if profile and getattr(profile, 'role', None) in ('admin', 'supervisor', 'manager'):
         return True
     return False
 
@@ -250,6 +254,9 @@ def process_sale_stock_deduction(sale_instance):
     if not sale_instance.items or not isinstance(sale_instance.items, list):
         return
     
+    sale_tenant = getattr(sale_instance, 'tenant', None)
+    low_stock_alerts = []
+
     for item in sale_instance.items:
         if not isinstance(item, dict):
             continue
@@ -261,12 +268,27 @@ def process_sale_stock_deduction(sale_instance):
         pk_val = get_pk_from_prefixed_id(str(prod_id), 'p_')
         if pk_val:
             try:
-                sale_tenant = getattr(sale_instance, 'tenant', None)
                 product = Product.objects.get(tenant=sale_tenant, pk=pk_val)
+                old_stock = product.stock_quantity
                 product.stock_quantity = max(0, product.stock_quantity - int(qty))
                 product.save()
+
+                # If stock just fell to or below low_stock_threshold
+                threshold = product.low_stock_threshold or 10
+                if product.stock_quantity <= threshold and old_stock > product.stock_quantity:
+                    low_stock_alerts.append({
+                        'name': product.name,
+                        'sku': product.sku or 'N/A',
+                        'stock_quantity': product.stock_quantity,
+                        'low_stock_threshold': threshold,
+                    })
             except Product.DoesNotExist:
                 pass
+
+    if low_stock_alerts and sale_tenant:
+        owner_email = sale_tenant.owner_email or getattr(settings, 'ADMIN_NOTIFY_EMAIL', None)
+        if owner_email:
+            send_low_stock_alert(owner_email, sale_tenant.name, low_stock_alerts)
 
 
 def process_purchase_order_stock_increase(po_instance):
@@ -331,14 +353,28 @@ def process_customer_loyalty_and_tier(sale_instance, payload_data):
         customer.loyalty_points = max(0, customer.loyalty_points - points_redeemed)
 
     # Customer Tiers Auto-upgrade logic
+    old_tier = customer.tier
     if customer.total_spending >= 20000:
-        customer.tier = 'gold'
+        new_tier = 'gold'
     elif customer.total_spending >= 5000:
-        customer.tier = 'silver'
+        new_tier = 'silver'
     else:
-        customer.tier = 'bronze'
+        new_tier = 'bronze'
 
+    customer.tier = new_tier
     customer.save()
+
+    # Send tier upgrade email if upgraded and email exists
+    tier_rank = {'bronze': 1, 'silver': 2, 'gold': 3, 'platinum': 4}
+    if customer.email and tier_rank.get(new_tier, 0) > tier_rank.get(old_tier, 0):
+        biz_name = getattr(sale_tenant, 'name', 'DukaPOS Store') if sale_tenant else 'DukaPOS Store'
+        send_loyalty_tier_upgrade_email(
+            customer.email,
+            customer.name,
+            new_tier,
+            customer.loyalty_points,
+            biz_name
+        )
 
 
 def seed_branches_if_empty(tenant):

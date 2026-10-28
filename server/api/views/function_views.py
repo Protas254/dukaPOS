@@ -41,6 +41,10 @@ User = get_user_model()
 
 
 from .helpers import *
+from ..emails import (
+    send_shift_summary_email,
+    send_cash_variance_alert,
+)
 
 # --- Custom Functions Invocation View ---
 
@@ -300,34 +304,52 @@ def functions_invoke(request):
             shift.total_sales = total_sales
             shift.save()
 
+        tenant_obj = get_tenant_for_user(request)
         ShiftAudit.objects.create(
-            tenant=get_tenant_for_user(request),
+            tenant=tenant_obj,
             shift_id=f"shift_{shift.id}" if shift else "shift_0",
             action=action,
             performed_by=request.user.username,
             notes=f"Actual Cash: {actual_cash}, Expected: {expected_cash}, Variance: {variance}. {notes}"
         )
 
+        z_report_data = {
+            'shift_id': f"shift_{shift.id}" if shift else "shift_0",
+            'cashier_name': shift.cashier_name if shift else request.user.username,
+            'started_at': shift.started_at if shift else None,
+            'ended_at': shift.ended_at if shift else None,
+            'total_transactions': sales_qs.count(),
+            'total_revenue': total_sales,
+            'cash_sales': cash_sales,
+            'mpesa_sales': mpesa_sales,
+            'card_sales': card_sales,
+            'starting_cash': starting_cash,
+            'cash_expenses': cash_expenses,
+            'expected_cash': expected_cash,
+            'actual_cash': actual_cash,
+            'variance': variance,
+            'is_balanced': abs(variance) < 1.0
+        }
+
+        # Send shift summary and variance alert emails on shift closure
+        if shift and (action == 'close' or name == 'closeShift') and tenant_obj:
+            owner_email = tenant_obj.owner_email or getattr(settings, 'ADMIN_NOTIFY_EMAIL', None)
+            if owner_email:
+                send_shift_summary_email(owner_email, tenant_obj.name, z_report_data)
+                if abs(variance) >= 1.0:
+                    send_cash_variance_alert(
+                        owner_email,
+                        tenant_obj.name,
+                        z_report_data['cashier_name'],
+                        expected_cash,
+                        actual_cash,
+                        variance
+                    )
+
         return Response({
             'status': 'success',
             'message': f"Shift audit action '{action}' processed successfully",
-            'z_report': {
-                'shift_id': f"shift_{shift.id}" if shift else "shift_0",
-                'cashier_name': shift.cashier_name if shift else request.user.username,
-                'started_at': shift.started_at if shift else None,
-                'ended_at': shift.ended_at if shift else None,
-                'total_transactions': sales_qs.count(),
-                'total_revenue': total_sales,
-                'cash_sales': cash_sales,
-                'mpesa_sales': mpesa_sales,
-                'card_sales': card_sales,
-                'starting_cash': starting_cash,
-                'cash_expenses': cash_expenses,
-                'expected_cash': expected_cash,
-                'actual_cash': actual_cash,
-                'variance': variance,
-                'is_balanced': abs(variance) < 1.0
-            }
+            'z_report': z_report_data
         })
 
     # 4. Analytics Functions

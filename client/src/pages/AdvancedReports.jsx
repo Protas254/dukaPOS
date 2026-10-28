@@ -68,7 +68,7 @@ export default function AdvancedReports() {
 
   return (
     <div className="p-6 bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Advanced Reports</h1>

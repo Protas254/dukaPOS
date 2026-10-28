@@ -59,7 +59,7 @@ export default function Dashboard() {
   const criticalStockCount = kpis.critical_stock_count || low_stock_items.length;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1500px] mx-auto min-h-screen bg-blue-50/40 dark:bg-blue-950/10 rounded-2xl">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 min-h-screen">
       {/* 1. Header & Controls Bar */}
       <DashboardControlHeader
         activeRange={activeRange}

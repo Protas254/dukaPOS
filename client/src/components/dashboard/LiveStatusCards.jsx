@@ -24,11 +24,11 @@ export default function LiveStatusCards({ liveStatus = {} }) {
         </div>
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Live Sales (1h)</span>
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Live Sales (1h)</span>
             <span className="w-2 h-2 rounded-full bg-blue-500" />
           </div>
           <p className="text-xl font-display font-bold text-foreground mt-0.5">{live_sales_count}</p>
-          <p className="text-xs text-muted-foreground font-medium">KES {live_sales_revenue.toLocaleString()}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">KES {live_sales_revenue.toLocaleString()}</p>
         </div>
       </div>
 
@@ -38,9 +38,9 @@ export default function LiveStatusCards({ liveStatus = {} }) {
           <Users className="w-5 h-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <span className="text-xs font-medium text-muted-foreground">Active Shifts</span>
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Active Shifts</span>
           <p className="text-xl font-display font-bold text-foreground mt-0.5">{active_shifts_count}</p>
-          <p className="text-xs text-muted-foreground truncate font-medium">{cashiersText}</p>
+          <p className="text-xs text-slate-700 dark:text-slate-200 truncate font-semibold" title={cashiersText}>{cashiersText}</p>
         </div>
       </div>
 
@@ -50,9 +50,9 @@ export default function LiveStatusCards({ liveStatus = {} }) {
           <Smartphone className="w-5 h-5" />
         </div>
         <div>
-          <span className="text-xs font-medium text-muted-foreground">Pending M-Pesa</span>
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pending M-Pesa</span>
           <p className="text-xl font-display font-bold text-foreground mt-0.5">{pending_mpesa_count}</p>
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
             {pending_mpesa_count === 0 ? 'All settled' : `${pending_mpesa_count} pending`}
           </p>
         </div>
@@ -64,9 +64,9 @@ export default function LiveStatusCards({ liveStatus = {} }) {
           <Ban className="w-5 h-5" />
         </div>
         <div>
-          <span className="text-xs font-medium text-muted-foreground">Voids / Refunds</span>
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Voids / Refunds</span>
           <p className="text-xl font-display font-bold text-foreground mt-0.5">{void_count + refund_count}</p>
-          <p className="text-xs text-muted-foreground font-medium">{void_count} void • {refund_count} refund</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">{void_count} void • {refund_count} refund</p>
         </div>
       </div>
     </div>

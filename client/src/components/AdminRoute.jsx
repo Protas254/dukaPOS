@@ -12,7 +12,8 @@ export default function AdminRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.role !== 'admin') {
+  const adminRoles = ['admin', 'manager', 'supervisor'];
+  if (!adminRoles.includes(user?.role)) {
     return <Navigate to="/" replace />;
   }
 

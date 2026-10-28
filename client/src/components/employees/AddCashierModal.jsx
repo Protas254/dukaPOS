@@ -65,14 +65,18 @@ export default function AddCashierModal({ open, onOpenChange, onSubmit, isPendin
           </div>
         </div>
         <div>
-          <label className="text-xs font-semibold text-foreground mb-1 block">Role</label>
+          <label className="text-xs font-semibold text-foreground mb-1 block">Role / Designation *</label>
           <select
             value={cashierForm.role}
             onChange={e => setCashierForm({ ...cashierForm, role: e.target.value })}
-            className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md"
+            className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md font-medium"
           >
-            <option value="cashier">Cashier</option>
-            <option value="manager">Store Manager</option>
+            <option value="admin">Administrator (Admin) — Full Store Management & Settings</option>
+            <option value="supervisor">Supervisor — Shift Supervision & Approvals</option>
+            <option value="clerk">Clerk — Inventory, Stock & Receiving</option>
+            <option value="general_staff">General Staff — Store Floor Operations</option>
+            <option value="cashier">Cashier — POS Terminal & Register</option>
+            <option value="manager">Store Manager — Store Operations</option>
           </select>
         </div>
       </div>

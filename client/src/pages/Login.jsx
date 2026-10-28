@@ -34,6 +34,7 @@ export default function Login() {
   return (
     <AuthLayout
       icon={LogIn}
+      brand="DukaPOS"
       title="Welcome back"
       subtitle="Log in to your account"
       footer={
@@ -67,10 +68,10 @@ export default function Login() {
         <Tabs value={role} onValueChange={(val) => { setRole(val); setError(""); }} className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-11 bg-muted/60 p-1 rounded-xl">
             <TabsTrigger value="cashier" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              Log in as Cashier
+              Staff / Cashier
             </TabsTrigger>
             <TabsTrigger value="admin" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              Log in as Admin
+              Administrator
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -137,7 +138,7 @@ export default function Login() {
               Logging in...
             </>
           ) : (
-            `Log in as ${role === 'admin' ? 'Admin' : 'Cashier'}`
+            `Log in as ${role === 'admin' ? 'Administrator' : 'Staff Member'}`
           )}
         </Button>
       </form>

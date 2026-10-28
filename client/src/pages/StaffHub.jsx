@@ -5,7 +5,7 @@ import { format, formatDuration, intervalToDuration, subDays, startOfDay } from 
 import {
   Users, Clock, DollarSign, ShoppingCart, TrendingUp, ChevronDown, ChevronUp,
   ArrowLeft, ArrowRight, Search, Award, Calendar, Download, Star, Pencil, Check, X, Plus,
-  Eye, EyeOff, Mail, Send
+  Eye, EyeOff, Mail, Send, UserPlus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,18 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import StatCard from '@/components/dashboard/StatCard';
 import ShiftPerformanceSummary from '@/components/shifts/ShiftPerformanceSummary';
+
+// ─── Role Configuration ────────────────────────────────────────────────────────
+
+const ROLE_CONFIG = {
+  admin: { label: 'Administrator', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+  supervisor: { label: 'Supervisor', cls: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' },
+  clerk: { label: 'Clerk', cls: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800' },
+  general_staff: { label: 'General Staff', cls: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+  staff: { label: 'General Staff', cls: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+  cashier: { label: 'Cashier', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' },
+  manager: { label: 'Store Manager', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+};
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -74,6 +86,8 @@ function EmployeesTab({ sales, shifts, currentUser }) {
   const [search, setSearch] = useState('');
   const [expandedEmployee, setExpandedEmployee] = useState(null);
   const [editingRating, setEditingRating] = useState(null);
+  const [editingRoleMember, setEditingRoleMember] = useState(null);
+  const [newRole, setNewRole] = useState('cashier');
   const [isAddCashierOpen, setIsAddCashierOpen] = useState(false);
 
   const [cashierForm, setCashierForm] = useState({
@@ -118,6 +132,14 @@ function EmployeesTab({ sales, shifts, currentUser }) {
   const inviteMutation = useMutation({
     mutationFn: (data) => api.cashiers.invite(data),
     onSuccess: () => { setInviteSent(true); },
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ cashierId, role }) => api.cashiers.update(cashierId, { role }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cashiers'] });
+      setEditingRoleMember(null);
+    },
   });
 
   const handleAddCashierSubmit = (e) => {
@@ -256,7 +278,7 @@ function EmployeesTab({ sales, shifts, currentUser }) {
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search employees..." className="pl-10" />
         </div>
         <Button onClick={() => setIsAddCashierOpen(true)} className="gap-2 flex-shrink-0 bg-primary text-white">
-          <Plus className="w-4 h-4" /> Add Cashier
+          <UserPlus className="w-4 h-4" /> Add Team Member
         </Button>
         <Button variant="outline" onClick={exportCSV} className="gap-2 flex-shrink-0">
           <Download className="w-4 h-4" /> Export CSV
@@ -267,9 +289,9 @@ function EmployeesTab({ sales, shifts, currentUser }) {
       <Dialog open={isAddCashierOpen} onOpenChange={handleModalClose}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle className="text-lg font-display font-bold">Add New Cashier / Staff</DialogTitle>
+            <DialogTitle className="text-lg font-display font-bold">Add Team Member / Administrator</DialogTitle>
             <DialogDescription className="text-xs">
-              Create an account directly or send an email invitation.
+              Create an account directly or send an email invitation for administrators, supervisors, clerks, or staff.
             </DialogDescription>
           </DialogHeader>
 
@@ -343,14 +365,18 @@ function EmployeesTab({ sales, shifts, currentUser }) {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Role</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Role / Designation *</label>
                   <select
                     value={cashierForm.role}
                     onChange={e => setCashierForm({ ...cashierForm, role: e.target.value })}
-                    className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md"
+                    className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md font-medium"
                   >
-                    <option value="cashier">Cashier</option>
-                    <option value="manager">Store Manager</option>
+                    <option value="admin">Administrator (Admin) — Full System Control & Settings</option>
+                    <option value="supervisor">Supervisor — Shift Supervision & Approvals</option>
+                    <option value="clerk">Clerk — Inventory, Stock & Receiving</option>
+                    <option value="general_staff">General Staff — Store Operations</option>
+                    <option value="cashier">Cashier — POS Terminal & Register</option>
+                    <option value="manager">Store Manager — Store Operations</option>
                   </select>
                 </div>
               </div>
@@ -383,7 +409,7 @@ function EmployeesTab({ sales, shifts, currentUser }) {
 
               {/* Forgot password hint */}
               <p className="text-[11px] text-muted-foreground">
-                Set a temporary password. The cashier can reset it via{' '}
+                Set a temporary password. The member can reset it anytime via{' '}
                 <a href="/forgot-password" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   Forgot Password
                 </a>.
@@ -407,7 +433,7 @@ function EmployeesTab({ sales, shifts, currentUser }) {
 
               {addCashierMutation.isError && (
                 <p className="text-xs text-red-600 bg-red-50 p-2 rounded-md">
-                  {addCashierMutation.error?.message || 'Failed to create cashier.'}
+                  {addCashierMutation.error?.message || 'Failed to create team member.'}
                 </p>
               )}
 
@@ -418,7 +444,7 @@ function EmployeesTab({ sales, shifts, currentUser }) {
                   disabled={addCashierMutation.isPending || (cashierForm.confirmPassword && cashierForm.password !== cashierForm.confirmPassword)}
                   className="bg-primary text-white"
                 >
-                  {addCashierMutation.isPending ? 'Saving...' : 'Add Cashier'}
+                  {addCashierMutation.isPending ? 'Saving...' : 'Add Team Member'}
                 </Button>
               </DialogFooter>
             </form>
@@ -442,7 +468,7 @@ function EmployeesTab({ sales, shifts, currentUser }) {
             ) : (
               <form onSubmit={handleInviteSubmit} className="space-y-4 py-1">
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Cashier's Name (optional)</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Full Name (optional)</label>
                   <Input
                     placeholder="e.g. Jane Wanjiku"
                     value={inviteForm.name}
@@ -459,18 +485,22 @@ function EmployeesTab({ sales, shifts, currentUser }) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Role</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Role / Designation *</label>
                   <select
                     value={inviteForm.role}
                     onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })}
-                    className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md"
+                    className="w-full h-9 px-3 text-xs bg-background border border-input rounded-md font-medium"
                   >
-                    <option value="cashier">Cashier</option>
-                    <option value="manager">Store Manager</option>
+                    <option value="admin">Administrator (Admin) — Full System Control & Settings</option>
+                    <option value="supervisor">Supervisor — Shift Supervision & Approvals</option>
+                    <option value="clerk">Clerk — Inventory, Stock & Receiving</option>
+                    <option value="general_staff">General Staff — Store Operations</option>
+                    <option value="cashier">Cashier — POS Terminal & Register</option>
+                    <option value="manager">Store Manager — Store Operations</option>
                   </select>
                 </div>
                 <p className="text-[11px] text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
-                  📧 An invite email with a secure link will be sent. The cashier clicks it to create their own password. The link expires in 48 hours.
+                  📧 An invite email with a secure link will be sent. The recipient clicks it to create their password and activate their role. The link expires in 48 hours.
                 </p>
                 {inviteMutation.isError && (
                   <p className="text-xs text-red-600 bg-red-50 p-2 rounded-md">
@@ -481,7 +511,7 @@ function EmployeesTab({ sales, shifts, currentUser }) {
                   <Button type="button" variant="outline" onClick={() => handleModalClose(false)}>Cancel</Button>
                   <Button type="submit" disabled={inviteMutation.isPending} className="bg-primary text-white gap-1.5">
                     <Mail className="w-4 h-4" />
-                    {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
+                    {inviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
                   </Button>
                 </DialogFooter>
               </form>
@@ -507,10 +537,53 @@ function EmployeesTab({ sales, shifts, currentUser }) {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-display font-semibold">{emp.name}</p>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-semibold border ${ROLE_CONFIG[emp.role]?.cls || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}
+                        >
+                          {ROLE_CONFIG[emp.role]?.label || (emp.role ? emp.role.replace('_', ' ') : 'Cashier')}
+                        </Badge>
                         {emp.activeShift && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">● ON SHIFT</Badge>}
                         {emp.name === currentUser?.full_name && <Badge variant="outline" className="text-[10px]">You</Badge>}
                         {rating === 5 && <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">⭐ Top Performer</Badge>}
                       </div>
+                      {editingRoleMember === emp.name ? (
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <select
+                            value={newRole}
+                            onChange={e => setNewRole(e.target.value)}
+                            className="h-7 text-xs px-2 bg-background border rounded-md"
+                          >
+                            <option value="admin">Administrator (Admin)</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="clerk">Clerk</option>
+                            <option value="general_staff">General Staff</option>
+                            <option value="cashier">Cashier</option>
+                            <option value="manager">Store Manager</option>
+                          </select>
+                          <Button
+                            size="sm"
+                            className="h-7 px-2.5 text-[11px]"
+                            disabled={updateRoleMutation.isPending}
+                            onClick={() => updateRoleMutation.mutate({ cashierId: emp.cashierId, role: newRole })}
+                          >
+                            {updateRoleMutation.isPending ? 'Saving...' : 'Save'}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => setEditingRoleMember(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : emp.cashierId ? (
+                        <div className="mt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => { setEditingRoleMember(emp.name); setNewRole(emp.role || 'cashier'); }}
+                            className="text-[10px] text-muted-foreground hover:text-primary underline"
+                          >
+                            Edit role ({ROLE_CONFIG[emp.role]?.label || emp.role || 'Cashier'})
+                          </button>
+                        </div>
+                      ) : null}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {isEditingThis ? (
                           <div className="flex flex-col gap-2 w-full mt-1">
@@ -767,7 +840,7 @@ export default function StaffHub() {
   });
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 ">
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold">Team Management</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Employee management & shift performance</p>

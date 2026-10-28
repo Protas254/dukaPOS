@@ -40,6 +40,14 @@ module.exports = {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
   			},
+  			success: {
+  				DEFAULT: 'hsl(var(--success))',
+  				foreground: 'hsl(var(--success-foreground))'
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning))',
+  				foreground: 'hsl(var(--warning-foreground))'
+  			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
@@ -62,10 +70,36 @@ module.exports = {
   			}
   		},
   		fontFamily: {
-  			heading: ['var(--font-heading)'],
-  			body: ['var(--font-body)'],
-  			display: ['var(--font-display)'],
-  			mono: ['var(--font-mono)']
+  			heading: ['var(--font-heading)', '"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			body: ['var(--font-body)', '"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			display: ['var(--font-display)', '"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace'],
+  			brand: ['var(--font-brand)', '"Russo One"', 'sans-serif'],
+  		},
+  		/* ── Type Scale (14px root = 1rem) ──────────────────────────────── */
+  		fontSize: {
+  			/* Micro labels — badge texts, chart ticks */
+  			'2xs': ['0.714rem', { lineHeight: '1rem',      letterSpacing: '0.02em' }], // 10px
+  			/* Small labels — card meta, table headers, sub-labels */
+  			'xs':  ['0.857rem', { lineHeight: '1.25rem',   letterSpacing: '0.01em' }], // 12px
+  			/* Body small — secondary text, timestamps, tooltip */
+  			'sm':  ['0.929rem', { lineHeight: '1.35rem',   letterSpacing: '0em'    }], // 13px
+  			/* Body base (1rem = 14px) — default prose, form labels, table rows */
+  			'base':['1rem',     { lineHeight: '1.5rem',    letterSpacing: '0em'    }], // 14px
+  			/* Body lg — sub-headings, section intro text */
+  			'lg':  ['1.143rem', { lineHeight: '1.75rem',   letterSpacing: '-0.01em'}], // 16px
+  			/* XL — card value numbers, page sub-titles */
+  			'xl':  ['1.286rem', { lineHeight: '1.75rem',   letterSpacing: '-0.01em'}], // 18px
+  			/* 2XL — KPI numbers, large stats */
+  			'2xl': ['1.571rem', { lineHeight: '2rem',      letterSpacing: '-0.02em'}], // 22px
+  			/* 3XL — dashboard greeting, hero numbers */
+  			'3xl': ['1.857rem', { lineHeight: '2.25rem',   letterSpacing: '-0.02em'}], // 26px
+  			/* 4XL — page-level hero display */
+  			'4xl': ['2.286rem', { lineHeight: '2.5rem',    letterSpacing: '-0.03em'}], // 32px
+  			/* 5XL — splash / brand display */
+  			'5xl': ['3rem',     { lineHeight: '1.1',       letterSpacing: '-0.03em'}], // 42px
+  			/* 6XL — landing hero */
+  			'6xl': ['3.857rem', { lineHeight: '1',         letterSpacing: '-0.04em'}], // 54px
   		},
   		keyframes: {
   			'accordion-down': {

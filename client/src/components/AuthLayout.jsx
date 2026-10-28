@@ -1,13 +1,18 @@
 import React from "react";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+export default function AuthLayout({ icon: Icon, title, subtitle, brand, footer, children }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600/10 p-2.5 mb-4 border border-blue-500/20 shadow-sm">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 p-2.5 mb-4 border border-primary/20 shadow-sm">
             <img src="/logo.svg" alt="Receipters Logo" className="w-full h-full object-contain" />
           </div>
+          {brand && (
+            <div className="font-brand text-2xl tracking-wider text-primary mb-1 uppercase font-normal">
+              {brand}
+            </div>
+          )}
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
         </div>

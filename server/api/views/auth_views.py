@@ -41,6 +41,11 @@ User = get_user_model()
 
 
 from .helpers import *
+from ..emails import (
+    send_welcome_email,
+    send_otp_email,
+    send_password_reset_email,
+)
 
 # --- Auth Views ---
 
@@ -80,10 +85,9 @@ def auth_login(request):
 
     if requested_role:
         requested_role = requested_role.lower()
-        if requested_role == 'cashier' and actual_role != 'cashier':
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-        elif requested_role == 'admin' and actual_role == 'cashier':
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        admin_roles = ('admin', 'manager', 'supervisor')
+        if requested_role == 'admin' and actual_role not in admin_roles:
+            return Response({'error': 'Invalid credentials for admin portal'}, status=status.HTTP_400_BAD_REQUEST)
 
     tokens = get_tokens_for_user(user)
     serializer = UserSerializer(user)
@@ -154,6 +158,8 @@ def auth_register(request):
     )
 
     tokens = get_tokens_for_user(user)
+    # Send welcome email to new owner
+    send_welcome_email(email, username.capitalize(), tenant.name)
     return Response({
         'token': tokens['access'],
         'access_token': tokens['access'],
@@ -215,6 +221,8 @@ def auth_verify_otp(request):
     del request.session['pending_user']
     
     tokens = get_tokens_for_user(user)
+    # Send welcome email to newly verified owner
+    send_welcome_email(email, username.capitalize(), tenant.name)
     return Response({
         'token': tokens['access'],
         'access_token': tokens['access'],
@@ -238,18 +246,79 @@ def auth_resend_otp(request):
     request.session.modified = True
     
     # Send OTP via Email
-    try:
-        send_mail(
-            subject='Your New DukaPOS Verification Code',
-            message=f'Your new verification code is: {otp_code}\n\nPlease enter this code to complete your registration.',
-            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@dukapos.com',
-            recipient_list=[email],
-            fail_silently=True,
-        )
-    except Exception as e:
-        print(f"Error sending email: {e}")
+    send_otp_email(email, otp_code)
         
     return Response({'success': True})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def auth_forgot_password(request):
+    """
+    POST { email } — generates a password-reset token and emails a reset link.
+    Uses the session to store the token (same pattern as OTP flow).
+    Responds with success regardless of whether the email exists (prevents enumeration).
+    """
+    email = (request.data.get('email') or '').strip().lower()
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects.filter(email__iexact=email).first()
+    if user:
+        import secrets
+        token = secrets.token_urlsafe(32)
+        # Store token in session (expires when session does — typically 2 weeks)
+        request.session[f'pwd_reset_{token}'] = {
+            'email': email,
+            'created_at': timezone.now().isoformat(),
+        }
+        request.session.set_expiry(3600)  # 1 hour
+
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+        reset_link = f"{frontend_url}/reset-password?token={token}"
+        send_password_reset_email(email, reset_link)
+
+    # Always return success to prevent user enumeration
+    return Response({'success': True, 'message': 'If an account exists with that email, a reset link has been sent.'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def auth_reset_password(request):
+    """
+    POST { token, newPassword } — validates the token and updates the password.
+    """
+    token = (request.data.get('token') or request.data.get('resetToken') or '').strip()
+    new_password = request.data.get('newPassword') or request.data.get('password') or ''
+
+    if not token or not new_password:
+        return Response({'error': 'Token and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if len(new_password) < 6:
+        return Response({'error': 'Password must be at least 6 characters'}, status=status.HTTP_400_BAD_REQUEST)
+
+    session_key = f'pwd_reset_{token}'
+    token_data = request.session.get(session_key)
+    if not token_data:
+        return Response({'error': 'Invalid or expired reset link. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check expiry (1 hour)
+    from datetime import datetime
+    created_at = datetime.fromisoformat(token_data['created_at'])
+    if (timezone.now() - timezone.make_aware(created_at.replace(tzinfo=None)) if created_at.tzinfo is None else timezone.now() - created_at).total_seconds() > 3600:
+        del request.session[session_key]
+        return Response({'error': 'Reset link has expired. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    email = token_data['email']
+    user = User.objects.filter(email__iexact=email).first()
+    if not user:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    user.set_password(new_password)
+    user.save()
+    del request.session[session_key]
+
+    return Response({'success': True, 'message': 'Password reset successfully. You can now log in.'})
 
 
 @api_view(['POST'])
@@ -399,12 +468,13 @@ def accept_cashier_invite(request):
     if User.objects.filter(username=username).exists():
         username = f"{username}_{random.randint(10, 99)}"
 
+    is_staff_role = invite.role in ('admin', 'manager', 'supervisor')
     new_user = User.objects.create(
         username=username,
         email=invite.email,
         first_name=first_name,
         last_name=last_name,
-        is_staff=False,
+        is_staff=is_staff_role,
         is_superuser=False,
     )
     new_user.set_password(password)

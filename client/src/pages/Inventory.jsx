@@ -155,7 +155,7 @@ export default function Inventory() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1400px]">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 ">
       <InventoryHeader
         products={products}
         totalValue={totalValue}

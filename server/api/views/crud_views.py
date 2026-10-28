@@ -41,6 +41,12 @@ User = get_user_model()
 
 
 from .helpers import *
+from ..emails import (
+    send_receipt_email,
+    send_purchase_order_email,
+    send_subscription_confirmation,
+    send_staff_schedule_email,
+)
 
 # --- Generic CRUD Views ---
 
@@ -208,8 +214,80 @@ def entity_list_create(request, entity_name):
                     is_locked=True,
                     stored_by_name=instance.cashier_name
                 )
+                # Customer Receipt Email delivery
+                customer_email = None
+                if isinstance(data.get('receipt_delivery'), dict):
+                    customer_email = data['receipt_delivery'].get('email')
+                if not customer_email:
+                    customer_email = data.get('customer_email') or data.get('email')
+                if not customer_email and data.get('customer_id'):
+                    c_pk = get_pk_from_prefixed_id(str(data.get('customer_id')), 'c_')
+                    if c_pk:
+                        cust = Customer.objects.filter(tenant=user_tenant, pk=c_pk).first()
+                        if cust and cust.email:
+                            customer_email = cust.email
+
+                if customer_email:
+                    biz_settings = BusinessSettings.objects.filter(tenant=user_tenant).first()
+                    store_name = getattr(biz_settings, 'trading_name', None) or getattr(biz_settings, 'business_name', None) or (user_tenant.name if user_tenant else "DukaPOS Store")
+                    send_receipt_email(
+                        customer_email=customer_email,
+                        receipt_number=instance.receipt_number,
+                        store_name=store_name,
+                        items=instance.items,
+                        subtotal=instance.subtotal,
+                        tax_total=instance.tax_total,
+                        total_amount=instance.total_amount,
+                        payment_method=instance.payment_method,
+                        cashier_name=instance.cashier_name,
+                        sale_date=instance.created_at.strftime('%Y-%m-%d %H:%M')
+                    )
             elif entity_name in ('PurchaseOrder', 'purchase_orders'):
                 process_purchase_order_stock_increase(instance)
+                # Send PO email to supplier if supplier email exists
+                supplier = None
+                if instance.supplier_id:
+                    s_pk = get_pk_from_prefixed_id(str(instance.supplier_id), 's_')
+                    if s_pk:
+                        supplier = Supplier.objects.filter(tenant=user_tenant, pk=s_pk).first()
+                if not supplier and instance.supplier_name:
+                    supplier = Supplier.objects.filter(tenant=user_tenant, name__iexact=instance.supplier_name).first()
+                if supplier and supplier.email:
+                    biz_name = user_tenant.name if user_tenant else "DukaPOS Store"
+                    send_purchase_order_email(
+                        supplier_email=supplier.email,
+                        supplier_name=supplier.name,
+                        business_name=biz_name,
+                        po_number=instance.order_number,
+                        items=instance.items,
+                        notes=instance.notes or ''
+                    )
+            elif entity_name in ('Subscription', 'subscriptions'):
+                if user_tenant and user_tenant.owner_email:
+                    send_subscription_confirmation(
+                        owner_email=user_tenant.owner_email,
+                        owner_name=user_tenant.owner_name or user.username,
+                        business_name=user_tenant.name,
+                        plan_name=instance.plan_name,
+                        amount=instance.amount,
+                        billing_cycle=instance.billing_cycle,
+                        end_date=str(instance.end_date or '')
+                    )
+            elif entity_name in ('EmployeeSchedule', 'employee_schedules'):
+                cashier_user = User.objects.filter(username__iexact=instance.cashier_name).first() or User.objects.filter(first_name__iexact=instance.cashier_name.split()[0]).first()
+                if cashier_user and cashier_user.email:
+                    biz_name = user_tenant.name if user_tenant else "DukaPOS Store"
+                    send_staff_schedule_email(
+                        employee_email=cashier_user.email,
+                        employee_name=instance.cashier_name,
+                        business_name=biz_name,
+                        schedule_entries=[{
+                            'date': str(instance.date),
+                            'start_time': instance.shift_type.capitalize(),
+                            'end_time': '',
+                            'role': 'Cashier'
+                        }]
+                    )
             elif entity_name in ('Expense', 'expenses'):
                 CashFlow.objects.create(
                     tenant=user_tenant,
@@ -298,8 +376,27 @@ def entity_detail(request, entity_name, pk):
         serializer = SerializerClass(instance, data=request.data, partial=True)
         if serializer.is_valid():
             updated_instance = serializer.save()
-            if entity_name in ('PurchaseOrder', 'purchase_orders') and old_status != 'delivered' and updated_instance.status == 'delivered':
-                process_purchase_order_stock_increase(updated_instance)
+            if entity_name in ('PurchaseOrder', 'purchase_orders'):
+                if old_status != 'delivered' and updated_instance.status == 'delivered':
+                    process_purchase_order_stock_increase(updated_instance)
+                if old_status != updated_instance.status and updated_instance.status in ('sent', 'ordered'):
+                    supplier = None
+                    if updated_instance.supplier_id:
+                        s_pk = get_pk_from_prefixed_id(str(updated_instance.supplier_id), 's_')
+                        if s_pk:
+                            supplier = Supplier.objects.filter(tenant=instance.tenant, pk=s_pk).first()
+                    if not supplier and updated_instance.supplier_name:
+                        supplier = Supplier.objects.filter(tenant=instance.tenant, name__iexact=updated_instance.supplier_name).first()
+                    if supplier and supplier.email:
+                        biz_name = instance.tenant.name if instance.tenant else "DukaPOS Store"
+                        send_purchase_order_email(
+                            supplier_email=supplier.email,
+                            supplier_name=supplier.name,
+                            business_name=biz_name,
+                            po_number=updated_instance.order_number,
+                            items=updated_instance.items,
+                            notes=updated_instance.notes or ''
+                        )
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

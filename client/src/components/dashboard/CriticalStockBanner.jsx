@@ -64,7 +64,7 @@ export default function CriticalStockBanner({ lowStockItems = [] }) {
                   className={`text-[10px] font-bold px-2 py-0.5 ${
                     isCritical
                       ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-300'
-                      : 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300'
+                      : 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/60 dark:text-red-300'
                   }`}
                 >
                   {left} left
@@ -73,10 +73,10 @@ export default function CriticalStockBanner({ lowStockItems = [] }) {
 
               {/* Progress Bar */}
               <div className="space-y-1">
-                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-red-100 dark:bg-red-950/40 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
-                      isCritical ? 'bg-red-500' : 'bg-amber-400'
+                      isCritical ? 'bg-red-600' : 'bg-red-500'
                     }`}
                     style={{ width: `${pct}%` }}
                   />

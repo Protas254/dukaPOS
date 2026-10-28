@@ -160,8 +160,8 @@ export default function InventoryTable({
                         <span className={cn(
                           "font-semibold",
                           isOutOfStock ? "text-red-600" :
-                          isCritical ? "text-red-500" :
-                          isLow ? "text-amber-600" : "text-emerald-600"
+                          isCritical ? "text-red-600" :
+                          isLow ? "text-red-600 dark:text-red-400" : "text-emerald-600"
                         )}>
                           {product.stock_quantity}
                         </span>
@@ -171,8 +171,8 @@ export default function InventoryTable({
                         <span className={cn(
                           "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
                           isOutOfStock ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                          isCritical ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
-                          "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          isCritical ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                          "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-900/40"
                         )}>
                           {isOutOfStock ? 'Out of stock' : isCritical ? 'Critical' : `Low ≤ ${threshold}`}
                         </span>
